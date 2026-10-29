@@ -5,8 +5,8 @@ using Unciv.GodotClient.Localization;
 
 namespace Unciv.GodotClient.Ui;
 
-/// <summary>A column of a <see cref="DataTable"/>: the untranslated header, and whether its cells are numbers (right-aligned, tabular, sorted by value).</summary>
-public readonly record struct DataColumn(string Header, bool Numeric = false);
+/// <summary>A column of a <see cref="DataTable"/>: the untranslated header, whether its cells are numbers (right-aligned, tabular, sorted by value) and, when not 0, the width in pixels its cells keep (C077: a long entry is not cut to an ellipsis).</summary>
+public readonly record struct DataColumn(string Header, bool Numeric = false, int MinWidth = 0);
 
 /// <summary>
 /// C065: a table in an Inset well. The header row is clickable (first click sorts ascending, the next descending, shown by a triangle), numbers are
@@ -148,6 +148,7 @@ public partial class DataTable : PanelContainer
                     TextOverrunBehavior = TextServer.OverrunBehavior.TrimEllipsis,
                     SizeFlagsHorizontal = SizeFlags.ExpandFill,
                 };
+                if (columns[c].MinWidth > 0) label.CustomMinimumSize = new Vector2(columns[c].MinWidth, 0f);
                 if (columns[c].Numeric) label.ThemeTypeVariation = UiVariants.LabelNumber;
                 int inputRow = order[r];
                 if (inputRow == SelectedRow) label.AddThemeColorOverride("font_color", ProceduralAssets.ToColor(UiTokens.Accent));

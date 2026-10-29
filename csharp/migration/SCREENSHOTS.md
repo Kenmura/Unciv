@@ -454,17 +454,17 @@ Victory and defeat screens: a forced one-turn Domination conquest, the ranking a
 
 Scenario `victory`.
 
-![The victory screen after a one-turn conquest: title, the victory paragraph, the ranking with the viewer highlighted and the defeated civ last, the score history and the two buttons.](../Unciv.Godot.Harness/golden/victory/victory.png)
+![The victory modal after a one-turn conquest: gold title, the victory paragraph, the ranking table with your row in the accent colour and the defeated civ last, the score graph with its value axis and turn axis, and Main menu with the primary One more turn.](../Unciv.Godot.Harness/golden/victory/victory.png)
 
-*The victory screen after a one-turn conquest: title, the victory paragraph, the ranking with the viewer highlighted and the defeated civ last, the score history and the two buttons.* (`victory/victory.png`)
+*The victory modal after a one-turn conquest: gold title, the victory paragraph, the ranking table with your row in the accent colour and the defeated civ last, the score graph with its value axis and turn axis, and Main menu with the primary One more turn.* (`victory/victory.png`)
 
 ![After One more turn the world is playable again on the next turn.](../Unciv.Godot.Harness/golden/victory/continued.png)
 
 *After One more turn the world is playable again on the next turn.* (`victory/continued.png`)
 
-![The defeat screen (scenario defeat): the game goes on without you; keep watching or go to the main menu.](../Unciv.Godot.Harness/golden/defeat/defeat.png)
+![The defeat modal (scenario defeat): red title, the defeat paragraph and the ranking with your defeated row muted; the game goes on without you, so Keep watching is the primary button next to Main menu.](../Unciv.Godot.Harness/golden/defeat/defeat.png)
 
-*The defeat screen (scenario defeat): the game goes on without you; keep watching or go to the main menu.* (`defeat/defeat.png`)
+*The defeat modal (scenario defeat): red title, the defeat paragraph and the ranking with your defeated row muted; the game goes on without you, so Keep watching is the primary button next to Main menu.* (`defeat/defeat.png`)
 
 ## C025 Localization: translations in the client, language picker, non-Latin fonts
 
@@ -816,9 +816,9 @@ Scenario `menu`.
 
 *The in-game menu as a modal of icon rows with key hints: resume, save, load, new game, victory status, options, then Resign (danger) and main menu.* (`menu/menu.png`)
 
-![Victory status: each victory with the milestones of your own path and every civ's progress](../Unciv.Godot.Harness/golden/menu/victory-status.png)
+![Victory status as a modal: a section header per victory, your milestones coloured by state (done green, partly gold, open grey), each civ's progress with yours in the accent colour, and Close.](../Unciv.Godot.Harness/golden/menu/victory-status.png)
 
-*Victory status: each victory with the milestones of your own path and every civ's progress* (`menu/victory-status.png`)
+*Victory status as a modal: a section header per victory, your milestones coloured by state (done green, partly gold, open grey), each civ's progress with yours in the accent colour, and Close.* (`menu/victory-status.png`)
 
 ![Start new game with unsaved progress: the menu modal asks before the game is left, Cancel on the left and the confirmation on the right.](../Unciv.Godot.Harness/golden/menu/unsaved.png)
 
@@ -828,9 +828,9 @@ Scenario `menu`.
 
 *Resign asks for confirmation in a modal with a danger button and says the AI takes over.* (`menu/resign-confirm.png`)
 
-![After resigning: the screen says so and offers only the main menu](../Unciv.Godot.Harness/golden/menu/resigned.png)
+![After resigning: the same game-over modal says so and offers only the main menu as its primary button.](../Unciv.Godot.Harness/golden/menu/resigned.png)
 
-*After resigning: the screen says so and offers only the main menu* (`menu/resigned.png`)
+*After resigning: the same game-over modal says so and offers only the main menu as its primary button.* (`menu/resigned.png`)
 
 ## C045 In-game multiplayer social and admin: chat, player list, kick, rebind a slot to a new device key
 
@@ -992,9 +992,9 @@ World Congress vote result: each civ you know with its votes, the worth of its v
 
 Scenario `vote-result`.
 
-![The result lists Babylon, Rome (two votes, owner of the United Nations, voted for an unnamed civ) and the city-state, then the verdict and Continue.](../Unciv.Godot.Harness/golden/vote-result/result.png)
+![The World Congress modal: a table with votes (right-aligned), civilization, vote worth (Rome's two votes with the United Nations on a second line) and whom each civ voted for or Abstained (an unnamed civ for Rome), then the verdict and the primary Continue button.](../Unciv.Godot.Harness/golden/vote-result/result.png)
 
-*The result lists Babylon, Rome (two votes, owner of the United Nations, voted for an unnamed civ) and the city-state, then the verdict and Continue.* (`vote-result/result.png`)
+*The World Congress modal: a table with votes (right-aligned), civilization, vote worth (Rome's two votes with the United Nations on a second line) and whom each civ voted for or Abstained (an unnamed civ for Rome), then the verdict and the primary Continue button.* (`vote-result/result.png`)
 
 ![After Continue the world is back and the result does not return.](../Unciv.Godot.Harness/golden/vote-result/continued.png)
 
@@ -1280,3 +1280,5 @@ Done tickets with nothing meaningful to show.
 - **C070 Tech tree redesign**: Tech tree redesign: shown under C019 (tech/*), whose captions and goldens were re-recorded in C070.
 - **C073 Diplomacy and trade redesign**: Diplomacy and trade redesign: the redesigned screens are shown under C021 (diplomacy/*), C022 (trade/*) and C039 (proposals/*), whose goldens were re-recorded.
 - **C074 Overview and espionage on DataTable**: Overview and espionage on DataTable: the redesigned screens are shown under C023 (overview/*), C050 (overview-espionage/*) and C051 (espionage/*), whose goldens were re-recorded.
+- **C075 Game menu, save/load and options**: Game menu, save/load and options redesign: the redesigned screens are shown under C044 (menu/*), the save/load, options and settings entries, whose goldens were re-recorded.
+- **C077 (ticket not Done or unknown)**: Victory, defeat, resigned, victory status and World Congress result as Modals: shown under C024 (victory/*, defeat/*), C044 (menu/victory-status, menu/resigned) and C053 (vote-result/*), whose captions and goldens were re-recorded.

@@ -135,6 +135,13 @@ public partial class Modal : Control
         return Math.Max(ui.Px(120), width - 2 * ui.Px(UiTokens.S4) - 2 * ui.Px(UiTokens.BorderWidth));
     }
 
+    /// <summary>C077: sizes a scroll area that holds <paramref name="content"/> in the body to the content's height, but at most <paramref name="share"/> of the window, so a tall body scrolls and the footer stays on screen. Call after the content is filled.</summary>
+    public void FitScroll(ScrollContainer scroll, Control content, float share = 0.55f)
+    {
+        float window = IsInsideTree() ? GetViewportRect().Size.Y : 480f;
+        scroll.CustomMinimumSize = new Vector2(scroll.CustomMinimumSize.X, Math.Min(content.GetCombinedMinimumSize().Y, window * share));
+    }
+
     /// <summary>Replaces the footer buttons (the previous ones are freed, so a caller passes each button once). They are laid out by role (ghost, secondary, danger, primary: the primary one right-most) in one right-aligned row that wraps when too narrow, or in a column in the given order when there are more than <see cref="MaxRowActions"/>.</summary>
     public void SetActions(IReadOnlyList<(Button Button, ChoiceRole Role)> actions)
     {

@@ -40,7 +40,7 @@ public sealed class DefeatScenario : Scenario
             new AssertQuery("the game is not over but Babylon is destroyed", () => game.VictoryData == null && game.GetCivilization(ScenarioGame.HumanA).IsDefeated()),
             new AssertQuery("the defeat screen is open with the default defeat paragraph and keep-watching and main-menu buttons", () =>
                 screen.GameOver.Visible && screen.GameOver.TitleText == "Defeated" && screen.GameOver.BodyText == new Unciv.Models.Ruleset.Victory().DefeatString
-                && screen.GameOver.ButtonIds.SequenceEqual(["KeepWatching", "MainMenu"])),
+                && screen.GameOver.ButtonIds.SequenceEqual(["MainMenu", "KeepWatching"])),
             new Capture("defeat", "The defeat screen: the game goes on without you; keep watching or go to the main menu"),
             new Act("remember the command log", () => logged = session.Log.Count),
             new Click(() => screen.GameOver.ButtonById("KeepWatching")?.GetGlobalRect().GetCenter() ?? Vector2.Zero),

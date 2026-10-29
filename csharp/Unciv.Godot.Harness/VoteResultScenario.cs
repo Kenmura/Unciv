@@ -70,8 +70,9 @@ public sealed class VoteResultScenario : Scenario
             new AssertQuery("the engine's numbers: Babylon and Rome got 1 vote each; Rome's vote is worth 2 (United Nations) and goes to an unnamed civ", () =>
             {
                 var texts = screen.VoteResult.RowTexts;
-                return texts[0][0] == "1" && texts[0][2] == "[1] vote".Tr() && texts[0][3] == "" && texts[0][4] == "Voted for".Tr() && texts[0][5] == rome.CivName
-                    && texts[1][0] == "1" && texts[1][2] == "[2] votes".Tr() && texts[1][3] != "" && texts[1][5] == DiplomaticVoteResultQuery.UnknownCiv.Tr()
+                string unBuilding = (Ask().UnBuilding ?? "").Tr();
+                return texts[0][0] == "1" && texts[0][2] == "[1] vote".Tr() && texts[0][3] == rome.CivName
+                    && texts[1][0] == "1" && texts[1][2] == "[2] votes".Tr() + "\n" + unBuilding && texts[1][3] == DiplomaticVoteResultQuery.UnknownCiv.Tr()
                     && screen.VoteResult.VerdictText.Contains("Minimum votes", StringComparison.Ordinal);
             }),
             new Capture("result", "The World Congress result: each civ you know with its votes, what its vote is worth, whom it voted for, the verdict and Continue"),

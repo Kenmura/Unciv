@@ -1,102 +1,72 @@
 using Godot;
 using Unciv.Assets;
+using Unciv.GodotClient.Localization;
 using Unciv.GodotClient.Ui;
 using Unciv.Models.Translations;
 
 namespace Unciv.GodotClient.Play;
 
 /// <summary>
-/// C053: the World Congress result, a modal over the world (<see cref="VoteResultModel"/>, all from the engine's answer): one line per civ the viewer knows with the votes
+/// C053: the World Congress result, a modal over the world (<see cref="VoteResultModel"/>, all from the engine's answer): one table row per civ the viewer knows with the votes
 /// it got, what its own vote is worth (and the United Nations building for its owner) and whom it voted for, then the engine's verdict and a Continue button. Pressing
 /// it only raises <see cref="Continued"/>; the owner sends <c>AckDiplomaticVoteResult</c>. The view shows what it is given.
+/// C077: a C066 <see cref="Modal"/> with a <see cref="DataTable"/> (votes right-aligned) in a scroll area, the verdict in its own card and Continue as the primary action.
 /// </summary>
-public partial class VoteResultScreen : Control
+public partial class VoteResultScreen : Modal
 {
-    private readonly ColorRect dim = new() { MouseFilter = MouseFilterEnum.Ignore };
-    private readonly PanelContainer panel = new() { Name = "VotePanel" };
-    private readonly Label title = new() { Name = "VoteTitle", HorizontalAlignment = HorizontalAlignment.Center };
-    private readonly GridContainer rows = new() { Name = "VoteRows", Columns = 6 };
-    private readonly Label verdict = new() { Name = "VoteVerdict", HorizontalAlignment = HorizontalAlignment.Center, AutowrapMode = TextServer.AutowrapMode.WordSmart };
-    private readonly Button continueButton = new() { Name = "VoteContinue" };
+    private readonly DataTable table = new([new DataColumn("Votes", Numeric: true), new DataColumn("Civilization", MinWidth: 100), new DataColumn("Vote worth", MinWidth: 120), new DataColumn("Voted for", MinWidth: 190)]);
+    private readonly ScrollContainer scroll = new() { Name = "VoteScroll", HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled };
+    private readonly VBoxContainer content = new() { Name = "VoteContent" };
+    private readonly Label verdict = new() { Name = "VoteVerdict", AutowrapMode = TextServer.AutowrapMode.WordSmart };
+    private Button continueButton = new() { Name = "VoteContinue" };
 
     public VoteResultScreen()
     {
         Name = "VoteResult";
-        Visible = false;
-        MouseFilter = MouseFilterEnum.Stop;
-        dim.Fill();
-        AddChild(dim);
-        var centre = new CenterContainer { MouseFilter = MouseFilterEnum.Ignore };
-        centre.Fill();
-        AddChild(centre);
-        centre.AddChild(panel);
-        var column = new VBoxContainer();
-        panel.AddChild(column);
-        column.AddChild(title);
-        column.AddChild(rows);
-        column.AddChild(verdict);
-        column.AddChild(continueButton);
-        continueButton.Pressed += () => Continued?.Invoke();
+        table.SizeFlagsHorizontal = SizeFlags.ExpandFill;
+        content.SizeFlagsHorizontal = SizeFlags.ExpandFill;
+        scroll.SizeFlagsHorizontal = SizeFlags.ExpandFill;
+        content.AddChild(table);
+        scroll.AddChild(content);
     }
 
     public VoteResultView? Current { get; private set; }
 
-    public string TitleText => title.Text;
+    public string TitleText => TitleLabel.Text;
 
     public string VerdictText => verdict.Text;
 
     public Button ContinueButton => continueButton;
 
-    /// <summary>The text of every cell, one list per row, top to bottom: votes received, civ, weight, United Nations (or empty), choice, target (or empty).</summary>
-    public IReadOnlyList<IReadOnlyList<string>> RowTexts
-    {
-        get
-        {
-            var cells = rows.GetChildren().Select(CellText).ToList();
-            return cells.Chunk(rows.Columns).Select(it => (IReadOnlyList<string>)it).ToList();
-        }
-    }
+    /// <summary>The text of every cell, one list per row, top to bottom: votes received, civ, vote worth (with the United Nations building of its owner on a second line), whom it voted for (or Abstained).</summary>
+    public IReadOnlyList<IReadOnlyList<string>> RowTexts =>
+        Enumerable.Range(0, table.RowCount).Select(r => (IReadOnlyList<string>)Enumerable.Range(0, 4).Select(c => table.CellText(r, c)).ToList()).ToList();
 
     public event Action? Continued;
 
-    public void Init(UiTheme uiTheme)
-    {
-        Theme = uiTheme.Theme;
-        var shade = uiTheme.Panel.BgColor;
-        shade.A = 0.75f;
-        dim.Color = shade;
-        title.AddThemeFontSizeOverride("font_size", uiTheme.Px(26));
-        rows.AddThemeConstantOverride("h_separation", uiTheme.Px(14));
-        verdict.CustomMinimumSize = new Vector2(uiTheme.Px(420), 0f);
-    }
-
-    public void LayoutIn(Vector2 screen) => Size = screen;
-
     /// <param name="view">What to show.</param>
-    /// <param name="colourOf">The civ's colour by name; null for a civ the ruleset does not know.</param>
-    public void Open(VoteResultView view, Func<string, Rgb?> colourOf)
+    public void Open(VoteResultView view)
     {
         Current = view;
-        title.Text = view.Title.Tr();
+        SetHeader(view.Title);
+        float width = Fit(MaxWidth);
         verdict.Text = view.Verdict.Tr();
-        continueButton.Text = view.ContinueLabel.Tr();
-        foreach (var child in rows.GetChildren())
-        {
-            rows.RemoveChild(child);
-            child.QueueFree();
-        }
-        foreach (var row in view.Rows)
-        {
-            var colour = colourOf(row.Civ) ?? PlaceholderPalette.FromHash(row.Civ, 150, 210);
-            rows.AddChild(new Label { Text = row.Received, HorizontalAlignment = HorizontalAlignment.Right });
-            var name = new Label { Text = row.Civ.Tr() };
-            name.AddThemeColorOverride("font_color", ToColour(colour));
-            rows.AddChild(name);
-            rows.AddChild(new Label { Text = row.Weight.Tr() });
-            rows.AddChild(new Label { Text = row.UnBuilding?.Tr() ?? "" });
-            rows.AddChild(new Label { Text = row.Choice.Tr() });
-            rows.AddChild(new Label { Text = row.Target?.Tr() ?? "" });
-        }
+        verdict.CustomMinimumSize = new Vector2(width, 0f);
+        continueButton = new Button { Name = "VoteContinue", Text = view.ContinueLabel.TrText() }; // the footer frees its buttons whenever it is refilled
+        continueButton.Pressed += () => Continued?.Invoke();
+        table.SetRows(view.Rows.Select(row => (IReadOnlyList<string>)
+        [
+            row.Received,
+            row.Civ.Tr(),
+            row.Weight.Tr() + (row.UnBuilding == null ? "" : "\n" + row.UnBuilding.Tr()),
+            row.Target?.Tr() ?? row.Choice.Tr(),
+        ]).ToList());
+        foreach (var child in Body.GetChildren()) Body.RemoveChild(child);
+        scroll.CustomMinimumSize = new Vector2(width, 0f);
+        Body.AddChild(scroll);
+        Body.AddChild(verdict);
+        FitScroll(scroll, content);
+        SetActions([(continueButton, ChoiceRole.Primary)]);
         Visible = true;
         continueButton.GrabFocus();
     }
@@ -106,8 +76,4 @@ public partial class VoteResultScreen : Control
         Current = null;
         Visible = false;
     }
-
-    private static Color ToColour(Rgb rgb) => new(rgb.R / 255f, rgb.G / 255f, rgb.B / 255f);
-
-    private static string CellText(Node node) => node is Label label ? label.Text : "";
 }

@@ -426,7 +426,7 @@
     "shots": [
       {
         "golden": "vote-result/result.png",
-        "caption": "The result lists Babylon, Rome (two votes, owner of the United Nations, voted for an unnamed civ) and the city-state, then the verdict and Continue."
+        "caption": "The World Congress modal: a table with votes (right-aligned), civilization, vote worth (Rome's two votes with the United Nations on a second line) and whom each civ voted for or Abstained (an unnamed civ for Rome), then the verdict and the primary Continue button."
       },
       {
         "golden": "vote-result/continued.png",
@@ -591,7 +591,7 @@
     "shots": [
       {
         "golden": "victory/victory.png",
-        "caption": "The victory screen after a one-turn conquest: title, the victory paragraph, the ranking with the viewer highlighted and the defeated civ last, the score history and the two buttons."
+        "caption": "The victory modal after a one-turn conquest: gold title, the victory paragraph, the ranking table with your row in the accent colour and the defeated civ last, the score graph with its value axis and turn axis, and Main menu with the primary One more turn."
       },
       {
         "golden": "victory/continued.png",
@@ -599,7 +599,7 @@
       },
       {
         "golden": "defeat/defeat.png",
-        "caption": "The defeat screen (scenario defeat): the game goes on without you; keep watching or go to the main menu."
+        "caption": "The defeat modal (scenario defeat): red title, the defeat paragraph and the ranking with your defeated row muted; the game goes on without you, so Keep watching is the primary button next to Main menu."
       }
     ]
   },
@@ -689,7 +689,7 @@
       },
       {
         "golden": "menu/victory-status.png",
-        "caption": "Victory status: each victory with the milestones of your own path and every civ's progress"
+        "caption": "Victory status as a modal: a section header per victory, your milestones coloured by state (done green, partly gold, open grey), each civ's progress with yours in the accent colour, and Close."
       },
       {
         "golden": "menu/unsaved.png",
@@ -701,7 +701,7 @@
       },
       {
         "golden": "menu/resigned.png",
-        "caption": "After resigning: the screen says so and offers only the main menu"
+        "caption": "After resigning: the same game-over modal says so and offers only the main menu as its primary button."
       }
     ]
   },
@@ -1274,5 +1274,11 @@
   },
   "C073": {
     "none": "Diplomacy and trade redesign: the redesigned screens are shown under C021 (diplomacy/*), C022 (trade/*) and C039 (proposals/*), whose goldens were re-recorded."
+  },
+  "C075": {
+    "none": "Game menu, save/load and options redesign: the redesigned screens are shown under C044 (menu/*), the save/load, options and settings entries, whose goldens were re-recorded."
+  },
+  "C077": {
+    "none": "Victory, defeat, resigned, victory status and World Congress result as Modals: shown under C024 (victory/*, defeat/*), C044 (menu/victory-status, menu/resigned) and C053 (vote-result/*), whose captions and goldens were re-recorded."
   }
 }

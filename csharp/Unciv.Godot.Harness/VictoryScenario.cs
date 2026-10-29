@@ -46,13 +46,15 @@ public sealed class VictoryScenario : Scenario
             new Press("Next turn"),
             new WaitFrames(4),
             new AssertQuery("the engine recorded Babylon's Domination victory", () => game.VictoryData is { WinningCiv: "Babylon", VictoryType: "Domination" }),
-            new AssertQuery("the victory screen is open with the engine's words and the player's buttons", () =>
+            new AssertQuery("the victory screen is open with the engine's words and the player's buttons (the primary one right-most)", () =>
                 screen.GameOver.Visible && screen.GameOver.TitleText.Contains("Domination", StringComparison.Ordinal)
                 && screen.GameOver.BodyText == game.Ruleset.Victories["Domination"].VictoryString
-                && screen.GameOver.ButtonIds.SequenceEqual(["OneMoreTurn", "MainMenu"])),
+                && screen.GameOver.ButtonIds.SequenceEqual(["MainMenu", "OneMoreTurn"])),
             new AssertQuery("the ranking lists Babylon first and Rome, defeated, last", () =>
-                screen.GameOver.RankingTexts.Count == 2 && screen.GameOver.RankingTexts[0].StartsWith("1. Babylon", StringComparison.Ordinal)
-                && screen.GameOver.RankingTexts[1].StartsWith("Rome (defeated)", StringComparison.Ordinal)),
+                screen.GameOver.Ranking.RowCount == 2 && screen.GameOver.Ranking.CellText(0, 0) == "1" && screen.GameOver.Ranking.CellText(0, 1) == "Babylon"
+                && screen.GameOver.Ranking.CellText(1, 1).StartsWith("Rome", StringComparison.Ordinal) && screen.GameOver.Ranking.CellText(1, 1).Contains("(defeated)", StringComparison.Ordinal)),
+            new AssertQuery("the graph has a value axis and a turn axis, and the legend names both civs", () =>
+                screen.GameOver.GraphAxisTexts.Count == 4 && screen.GameOver.GraphAxisTexts.All(it => it.Length > 0) && screen.GameOver.LegendTexts.SequenceEqual(["Babylon", "Rome"])),
             new AssertQuery("the history graph draws a line for each civ", () => screen.GameOver.GraphSize.Lines == 2 && screen.GameOver.GraphSize.Points >= 2),
             new Capture("victory", "The victory screen after a one-turn conquest: title, the victory paragraph, the ranking and the score history"),
             new Act("remember the command log", () => logged = session.Log.Count),

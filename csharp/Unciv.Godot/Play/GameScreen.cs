@@ -1456,7 +1456,7 @@ public partial class GameScreen : Control
             VoteResult.Close();
             return;
         }
-        if (!VoteResult.Visible) VoteResult.Open(due, civ => OwnerColour(civ));
+        if (!VoteResult.Visible) VoteResult.Open(due);
     }
 
     private async Task AcknowledgeVoteResult()
