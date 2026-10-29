@@ -409,6 +409,10 @@ public sealed class LobbyHost : IAsyncDisposable
         && manifest.Entries.Any(it => !clientChecksums.TryGetValue(it.Name, out var theirs) || !string.Equals(theirs, it.Checksum, StringComparison.Ordinal));
 
     private (string Key, ModManifest? Manifest)? modManifestCache;
+    private (string Key, long UntilMillis)? noModsToOffer;
+
+    /// <summary>How long "nothing to offer" is remembered, so a flood of Hellos cannot make the host re-read its mods every time.</summary>
+    private const long NegativeCacheMillis = 5_000;
 
     /// <summary>The manifest of this lobby's downloadable mods, or null when there is nothing the host can offer. Built once per set of rules; the files are re-verified when served.</summary>
     private ModManifest? CurrentModManifest()
@@ -424,6 +428,7 @@ public sealed class LobbyHost : IAsyncDisposable
         lock (gate)
         {
             if (modManifestCache is { } cached && cached.Key == key) return cached.Manifest;
+            if (noModsToOffer is { } none && none.Key == key && clock.NowMillis < none.UntilMillis) return null;
         }
 
         ModManifest? manifest = null;
@@ -450,13 +455,19 @@ public sealed class LobbyHost : IAsyncDisposable
         {
             // Only a usable manifest is kept: "nothing to offer" is re-checked next time (the host may have fixed a mod meanwhile).
             modManifestCache = manifest == null ? null : (key, manifest);
+            noModsToOffer = manifest == null ? (key, clock.NowMillis + NegativeCacheMillis) : null;
         }
         return manifest;
     }
 
     private async Task SendModManifestAsync(LobbySession session)
     {
-        if (session.ModManifestSent != null) return; // one manifest per connection
+        if (session.ModManifestSent != null)
+        {
+            // one manifest per connection: a second join on it is answered, not ignored
+            await SendAsync(session.Transport, new JoinRefused { Code = JoinRefusedCodes.AuthFailed }).ConfigureAwait(false);
+            return;
+        }
         var manifest = CurrentModManifest();
         if (manifest == null)
         {
@@ -486,7 +497,7 @@ public sealed class LobbyHost : IAsyncDisposable
         var bytes = first && folder != null ? ModManifestBuilder.ReadFile(folder, request.Path) : null;
         if (listed == null || bytes == null || bytes.Length != listed.Size || !string.Equals(ModManifestBuilder.HashOf(bytes), listed.Sha256, StringComparison.Ordinal))
         {
-            if (listed != null)
+            if (first && listed != null)
             {
                 // The files changed after the manifest was built: drop it so the next joiner gets a fresh one.
                 lock (gate)

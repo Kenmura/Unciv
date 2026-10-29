@@ -776,7 +776,7 @@ public sealed class ModSyncTests : IDisposable
         // Joining and authenticating again on the same connection yields no second manifest.
         await client.SendAsync(ProtocolCodec.Encode(new Join { PlayerKey = identity.PlayerKey, DisplayName = "Mallory" }));
         await client.SendAsync(ProtocolCodec.Encode(new Auth { Proof = identity.Sign(welcome.HostKeyFingerprint, welcome.SessionId, welcome.Challenge) }));
-        Assert.IsNotType<ModManifest>(await ReceiveAsync<Message>(client));
+        Assert.Equal(JoinRefusedCodes.AuthFailed, (await ReceiveAsync<JoinRefused>(client)).Code);
         Assert.All(lobby.Slots, slot => Assert.Equal(SlotKind.Open, slot.Kind));
     }
 
@@ -795,7 +795,7 @@ public sealed class ModSyncTests : IDisposable
     }
 
     [Fact]
-    public async Task Hostile_ManifestOfferingAnUnrelatedMod_IsRejected()
+    public async Task Hostile_ManifestWhoseEntriesAreNotInItsOwnModList_IsRejected()
     {
         var good = Encoding.UTF8.GetBytes(UnitsJson);
         var manifest = ManifestOf("Unrelated", "Units.json", good) with { Mods = ["SomethingElse"] };
