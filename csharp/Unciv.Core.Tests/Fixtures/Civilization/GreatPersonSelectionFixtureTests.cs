@@ -47,7 +47,7 @@ public sealed class GreatPersonSelectionFixtureTests
     [Fact]
     public void NormalChoiceGrantsTheCivilizationEquivalentInBothBaseRulesets()
     {
-        foreach (var baseRuleset in Enum.GetValues<BaseRuleset>().Where(it => it != BaseRuleset.Civ_V_BNW))
+        foreach (var baseRuleset in Enum.GetValues<BaseRuleset>())
         {
             var scenario = CreateScenario(baseRuleset, "Mongolia");
             var manager = scenario.Civ.GreatPeople;

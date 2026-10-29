@@ -701,6 +701,7 @@ public sealed class RulesetLoadTests : IDisposable
         {
             [BaseRuleset.Civ_V_Vanilla.FullName()] = BaseFiles("Vanilla Unit"),
             [BaseRuleset.Civ_V_GnK.FullName()] = BaseFiles("GnK Unit"),
+            [BaseRuleset.Civ_V_BNW.FullName()] = BaseFiles("BNW Unit"),
         };
         var mods = new Dictionary<string, object>
         {
@@ -722,13 +723,13 @@ public sealed class RulesetLoadTests : IDisposable
         Assert.False(RulesetCache.ContainsKey("Broken"));
         Assert.False(RulesetCache.ContainsKey(".hidden"));
         Assert.False(RulesetCache.ContainsKey("readme.txt"));
-        Assert.Equal(5, RulesetCache.Count);
+        Assert.Equal(6, RulesetCache.Count);
         Assert.Equal(["Vanilla Unit"], RulesetCache.Get(BaseRuleset.Civ_V_Vanilla.FullName())!.Units.Keys);
         var alpha = RulesetCache.Get("Alpha")!;
         Assert.Equal("Alpha", alpha.Name);
         Assert.NotNull(alpha.FolderLocation);
         Assert.Null(RulesetCache.Get(BaseRuleset.Civ_V_Vanilla.FullName())!.FolderLocation);
-        Assert.Equal(["Civ V - Vanilla", "Civ V - Gods & Kings", "OtherBase"], RulesetCache.GetSortedBaseRulesets());
+        Assert.Equal(["Civ V - Vanilla", "Civ V - Gods & Kings", "Civ V - Brave New World", "OtherBase"], RulesetCache.GetSortedBaseRulesets());
     }
 
     [Fact]
@@ -753,10 +754,11 @@ public sealed class RulesetLoadTests : IDisposable
         {
             [BaseRuleset.Civ_V_Vanilla.FullName()] = BaseFiles("V"),
             [BaseRuleset.Civ_V_GnK.FullName()] = BaseFiles("G"),
+            [BaseRuleset.Civ_V_BNW.FullName()] = BaseFiles("B"),
         };
         var mods = new Dictionary<string, object> { ["Alpha"] = new Dictionary<string, object> { ["jsons"] = new Dictionary<string, object>() } };
         Assert.Empty(RulesetCache.LoadRulesets(new MemorySource(builtins, mods), noMods: true));
-        Assert.Equal(2, RulesetCache.Count);
+        Assert.Equal(3, RulesetCache.Count);
     }
 
     [Fact]
@@ -894,7 +896,7 @@ public sealed class RulesetLoadTests : IDisposable
         Assert.True(vanilla.Policies.ContainsKey("Tradition Complete"));
         Assert.NotNull(vanilla.RoadImprovement);
         Assert.NotNull(vanilla.RailroadImprovement);
-        Assert.Equal(["Civ V - Vanilla", "Civ V - Gods & Kings"], RulesetCache.GetSortedBaseRulesets());
+        Assert.Equal(["Civ V - Vanilla", "Civ V - Gods & Kings", "Civ V - Brave New World"], RulesetCache.GetSortedBaseRulesets());
         Assert.NotNull(vanilla.AllHappinessLevelsThatAffectUniques);
 
         var combined = RulesetCache.GetComplexRuleset(new GameParameters());

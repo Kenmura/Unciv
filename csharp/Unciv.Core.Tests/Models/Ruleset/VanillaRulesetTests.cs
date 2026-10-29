@@ -41,8 +41,8 @@ public sealed class VanillaRulesetTests : IDisposable
     public void LoadRulesetsNoModsLoadsExactlyTheBaseRulesets()
     {
         LoadBase(BaseRuleset.Civ_V_Vanilla);
-        Assert.Equal(["Civ V - Vanilla", "Civ V - Gods & Kings"], RulesetCache.Keys.Order(StringComparer.Ordinal).Reverse());
-        Assert.Equal(2, RulesetCache.Count);
+        Assert.Equal(["Civ V - Brave New World", "Civ V - Gods & Kings", "Civ V - Vanilla"], RulesetCache.Keys.Order(StringComparer.Ordinal));
+        Assert.Equal(3, RulesetCache.Count);
     }
 
     [Fact]
@@ -87,10 +87,11 @@ public sealed class VanillaRulesetTests : IDisposable
             UniqueType.EnablesIdeologies, UniqueType.EnablesWorldCongress, UniqueType.BnwHappinessRules];
         Assert.All(gates, it => Assert.True(it.CanAcceptUniqueTarget(UniqueTarget.ModOptions)));
         Assert.All(gates, it => Assert.Contains(UniqueFlag.NoConditionals, it.Flags()));
-        foreach (var baseRuleset in Enum.GetValues<BaseRuleset>().Where(it => it != BaseRuleset.Civ_V_BNW))
+        foreach (var baseRuleset in Enum.GetValues<BaseRuleset>())
         {
             var modOptions = (IHasUniques)LoadBase(baseRuleset).ModOptions;
-            Assert.All(gates, it => Assert.False(modOptions.HasUnique(it), baseRuleset.FullName() + " " + it));
+            // B002: the generated BNW ruleset is the one that switches every gate on.
+            Assert.All(gates, it => Assert.Equal(baseRuleset == BaseRuleset.Civ_V_BNW, modOptions.HasUnique(it)));
         }
         Assert.Equal(6, UniqueTypeExtensions.Entries.Count(it => it.TargetTypes().Contains(UniqueTarget.ModOptions) && (int)it >= (int)UniqueType.EnablesInternationalTradeRoutes));
     }
@@ -109,7 +110,7 @@ public sealed class VanillaRulesetTests : IDisposable
     [Fact]
     public void ObjectNamesAreUniqueKeysAndOriginIsSet()
     {
-        foreach (var baseRuleset in Enum.GetValues<BaseRuleset>().Where(it => it != BaseRuleset.Civ_V_BNW))
+        foreach (var baseRuleset in Enum.GetValues<BaseRuleset>())
         {
             var r = LoadBase(baseRuleset);
             Assert.NotEmpty(r.Buildings);

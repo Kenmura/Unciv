@@ -62,7 +62,7 @@ public sealed class NewGameFormTests
         Assert.DoesNotContain("Barbarians", form.PlayableNations);
         Assert.Contains("Babylon", form.PlayableNations);
         Assert.True(form.MaxCityStates > 10);
-        Assert.Equal([Gnk, Vanilla], form.BaseRulesets.Order(StringComparer.Ordinal));
+        Assert.Equal(["Civ V - Brave New World", Gnk, Vanilla], form.BaseRulesets.Order(StringComparer.Ordinal));
         Assert.DoesNotContain(Vanilla, form.AvailableMods);
     }
 

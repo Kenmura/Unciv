@@ -101,6 +101,22 @@ Two routes, in order of preference:
   Deliberate deviation: the JVM-golden `ModConstants` hash codes and the `UniqueType` count test were rebased on the extended
   classes. No decompiler output was available, so no [K]/[?] item was resolved by this ticket.
 
+- **As built (B002).** `tools/gen_ruleset.py` (+ `tools/overrides.json`, `tools/test_gen_ruleset.py`) writes `android/assets/jsons/Civ V - Brave New World/`
+  and `data/derived/gen_ruleset_report.txt` (removed, added and changed objects; the reviewer's log). `RulesetCache` no longer skips BNW and the
+  seven tests loop over all three base rulesets. The ruleset validates with zero messages (`BnwRulesetTests`). Generated: the tech tree (81 techs, BNW
+  rows, prerequisites and per-tech costs, The Internet), buildings and units (BNW numbers over the G&K objects, new BNW rows as new objects, `TheXxx`
+  wonder names kept), the ModOptions gates and the 75 tunables of `ModConstants.cs` (value taken from the comment there, cross-checked against
+  `Defines.tsv`; `BASE_CITY_AIR_STACKING` stays `cityAirUnitCapacity`). Hand-written in `overrides.json`: nine major civs (Venice becomes major) with
+  their unique units and buildings, 16 city-states, Writer and Musician specialists and great-person names, Bison/Cocoa/Cloves/Pepper/Nutmeg.
+  Deliberate deviations: (1) matched buildings keep Unciv's flat `culture` (it stands in for Great Work slots until B030); (2) the resource keeps the
+  name `Gold Ore` (a resource named `Gold` collides with the stat in unique parameters); (3) the Cultural and Diplomatic victory types are removed and
+  nations preferring them get `Neutral` until B032/B063 add milestone kinds (Utopia Project and United Nations are dropped, SPEC 3.3);
+  (4) the new Caravan, Cargo Ship, Archaeologist and International Space Station are `Unbuildable` until B021/B040/B062; (5) Machine Gun has no
+  obsolete tech (BNW's Nuclear Fission contradicts its upgrade prerequisites); (6) civ abilities, tourism/trade/league columns, the 16 BNW beliefs,
+  Hand-Axe/Bazooka/XCOM Squad (scenario-only) and the BNW policy tree are not emitted: they need the B003 `UniqueType`s and are listed under
+  `pending` in the report/overrides for B010, B050 and the feature tickets; (7) Maria I's personality is a copy of Maria Theresa's. No decompiler
+  output was available, so no [K]/[?] item was resolved by this ticket.
+
 ### 2.2 New state (all JSON-serialized, saved and loaded, included in `Checksum`)
 
 | Owner | New type / field | Holds |

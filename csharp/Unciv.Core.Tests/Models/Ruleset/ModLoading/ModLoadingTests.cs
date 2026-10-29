@@ -32,7 +32,7 @@ public sealed class ModLoadingTests : IDisposable
         var errors = RulesetCache.LoadRulesets(Source());
 
         // '.hidden' is skipped, BrokenMod is reported and left out; the cache is a hash map, so compare as a set.
-        Assert.Equal(["Civ V - Gods & Kings", "Civ V - Vanilla", "LateMod", "TestMod"], RulesetCache.Keys.Order(StringComparer.Ordinal).ToArray());
+        Assert.Equal(["Civ V - Brave New World", "Civ V - Gods & Kings", "Civ V - Vanilla", "LateMod", "TestMod"], RulesetCache.Keys.Order(StringComparer.Ordinal).ToArray());
         Assert.False(RulesetCache.ContainsKey("BrokenMod"));
         Assert.False(RulesetCache.ContainsKey(".hidden"));
         Assert.Equal("Exception loading mod 'BrokenMod':", errors[0]);
@@ -51,7 +51,7 @@ public sealed class ModLoadingTests : IDisposable
     public void NoModsSkipsTheModsFolder()
     {
         Assert.Empty(RulesetCache.LoadRulesets(Source(), noMods: true));
-        Assert.Equal(2, RulesetCache.Count);
+        Assert.Equal(3, RulesetCache.Count);
     }
 
     [Fact]

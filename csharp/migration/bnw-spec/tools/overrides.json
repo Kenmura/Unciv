@@ -1,0 +1,1015 @@
+{
+  // Hand-maintained content that cannot be generated (SPEC 3.1). Per file: remove [names], patch {name: fields},
+  // add [objects]. Patch key 'x+' appends to list x, 'x-' removes from it, null deletes the key, 'copyFrom' starts
+  // from a copy of an analogous object (the generated numbers of the patched object win).
+  // 'pending' lists SPEC 3.2 hooks the generator cannot emit yet; they go to the report.
+ "files": {
+  "Nations.json": {
+   "add": [
+    {
+     "name": "Assyria",
+     "leaderName": "Ashurbanipal",
+     "adjective": [
+      "Assyrian"
+     ],
+     "startBias": [
+      "Avoid [Tundra]"
+     ],
+     "preferredVictoryType": "Domination",
+     "personality": "Ashurbanipal",
+     "outerColor": [
+      120,
+      30,
+      30
+     ],
+     "innerColor": [
+      240,
+      200,
+      90
+     ],
+     "uniqueName": "Treasures of Nineveh",
+     "uniques": [
+      "Free Technology <upon conquering a city>"
+     ],
+     "cities": [
+      "Ashur",
+      "Nineveh",
+      "Nimrud",
+      "Arbela",
+      "Dur-Sharrukin",
+      "Harran",
+      "Kar-Tukulti-Ninurta",
+      "Tushhan",
+      "Tarbisu",
+      "Kilizu",
+      "Singara",
+      "Til-Barsip"
+     ],
+     "favoredReligion": "Christianity"
+    },
+    {
+     "name": "Brazil",
+     "leaderName": "Pedro II",
+     "adjective": [
+      "Brazilian"
+     ],
+     "startBias": [
+      "Jungle"
+     ],
+     "preferredVictoryType": "Neutral",
+     "personality": "Pedro II",
+     "outerColor": [
+      20,
+      110,
+      50
+     ],
+     "innerColor": [
+      250,
+      220,
+      40
+     ],
+     "uniqueName": "Carnival",
+     "uniques": [
+      "[+100]% Great Person generation [in all cities] <during a Golden Age>"
+     ],
+     "cities": [
+      "Rio de Janeiro",
+      "Sao Paulo",
+      "Salvador",
+      "Brasilia",
+      "Recife",
+      "Fortaleza",
+      "Belo Horizonte",
+      "Manaus",
+      "Curitiba",
+      "Porto Alegre",
+      "Belem",
+      "Goiania"
+     ],
+     "favoredReligion": "Christianity"
+    },
+    {
+     "name": "Indonesia",
+     "leaderName": "Gajah Mada",
+     "adjective": [
+      "Indonesian"
+     ],
+     "startBias": [
+      "Coast"
+     ],
+     "preferredVictoryType": "Neutral",
+     "personality": "Gajah Mada",
+     "outerColor": [
+      190,
+      30,
+      30
+     ],
+     "innerColor": [
+      245,
+      245,
+      245
+     ],
+     "uniqueName": "Spice Islanders",
+     "uniques": [],
+     "cities": [
+      "Majapahit",
+      "Singosari",
+      "Demak",
+      "Mataram",
+      "Banten",
+      "Jayakarta",
+      "Surabaya",
+      "Malang",
+      "Palembang",
+      "Makassar",
+      "Pontianak",
+      "Medan"
+     ],
+     "favoredReligion": "Buddhism"
+    },
+    {
+     "name": "Morocco",
+     "leaderName": "Ahmad al-Mansur",
+     "adjective": [
+      "Moroccan"
+     ],
+     "startBias": [
+      "Desert"
+     ],
+     "preferredVictoryType": "Neutral",
+     "personality": "Ahmad al-Mansur",
+     "outerColor": [
+      116,
+      19,
+      34
+     ],
+     "innerColor": [
+      93,
+      153,
+      108
+     ],
+     "uniqueName": "Gateway to Africa",
+     "uniques": [],
+     "cities": [
+      "Marrakesh",
+      "Fez",
+      "Rabat",
+      "Meknes",
+      "Tangier",
+      "Agadir",
+      "Casablanca",
+      "Oujda",
+      "Tetouan",
+      "Essaouira",
+      "Ouarzazate",
+      "Taza"
+     ],
+     "favoredReligion": "Islam"
+    },
+    {
+     "name": "Poland",
+     "leaderName": "Casimir III",
+     "adjective": [
+      "Polish"
+     ],
+     "startBias": [
+      "Avoid [Tundra]"
+     ],
+     "preferredVictoryType": "Neutral",
+     "personality": "Casimir III",
+     "outerColor": [
+      210,
+      30,
+      50
+     ],
+     "innerColor": [
+      250,
+      250,
+      250
+     ],
+     "uniqueName": "Solidarity",
+     "uniques": [],
+     "cities": [
+      "Warsaw",
+      "Krakow",
+      "Gdansk",
+      "Poznan",
+      "Wroclaw",
+      "Lublin",
+      "Torun",
+      "Szczecin",
+      "Bialystok",
+      "Katowice",
+      "Lodz",
+      "Gniezno"
+     ],
+     "favoredReligion": "Christianity"
+    },
+    {
+     "name": "Portugal",
+     "leaderName": "Maria I",
+     "adjective": [
+      "Portuguese"
+     ],
+     "startBias": [
+      "Coast"
+     ],
+     "preferredVictoryType": "Neutral",
+     "personality": "Maria I",
+     "outerColor": [
+      10,
+      60,
+      150
+     ],
+     "innerColor": [
+      240,
+      240,
+      240
+     ],
+     "uniqueName": "Mare Nostrum",
+     "uniques": [],
+     "cities": [
+      "Lisbon",
+      "Porto",
+      "Coimbra",
+      "Braga",
+      "Faro",
+      "Evora",
+      "Funchal",
+      "Setubal",
+      "Aveiro",
+      "Guimaraes",
+      "Viseu",
+      "Leiria"
+     ],
+     "favoredReligion": "Christianity"
+    },
+    {
+     "name": "The Shoshone",
+     "leaderName": "Pocatello",
+     "adjective": [
+      "Shoshone"
+     ],
+     "startBias": [
+      "Plains"
+     ],
+     "preferredVictoryType": "Domination",
+     "personality": "Pocatello",
+     "outerColor": [
+      170,
+      90,
+      30
+     ],
+     "innerColor": [
+      250,
+      230,
+      160
+     ],
+     "uniqueName": "Great Expanse",
+     "uniques": [],
+     "cities": [
+      "Boise",
+      "Fort Hall",
+      "Lemhi",
+      "Pocatello",
+      "Salmon",
+      "Bannock",
+      "Duckwater",
+      "Wind River",
+      "Skull Valley",
+      "Fallon",
+      "Goshute",
+      "Yomba"
+     ],
+     "favoredReligion": "Christianity"
+    },
+    {
+     "name": "The Zulus",
+     "leaderName": "Shaka",
+     "adjective": [
+      "Zulu"
+     ],
+     "startBias": [
+      "Avoid [Tundra]"
+     ],
+     "preferredVictoryType": "Domination",
+     "personality": "Shaka",
+     "outerColor": [
+      30,
+      30,
+      30
+     ],
+     "innerColor": [
+      230,
+      60,
+      40
+     ],
+     "uniqueName": "Iklwa",
+     "uniques": [],
+     "cities": [
+      "Ulundi",
+      "Bulawayo",
+      "Nongoma",
+      "Kwadukuza",
+      "Ondini",
+      "Ntondo",
+      "Isandlwana",
+      "Mahlabatini",
+      "Eshowe",
+      "Mtonjaneni",
+      "Nodwengu",
+      "Emakhosini"
+     ],
+     "favoredReligion": "Christianity"
+    },
+    {
+     "name": "Venice",
+     "leaderName": "Enrico Dandolo",
+     "adjective": [
+      "Venetian"
+     ],
+     "startBias": [
+      "Coast"
+     ],
+     "preferredVictoryType": "Neutral",
+     "personality": "Enrico Dandolo",
+     "outerColor": [
+      130,
+      20,
+      40
+     ],
+     "innerColor": [
+      240,
+      210,
+      100
+     ],
+     "uniqueName": "Serenissima",
+     "uniques": [],
+     "cities": [
+      "Venice",
+      "Chioggia",
+      "Murano",
+      "Torcello",
+      "Burano",
+      "Mestre",
+      "Padua",
+      "Verona",
+      "Treviso",
+      "Zara",
+      "Candia",
+      "Corfu"
+     ],
+     "favoredReligion": "Christianity"
+    },
+    {
+     "name": "Bogota",
+     "adjective": [
+      "Bogota"
+     ],
+     "cityStateType": "Cultured",
+     "outerColor": [
+      195,
+      214,
+      206
+     ],
+     "innerColor": [
+      13,
+      43,
+      25
+     ],
+     "cities": [
+      "Bogota"
+     ]
+    },
+    {
+     "name": "Buenos Aires",
+     "adjective": [
+      "Buenos Aires"
+     ],
+     "cityStateType": "Cultured",
+     "outerColor": [
+      217,
+      218,
+      199
+     ],
+     "innerColor": [
+      32,
+      16,
+      13
+     ],
+     "cities": [
+      "Buenos Aires"
+     ]
+    },
+    {
+     "name": "Kiev",
+     "adjective": [
+      "Kiev"
+     ],
+     "cityStateType": "Cultured",
+     "outerColor": [
+      218,
+      206,
+      202
+     ],
+     "innerColor": [
+      27,
+      23,
+      4
+     ],
+     "cities": [
+      "Kiev"
+     ]
+    },
+    {
+     "name": "Kyzyl",
+     "adjective": [
+      "Kyzyl"
+     ],
+     "cityStateType": "Cultured",
+     "outerColor": [
+      162,
+      217,
+      208
+     ],
+     "innerColor": [
+      53,
+      15,
+      10
+     ],
+     "cities": [
+      "Kyzyl"
+     ]
+    },
+    {
+     "name": "Byblos",
+     "adjective": [
+      "Byblos"
+     ],
+     "cityStateType": "Maritime",
+     "startBias": [
+      "Coast"
+     ],
+     "outerColor": [
+      221,
+      166,
+      194
+     ],
+     "innerColor": [
+      26,
+      50,
+      58
+     ],
+     "cities": [
+      "Byblos"
+     ]
+    },
+    {
+     "name": "Ormus",
+     "adjective": [
+      "Ormus"
+     ],
+     "cityStateType": "Maritime",
+     "startBias": [
+      "Coast"
+     ],
+     "outerColor": [
+      232,
+      170,
+      207
+     ],
+     "innerColor": [
+      21,
+      7,
+      63
+     ],
+     "cities": [
+      "Ormus"
+     ]
+    },
+    {
+     "name": "Panama City",
+     "adjective": [
+      "Panama City"
+     ],
+     "cityStateType": "Maritime",
+     "startBias": [
+      "Coast"
+     ],
+     "outerColor": [
+      224,
+      164,
+      227
+     ],
+     "innerColor": [
+      25,
+      19,
+      55
+     ],
+     "cities": [
+      "Panama City"
+     ]
+    },
+    {
+     "name": "Riga",
+     "adjective": [
+      "Riga"
+     ],
+     "cityStateType": "Maritime",
+     "startBias": [
+      "Coast"
+     ],
+     "outerColor": [
+      229,
+      168,
+      212
+     ],
+     "innerColor": [
+      61,
+      49,
+      32
+     ],
+     "cities": [
+      "Riga"
+     ]
+    },
+    {
+     "name": "Wellington",
+     "adjective": [
+      "Wellington"
+     ],
+     "cityStateType": "Maritime",
+     "startBias": [
+      "Coast"
+     ],
+     "outerColor": [
+      167,
+      171,
+      167
+     ],
+     "innerColor": [
+      43,
+      19,
+      23
+     ],
+     "cities": [
+      "Wellington"
+     ]
+    },
+    {
+     "name": "Antananarivo",
+     "adjective": [
+      "Antananarivo"
+     ],
+     "cityStateType": "Mercantile",
+     "outerColor": [
+      171,
+      215,
+      211
+     ],
+     "innerColor": [
+      49,
+      20,
+      10
+     ],
+     "cities": [
+      "Antananarivo"
+     ]
+    },
+    {
+     "name": "Malacca",
+     "adjective": [
+      "Malacca"
+     ],
+     "cityStateType": "Mercantile",
+     "outerColor": [
+      244,
+      214,
+      164
+     ],
+     "innerColor": [
+      20,
+      57,
+      18
+     ],
+     "cities": [
+      "Malacca"
+     ]
+    },
+    {
+     "name": "Melbourne",
+     "adjective": [
+      "Melbourne"
+     ],
+     "cityStateType": "Mercantile",
+     "outerColor": [
+      188,
+      203,
+      205
+     ],
+     "innerColor": [
+      28,
+      5,
+      22
+     ],
+     "cities": [
+      "Melbourne"
+     ]
+    },
+    {
+     "name": "Samarkand",
+     "adjective": [
+      "Samarkand"
+     ],
+     "cityStateType": "Mercantile",
+     "outerColor": [
+      185,
+      242,
+      162
+     ],
+     "innerColor": [
+      14,
+      1,
+      28
+     ],
+     "cities": [
+      "Samarkand"
+     ]
+    },
+    {
+     "name": "Vilnius",
+     "adjective": [
+      "Vilnius"
+     ],
+     "cityStateType": "Mercantile",
+     "outerColor": [
+      224,
+      203,
+      234
+     ],
+     "innerColor": [
+      33,
+      38,
+      42
+     ],
+     "cities": [
+      "Vilnius"
+     ]
+    },
+    {
+     "name": "Ife",
+     "adjective": [
+      "Ife"
+     ],
+     "cityStateType": "Religious",
+     "outerColor": [
+      215,
+      218,
+      167
+     ],
+     "innerColor": [
+      6,
+      23,
+      55
+     ],
+     "cities": [
+      "Ife"
+     ]
+    },
+    {
+     "name": "Sofia",
+     "adjective": [
+      "Sofia"
+     ],
+     "cityStateType": "Militaristic",
+     "outerColor": [
+      222,
+      204,
+      195
+     ],
+     "innerColor": [
+      20,
+      42,
+      25
+     ],
+     "cities": [
+      "Sofia"
+     ]
+    }
+   ]
+  },
+  "Specialists.json": {
+   "add": [
+    {
+     "name": "Writer",
+     "culture": 2,
+     "greatPersonPoints": {
+      "Great Writer": 3
+     },
+     "color": [
+      200,
+      120,
+      60
+     ]
+    },
+    {
+     "name": "Musician",
+     "culture": 2,
+     "greatPersonPoints": {
+      "Great Musician": 3
+     },
+     "color": [
+      60,
+      160,
+      200
+     ]
+    }
+   ]
+  },
+  "UnitNameGroups.json": {
+   "add": [
+    {
+     "name": "Writer",
+     "unitNames": [
+      "Homer",
+      "Sophocles",
+      "Virgil",
+      "Dante Alighieri",
+      "Geoffrey Chaucer",
+      "Miguel de Cervantes",
+      "William Shakespeare",
+      "John Milton",
+      "Voltaire",
+      "Jane Austen",
+      "Victor Hugo",
+      "Charles Dickens",
+      "Leo Tolstoy",
+      "Mark Twain",
+      "Fyodor Dostoevsky",
+      "Virginia Woolf"
+     ]
+    },
+    {
+     "name": "Musician",
+     "unitNames": [
+      "Johann Sebastian Bach",
+      "Antonio Vivaldi",
+      "George Frideric Handel",
+      "Joseph Haydn",
+      "Wolfgang Amadeus Mozart",
+      "Ludwig van Beethoven",
+      "Franz Schubert",
+      "Frederic Chopin",
+      "Richard Wagner",
+      "Giuseppe Verdi",
+      "Pyotr Tchaikovsky",
+      "Claude Debussy",
+      "Duke Ellington",
+      "Louis Armstrong"
+     ]
+    }
+   ]
+  },
+  "Personalities.json": {
+   "add": [
+    {
+     "name": "Maria I",
+     "copyFrom": "Maria Theresa"
+    }
+   ]
+  },
+  "TileResources.json": {
+   "add": [
+    {
+     "name": "Bison",
+     "resourceType": "Bonus",
+     "terrainsCanBeFoundOn": [
+      "Plains",
+      "Grassland"
+     ],
+     "food": 1,
+     "improvement": "Camp",
+     "improvementStats": {
+      "production": 1
+     },
+     "uniques": [
+      "Generated on every [25] tiles <in [Plains] Regions>",
+      "Generated on every [25] tiles <in [Grassland] Regions>"
+     ]
+    },
+    {
+     "name": "Cocoa",
+     "resourceType": "Luxury",
+     "terrainsCanBeFoundOn": [
+      "Jungle",
+      "Plains",
+      "Grassland"
+     ],
+     "food": 1,
+     "gold": 1,
+     "improvement": "Plantation",
+     "uniques": [
+      "Generated with weight [20] <in [Jungle] Regions>",
+      "Generated with weight [5] <in [Plains] Regions>",
+      "Generated near City States with weight [10]"
+     ]
+    },
+    {
+     "name": "Cloves",
+     "resourceType": "Luxury",
+     "terrainsCanBeFoundOn": [
+      "Jungle",
+      "Plains",
+      "Grassland"
+     ],
+     "gold": 2,
+     "improvement": "Plantation",
+     "uniques": []
+    },
+    {
+     "name": "Pepper",
+     "resourceType": "Luxury",
+     "terrainsCanBeFoundOn": [
+      "Jungle",
+      "Plains",
+      "Grassland"
+     ],
+     "gold": 2,
+     "improvement": "Plantation",
+     "uniques": []
+    },
+    {
+     "name": "Nutmeg",
+     "resourceType": "Luxury",
+     "terrainsCanBeFoundOn": [
+      "Jungle",
+      "Plains",
+      "Grassland"
+     ],
+     "gold": 2,
+     "improvement": "Plantation",
+     "uniques": []
+    }
+   ]
+  },
+  "Units.json": {
+   "patch": {
+    "Machine Gun": {
+     "obsoleteTech": null
+    },
+    "Impi": {
+     "copyFrom": "Pikeman",
+     "uniqueTo": "The Zulus",
+     "replaces": "Pikeman"
+    },
+    "Kris Swordsman": {
+     "copyFrom": "Swordsman",
+     "uniqueTo": "Indonesia",
+     "replaces": "Swordsman"
+    },
+    "Berber Cavalry": {
+     "copyFrom": "Cavalry",
+     "uniqueTo": "Morocco",
+     "replaces": "Cavalry"
+    },
+    "Winged Hussar": {
+     "copyFrom": "Lancer",
+     "uniqueTo": "Poland",
+     "replaces": "Lancer"
+    },
+    "Nau": {
+     "copyFrom": "Caravel",
+     "uniqueTo": "Portugal",
+     "replaces": "Caravel"
+    },
+    "Pathfinder": {
+     "copyFrom": "Scout",
+     "uniqueTo": "The Shoshone",
+     "replaces": "Scout"
+    },
+    "Comanche Riders": {
+     "copyFrom": "Cavalry",
+     "uniqueTo": "The Shoshone",
+     "replaces": "Cavalry"
+    },
+    "Great Galleass": {
+     "copyFrom": "Galleass",
+     "uniqueTo": "Venice",
+     "replaces": "Galleass"
+    },
+    "Pracinha": {
+     "copyFrom": "Infantry",
+     "uniqueTo": "Brazil",
+     "replaces": "Infantry"
+    },
+    "Siege Tower": {
+     "copyFrom": "Battering Ram",
+     "uniqueTo": "Assyria",
+     "replaces": "Catapult"
+    },
+    "Merchant of Venice": {
+     "copyFrom": "Great Merchant",
+     "uniqueTo": "Venice",
+     "replaces": "Great Merchant"
+    },
+    "Great Writer": {
+     "copyFrom": "Great Artist",
+     "uniques": [
+      "Is part of Great Person group [Great Person]",
+      "[This Unit] gets a name from the [Writer] group",
+      "Great Person - [Culture]",
+      "Unbuildable",
+      "Uncapturable"
+     ]
+    },
+    "Great Musician": {
+     "copyFrom": "Great Artist",
+     "uniques": [
+      "Is part of Great Person group [Great Person]",
+      "[This Unit] gets a name from the [Musician] group",
+      "Great Person - [Culture]",
+      "Unbuildable",
+      "Uncapturable"
+     ]
+    },
+    "Caravan": {
+     "copyFrom": "Worker",
+     "uniques": [
+      "Unbuildable"
+     ]
+    },
+    "Cargo Ship": {
+     "copyFrom": "Work Boat",
+     "unitType": "Civilian Water",
+     "uniques": [
+      "Unbuildable"
+     ]
+    },
+    "Archaeologist": {
+     "copyFrom": "Worker",
+     "uniques": [
+      "Unbuildable"
+     ]
+    }
+   }
+  },
+  "Buildings.json": {
+   "patch": {
+    "International Space Station": {
+     "uniques": [
+      "Unbuildable"
+     ]
+    }
+   }
+  }
+ },
+ "gates": [
+  "Enables international trade routes",
+  "Enables Great Works and tourism",
+  "Enables archaeology",
+  "Enables ideologies",
+  "Enables the World Congress",
+  "BNW happiness rules"
+ ],
+ "pending": {
+  "Nations.json/Assyria": [
+   "TechFromCityConquer is approximated by 'Free Technology <upon conquering a city>' (BNW: a stolen/random tech per conquest)"
+  ],
+  "Nations.json/Indonesia": [
+   "UniqueLuxuryCities / UniqueLuxuryQuantity / UniqueLuxuryRequiresNewArea (Spice Islanders)"
+  ],
+  "Nations.json/Morocco": [
+   "Trait_YieldChangesIncomingTradeRoute, Trait_YieldChangesPerTradePartner (Gateway to Africa)"
+  ],
+  "Nations.json/Poland": [
+   "FreeSocialPoliciesPerEra (Solidarity)"
+  ],
+  "Nations.json/Portugal": [
+   "TradeRouteResourceModifier (Mare Nostrum)"
+  ],
+  "Nations.json/The Shoshone": [
+   "ExtraFoundedCityTerritoryClaimRange (Great Expanse)"
+  ],
+  "Nations.json/The Zulus": [
+   "LevelExperienceModifier (Iklwa), Ikanda promotion"
+  ],
+  "Nations.json/Venice": [
+   "NumTradeRoutesModifier, NoAnnexing, FreeUnit @ FreeUnitPrereqTech (Serenissima)"
+  ],
+  "Buildings.json/all": [
+   "Tourism, Great Work, trade route and league columns of SPEC 3.2 (B003 declares the UniqueTypes, feature tickets B020-B062 wire them)"
+  ],
+  "Units.json/Caravan, Cargo Ship, Archaeologist": [
+   "made Unbuildable until B021/B040 give them behaviour"
+  ],
+  "Beliefs.json/16 BNW beliefs": [
+   "added by B010 together with their effects (a belief without its unique would be dead content)"
+  ],
+  "Policies.json": [
+   "BNW policy tree is B050 (branches, ideologies and tenets need Level/branch fields B003 declares)"
+  ],
+  "Personalities.json/Maria I": [
+   "copied from Maria Theresa: derive from Leaders.tsv / Leader_Flavors.tsv in B010"
+  ]
+ }
+}
