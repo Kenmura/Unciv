@@ -407,7 +407,7 @@ public partial class TradeScreen : PanelContainer
     {
         flow.AddChild(new Label { Text = heading.Tr() + ":", ThemeTypeVariation = UiVariants.LabelSecondary });
         if (items.Count == 0) flow.AddChild(new Label { Text = "nothing".Tr(), ThemeTypeVariation = UiVariants.LabelSecondary });
-        foreach (var item in items) flow.AddChild(new IconLabel(theme, item.Icon, item.Text.TrText(), trim: true));
+        foreach (var item in items) flow.AddChild(new IconLabel(theme, item.Icon, item.Text.TrText()));
     }
 
     private void AddControl(HBoxContainer box, string name, string text, ChoiceRole role, Action pressed)
