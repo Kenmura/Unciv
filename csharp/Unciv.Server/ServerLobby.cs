@@ -19,6 +19,8 @@ public sealed class ServerLobby : IAsyncDisposable
     private readonly IClock clock;
     private readonly TaskCompletionSource<GameHost> gameHostReady = new(TaskCreationOptions.RunContinuationsAsynchronously);
     private readonly CancellationTokenSource disposed = new();
+    private readonly HashSet<string> attached = new(StringComparer.Ordinal);
+    private readonly Lock attachedGate = new();
     private GameHost? activeGameHost;
 
     public ServerLobby(
@@ -49,6 +51,10 @@ public sealed class ServerLobby : IAsyncDisposable
     private async Task SeatLateAsync(Slot slot, ITransport gameTransport)
     {
         if (slot.SessionId == null) return;
+        lock (attachedGate)
+        {
+            if (!attached.Add(slot.SessionId)) return; // the start loop already seated this connection
+        }
         var gameHost = await gameHostReady.Task.WaitAsync(disposed.Token).ConfigureAwait(false);
         await gameHost.AttachSessionAsync(slot.SessionId, slot.Nation, gameTransport, slot.PlayerKeyId).ConfigureAwait(false);
     }
@@ -77,16 +83,16 @@ public sealed class ServerLobby : IAsyncDisposable
 
         foreach (var slot in startResult.Slots)
         {
-            if (slot.Kind == SlotKind.Human && slot.Connected && slot.SessionId != null && slot.Transport != null)
+            if (slot.Kind != SlotKind.Human || !slot.Connected || slot.SessionId == null) continue;
+            // The hand-over transport, never the raw one: the lobby reader keeps reading the socket and forwards to the game.
+            // No hand-over (superseded or gone) means nobody seats it; a raw attach would bring back the two-reader race.
+            var gameTransport = lobbyHost.GameTransportFor(slot.SessionId);
+            if (gameTransport == null) continue;
+            lock (attachedGate)
             {
-                // The hand-over transport, never the raw one: the lobby reader keeps reading the socket and forwards to the game.
-                await gameHost.AttachSessionAsync(
-                    slot.SessionId,
-                    slot.Nation,
-                    lobbyHost.GameTransportFor(slot.SessionId) ?? slot.Transport,
-                    slot.PlayerKeyId
-                ).ConfigureAwait(false);
+                if (!attached.Add(slot.SessionId)) continue; // a late seat in the start window already claimed it
             }
+            await gameHost.AttachSessionAsync(slot.SessionId, slot.Nation, gameTransport, slot.PlayerKeyId).ConfigureAwait(false);
         }
 
         activeGameHost = gameHost;

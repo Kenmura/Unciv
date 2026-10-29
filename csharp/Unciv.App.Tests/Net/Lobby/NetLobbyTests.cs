@@ -625,4 +625,27 @@ public sealed class NetLobbyTests : IDisposable
         var refused = await ReceiveMessageAsync<JoinRefused>(c2);
         Assert.Equal(JoinRefusedCodes.GameAlreadyStarted, refused.Code);
     }
+
+    [Fact]
+    public async Task ServerLobby_SecondConnectionOfTheSameKeyBeforeStart_SupersedesTheFirst_AndOnlyTheCurrentOneIsSeated()
+    {
+        await using var lobby = new ServerLobby();
+        using var id = ClientIdentity.Generate();
+        var (c1, s1) = InMemoryTransport.CreatePair();
+        _ = lobby.AttachConnectionAsync(s1);
+        await using var first = NewClient(lobby, id, "Alice", c1);
+        Assert.True((await first.JoinAsync().WaitAsync(Bound)).Joined);
+        var (c2, s2) = InMemoryTransport.CreatePair();
+        _ = lobby.AttachConnectionAsync(s2);
+        await using var second = NewClient(lobby, id, "Alice", c2);
+        Assert.True((await second.JoinAsync().WaitAsync(Bound)).Joined);
+        await second.SetLobbySlotAsync(0, "Rome", null, true);
+        await lobby.StartGameAsync(force: true, seed: 42L, clockMillis: 5000L);
+
+        Assert.False(string.IsNullOrEmpty((await second.SubmitAsync(new EndTurn()).WaitAsync(Bound)).ClientCmdId));
+
+        // The superseded connection is closed by the host (its frames would otherwise pile up in a channel nobody reads).
+        using var cts = new CancellationTokenSource(Bound);
+        while (await c1.ReceiveAsync(cts.Token) != null) { }
+    }
 }

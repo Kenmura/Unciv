@@ -148,9 +148,18 @@ public sealed class LobbyHost : IAsyncDisposable
         }
     }
 
+    private static async Task CloseQuietlyAsync(ITransport transport)
+    {
+        try { await transport.CloseAsync().ConfigureAwait(false); }
+        catch (Exception) { /* already gone */ }
+    }
+
+    /// <summary>Bounded so a client flooding frames while the game actor is busy is held back by the socket (TCP backpressure), not buffered without limit.</summary>
+    private const int HandoffCapacity = 256;
+
     private static void HandOff(LobbySession session)
     {
-        session.Handoff = Channel.CreateUnbounded<string>();
+        session.Handoff = Channel.CreateBounded<string>(new BoundedChannelOptions(HandoffCapacity) { SingleReader = true, SingleWriter = true, FullMode = BoundedChannelFullMode.Wait });
         session.GameTransport = new HandoffTransport(session.Transport, session.Handoff);
     }
 
@@ -185,7 +194,7 @@ public sealed class LobbyHost : IAsyncDisposable
                 }
                 if (handoff != null)
                 {
-                    handoff.TryWrite(frame);
+                    await handoff.WriteAsync(frame, cancellationToken).ConfigureAwait(false);
                     continue;
                 }
 
@@ -343,13 +352,18 @@ public sealed class LobbyHost : IAsyncDisposable
 
         bool stateChanged = false;
         Slot? lateSlot = null;
-        bool started;
+        ITransport? replacedTransport = null;
+        var refuseStarted = false;
         lock (gate)
         {
-            started = Status is LobbyStatus.Starting or LobbyStatus.Started;
+            if (Status is LobbyStatus.Starting or LobbyStatus.Started
+                && (Status != LobbyStatus.Started || Bindings.SlotOf(session.PendingPlayerKey) is not int knownSeat || knownSeat >= slots.Count))
+            {
+                refuseStarted = true;
+            }
         }
 
-        if (started && (Status != LobbyStatus.Started || Bindings.SlotOf(session.PendingPlayerKey) is not int knownSeat || knownSeat >= slots.Count))
+        if (refuseStarted)
         {
             await SendAsync(session.Transport, new JoinRefused { Code = JoinRefusedCodes.GameAlreadyStarted }).ConfigureAwait(false);
             return;
@@ -365,6 +379,13 @@ public sealed class LobbyHost : IAsyncDisposable
             if (existingSlotIndex.HasValue && existingSlotIndex.Value < slots.Count)
             {
                 var slot = slots[existingSlotIndex.Value];
+                if (Status == LobbyStatus.Started && slot.SessionId != null && slot.SessionId != session.SessionId
+                    && sessions.TryGetValue(slot.SessionId, out var replaced))
+                {
+                    // The same key on a new connection replaces the old one: it must not keep a hand-over channel nobody reads.
+                    sessions.Remove(replaced.SessionId);
+                    replacedTransport = replaced.Transport;
+                }
                 slot.Connected = true;
                 slot.Transport = session.Transport;
                 slot.SessionId = session.SessionId;
@@ -410,7 +431,15 @@ public sealed class LobbyHost : IAsyncDisposable
         {
             var seated = LateSeated;
             var gameTransport = session.GameTransport;
-            if (seated != null && gameTransport != null) await seated(lateSlot, gameTransport).ConfigureAwait(false);
+            if (replacedTransport != null) await CloseQuietlyAsync(replacedTransport).ConfigureAwait(false);
+            try
+            {
+                if (seated != null && gameTransport != null) await seated(lateSlot, gameTransport).ConfigureAwait(false);
+            }
+            catch (Exception)
+            {
+                await CloseQuietlyAsync(session.Transport).ConfigureAwait(false); // never seated: the client must see the drop, not wait for a snapshot
+            }
             return;
         }
 
@@ -638,6 +667,7 @@ public sealed class LobbyHost : IAsyncDisposable
         long actualSeed;
         long actualClock;
         List<Slot> activeSlots;
+        List<ITransport> superseded = [];
 
         lock (gate)
         {
@@ -717,11 +747,22 @@ public sealed class LobbyHost : IAsyncDisposable
         lock (gate)
         {
             Status = LobbyStatus.Started;
-            foreach (var session in sessions.Values.Where(s => s.SlotIndex.HasValue))
+            foreach (var session in sessions.Values.ToList())
             {
-                HandOff(session);
+                if (session.SlotIndex is not int seat) continue;
+                if (slots[seat].SessionId == session.SessionId)
+                {
+                    HandOff(session);
+                }
+                else
+                {
+                    sessions.Remove(session.SessionId); // superseded by a newer connection of the same key
+                    superseded.Add(session.Transport);
+                }
             }
         }
+
+        foreach (var transport in superseded) await CloseQuietlyAsync(transport).ConfigureAwait(false);
 
         await BroadcastAsync(new GameStarting()).ConfigureAwait(false);
 
