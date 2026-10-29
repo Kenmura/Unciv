@@ -185,6 +185,7 @@ public sealed class StandbyStore : IDisposable
         {
             return RejectSnapshot("chunk-order");
         }
+        // JUSTIFY: T272 assembly is set above for part 0 and checked for the later parts.
         if (assembly!.Bytes.Length + data.Length > limits.MaxSnapshotBytes) return RejectSnapshot("snapshot-too-large");
         assembly.Bytes.Write(data);
         assembly.NextPart++;
@@ -265,6 +266,7 @@ public sealed class StandbyStore : IDisposable
 
     private void Append(string line)
     {
+        // JUSTIFY: T272 every caller checked that the store is open (log is null only before the first snapshot).
         var stream = log!;
         var before = stream.Length;
         try

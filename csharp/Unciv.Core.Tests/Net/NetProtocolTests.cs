@@ -58,7 +58,7 @@ public class NetProtocolTests
         { new StandbySubscribe { GameId = "g", HaveSeq = -1 }, """{"type":"StandbySubscribe","gameId":"g","haveSeq":-1}""" },
         { new StandbyMeta { Epoch = 1, Header = "{}", Meta = "{}" }, """{"type":"StandbyMeta","epoch":1,"header":"{}","meta":"{}"}""" },
         { new StandbySnapshot { Epoch = 0, Seq = 9, Part = 0, Parts = 2, Sha256 = "h", Data = "AA==", Reset = true }, """{"type":"StandbySnapshot","epoch":0,"seq":9,"part":0,"parts":2,"sha256":"h","data":"AA==","reset":true}""" },
-        { new StandbyEntry { Epoch = 0, Seq = 3, Line = "{\"checkpoint\":3}" }, """{"type":"StandbyEntry","epoch":0,"seq":3,"line":"{\"checkpoint\":3}"}""" },
+        { new StandbyEntry { Epoch = 0, Seq = 3, Line = "{\"checkpoint\":3}" }, """{"type":"StandbyEntry","epoch":0,"seq":3,"line":"{\u0022checkpoint\u0022:3}"}""" },
         { new StandbyAck { Seq = 3 }, """{"type":"StandbyAck","seq":3}""" },
         { new HostSuccessor { Epoch = 0, Status = "none", Roster = [] }, """{"type":"HostSuccessor","epoch":0,"status":"none","roster":[]}""" },
         { new HostSuccessor { Epoch = 1, Status = "ready", Successor = new SuccessorInfo { KeyId = "k", Endpoints = ["a.example:47821"], Fingerprint = "fp" }, Roster = [new SuccessorSeat { KeyId = "k", Connected = true }] },
