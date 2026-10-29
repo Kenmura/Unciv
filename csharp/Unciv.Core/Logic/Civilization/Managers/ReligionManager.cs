@@ -490,6 +490,7 @@ public class ReligionManager : IsPartOfGameInfoSerialization
                 break;
             case ReligionState.FoundingReligion:
                 ReligionState = ReligionState.Religion;
+                ReleaseStrandedFounders();
                 CivInfo.ForEachTriggeredUnique(UniqueType.TriggerUponFoundingReligion, CivInfo.State, _ => true, false,
                     unique => UniqueTriggerActivation.TriggerUnique(unique, CivInfo));
                 break;
@@ -519,6 +520,29 @@ public class ReligionManager : IsPartOfGameInfoSerialization
         }
 
         CivInfo.UpdateStatsForNextTurn(); // a belief can have an immediate effect on stats
+    }
+
+    /// <summary>
+    /// Deliberate deviation (T245, simultaneous turns): once a religion is founded, other civs that already used their prophet
+    /// (<see cref="ReligionState.FoundingReligion"/>) but can no longer found one (no icon or belief left) would be stuck with a blocking
+    /// decision nothing can satisfy. They fall back to their previous state and get the prophet back. Sequential play cannot reach this.
+    /// </summary>
+    private void ReleaseStrandedFounders()
+    {
+        foreach (var civ in CivInfo.GameInfo.Civilizations.ToList())
+        {
+            var manager = civ.ReligionManager;
+            if (ReferenceEquals(civ, CivInfo) || manager.ReligionState != ReligionState.FoundingReligion) continue;
+            if (manager.RemainingFoundableReligions() > 0) continue;
+            var city = civ.Cities.FirstOrDefault(it => it.Id == manager.foundingCityId);
+            manager.ReligionState = manager.shouldChoosePantheonBelief ? ReligionState.None : ReligionState.Pantheon;
+            manager.foundingCityId = null;
+            manager.shouldChoosePantheonBelief = false;
+            var prophetUnit = manager.GetGreatProphetEquivalent();
+            if (prophetUnit == null) continue;
+            var prophet = civ.Units.AddUnit(prophetUnit, city ?? civ.GetCapital());
+            if (prophet != null) prophet.Religion = manager.Religion?.Name;
+        }
     }
 
     internal void FoundReligion(string displayName, string name)

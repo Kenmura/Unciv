@@ -993,13 +993,13 @@ public sealed class SimultaneousTurnConflictTests
         arena.Ok(first, found);
         Assert.Equal(ReligionState.Religion, first.ReligionManager.ReligionState);
 
-        arena.Rejected(second, found, CommandErrors.InvalidTarget); // the only icon is gone
-        arena.Rejected(second, new FoundReligion { ReligionName = "Judaism", DisplayName = "Judaism", Beliefs = good }, CommandErrors.InvalidTarget); // and there is no other
-        // what the second human is left with: a prophet that was used and nothing to found. It is told by the rejection, and the server
-        // can still end its turn (T245 tracks giving the prophet back or ending this state in the engine).
-        Assert.Equal(ReligionState.FoundingReligion, second.ReligionManager.ReligionState);
-        arena.Rejected(second, new EndTurn(), CommandErrors.PendingDecisions);
-        Assert.True(arena.Session.SubmitAsServer(new ForceEndTurn { CivId = second.CivId }).Accepted);
+        arena.Rejected(second, found, CommandErrors.NotAllowed); // the only icon is gone, so there is nothing to found any more
+        arena.Rejected(second, new FoundReligion { ReligionName = "Judaism", DisplayName = "Judaism", Beliefs = good }, CommandErrors.NotAllowed); // and there is no other
+        // T245: the second human is not stranded: back to its pantheon, prophet returned, no blocking decision, can end its turn.
+        Assert.Equal(ReligionState.Pantheon, second.ReligionManager.ReligionState);
+        Assert.DoesNotContain(PendingDecisions.BlockingFor(second), it => it.Kind == DecisionKind.FoundReligion);
+        Assert.Contains(second.Units.GetCivUnits(), it => it.Name == "Great Prophet");
+        arena.Ok(second, new EndTurn());
         Assert.True(arena.Game.GameInfo.HasEndedTurn(second));
         AssertReplays(arena, () => Build().Arena);
     }

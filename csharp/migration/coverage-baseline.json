@@ -328,7 +328,7 @@
     "Unciv.Core/Logic/Civilization/Managers/Quests/QuestImplementation.cs": {"branch": 77.19, "line": 92.09},
     "Unciv.Core/Logic/Civilization/Managers/Quests/QuestManager.cs": {"branch": 82.21, "line": 91.23},
     "Unciv.Core/Logic/Civilization/Managers/Quests/QuestTargetHelpers.cs": {"branch": 58.93, "line": 90.24},
-    "Unciv.Core/Logic/Civilization/Managers/ReligionManager.cs": {"branch": 73.58, "line": 85.14},
+    "Unciv.Core/Logic/Civilization/Managers/ReligionManager.cs": {"branch": 77.65, "line": 87.2},
     "Unciv.Core/Logic/Civilization/Managers/RuinsManager.cs": {"branch": 100.0, "line": 100.0},
     "Unciv.Core/Logic/Civilization/Managers/TechManager.cs": {"branch": 94.39, "line": 98.33},
     "Unciv.Core/Logic/Civilization/Managers/TurnManager.cs": {"branch": 90.62, "line": 93.35},
