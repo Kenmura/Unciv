@@ -18,6 +18,7 @@
   - [Frame time per level](#frame-time-per-level)
   - [Cost per effect](#cost-per-effect)
   - [Look, colour calibration and animation](#look-colour-calibration-and-animation)
+  - [Real-GPU pictures (T291)](#real-gpu-pictures-t291)
   - [Conclusions and follow-ups](#conclusions-and-follow-ups)
   - [Windows, macOS and Android (UNVERIFIED)](#windows-macos-and-android-unverified)
 <!-- /toc -->
@@ -196,13 +197,27 @@ On this card no single effect costs more than the shadows, and the whole of Ultr
 
 ### Look, colour calibration and animation
 
-Pictures were rendered and viewed for all three levels at five views (kept outside the repository: real-GPU output must not become a golden). Findings:
+Pictures were rendered and viewed for all three levels at five views (the PNGs themselves stayed outside the repository; a curated set was re-rendered and published as documentation images, see "Real-GPU pictures" below; real-GPU output must not become a golden). Findings:
 
 - **Forward+ is much brighter and paler than the compatibility renderer for the same scene and settings** (measured as mean pixel value over the map area, 0-255): compatibility Low 56, High 80 (mid view); Forward+ Low 86, High 108, Ultra with the old provisional constants (0.9 / 0.5) 111. Ultra was about 38% brighter than High, with washed-out blue-grey water. Compatibility Low draws the deep ocean nearly black (the palette the CI goldens were tuned on) and High is neon-saturated; both are today's behaviour and were left alone.
 - **Calibration applied** (`GraphicsModel.Preset(Ultra)`): exposure 0.9 -> 0.6, ambient 0.5 -> 0.3, and a new `Saturation` 1.3 (Environment adjustment, Ultra only; Low and High keep 1.0 so they are untouched). Result, mean pixel value Ultra versus compatibility High: mid 85 vs 80, coast 89 vs 84, close 103 vs 105, overview 73 vs 62 (the overview gap is the near-black compatibility forests). The picture keeps natural, saturated land and blue water. Ultra is therefore matched to High, not to Low: Low is deliberately the old dark look, and High/Ultra are the "film look" levels.
 - **Ultra water/terrain shader (C098)**: compiles and draws on both NVIDIA (Vulkan) and Intel (Vulkan); no artefacts on shorelines, hills, or under SSAO/SSR (viewed at full resolution at `coast` and `coastlow`). The water animates (frame-to-frame mean difference 0.1-0.5 per channel between two shots 40 frames apart, zero at High) and shows a soft depth tint; the ripples and fresnel are subtle at the game's steep camera angles and there is no visible sun glint (the sun is at -60 degrees). It reads as "clean, slightly lit water", not as a strong effect; judged acceptable, a stronger ripple is a tuning follow-up (T289). Not verified: shoreline foam, vegetation wind (not implemented).
 - **SSAO / SSR on Forward+**: SSAO grounds the tree and figure props (contact darkening) with no halos; SSR shows nothing visible on the shader water at the usual tilt (the cost is small, +0.2-0.5 ms). No interaction artefacts with the shader's animated normals were seen.
 - **C085 LOD and C086 combat effects**: the `unit-visuals` (including `far`) and `combat-presentation` scenarios were run on the RTX 5060 Ti compatibility renderer against the committed llvmpipe goldens with the cross-renderer tolerance: all 17 + 5 captures match with a mean difference of 0.0001-0.0004 (hash distance 0-2), i.e. the CI goldens are what a real GPU draws; the pictures were viewed (one figure per formation at far zoom, damage number, shot flash, bombard burst, death marker all present). On Forward+ the same scenarios differ from the goldens (mean 0.03-0.14), the known renderer colour shift. The scenarios pin the Low level, so C085/C086 under High and Ultra (shadows, glow on the effect sprites) were not exercised.
+
+### Real-GPU pictures (T291)
+
+Documentation images (not goldens; nothing reads them in CI) rendered on the RTX 5060 Ti, Forward+, 1920x1080, 2026-10-29, from the T271 fixture with the HUD and yield chips hidden (`UNCIV_BENCH_CLEAN=1`). Method, caption table and regeneration command: [`images/ultra/README.md`](images/ultra/README.md).
+
+![Low, High and Ultra at mid, coast and overview](images/ultra/compare-low-high-ultra.jpg)
+
+| Default play view: Low | High | Ultra |
+|---|---|---|
+| ![Low mid](images/ultra/low-mid.jpg) | ![High mid](images/ultra/high-mid.jpg) | ![Ultra mid](images/ultra/ultra-mid.jpg) |
+
+| Ultra coast | Ultra water close-up | Ultra overview |
+|---|---|---|
+| ![Ultra coast](images/ultra/ultra-coast.jpg) | ![Ultra water close-up](images/ultra/ultra-water-closeup.jpg) | ![Ultra overview](images/ultra/ultra-overview.jpg) |
 
 ### Conclusions and follow-ups
 

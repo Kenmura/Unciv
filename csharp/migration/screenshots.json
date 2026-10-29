@@ -1597,7 +1597,13 @@
     ]
   },
   "C098": {
-    "none": "Ultra-only water and terrain shader: no golden, because goldens are pinned to Low on llvmpipe OpenGL and the Ultra look is time-animated and only meaningful on a real GPU. The optional terrain-ultra scenario (not in CI) writes unversioned PNGs; the settings picker is shown under C097 (settings-graphics)."
+    "about": "Ultra-only water and terrain shader, with the Low, High and Ultra levels compared on a real GPU. No golden exists because goldens are pinned to Low on llvmpipe OpenGL and the Ultra look is time-animated and only meaningful on a real GPU; the settings picker is shown under C097 (settings-graphics).",
+    "doc_note": "Documentation images rendered on an NVIDIA GeForce RTX 5060 Ti (Forward+, Vulkan, 1920x1080, 2026-10-29) from the T271 Large Pangaea fixture. They are not goldens and no CI comparison reads them; details in `design/images/ultra/README.md`.",
+    "shots": [
+      {"doc": "ultra/compare-low-high-ultra.jpg", "caption": "Low, High and Ultra (columns) at the default, coast and overview views (rows) on a real GPU."},
+      {"doc": "ultra/ultra-mid.jpg", "caption": "Ultra at the default play view: soft depth-tinted water, shadows and ambient occlusion."},
+      {"doc": "ultra/ultra-water-closeup.jpg", "caption": "Ultra water close-up at a low tilt; the shader ripple and depth tint are subtle by design."}
+    ]
   },
   "C097": {
     "scenario": "settings-graphics",

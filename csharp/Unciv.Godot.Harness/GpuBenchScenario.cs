@@ -20,7 +20,7 @@ namespace Unciv.GodotHarness;
 /// Per configuration and camera view it records wall frame time (Godot's process delta, vsync off), the GPU and CPU render time the renderer measures, and a PNG.
 /// Configuration through environment variables: <c>UNCIV_BENCH_OUT</c> (output folder, required), <c>UNCIV_BENCH_MODE</c> = <c>levels</c> (Low/High/Ultra, default) or
 /// <c>ablation</c> (Low plus each effect alone, then everything), <c>UNCIV_BENCH_SIZE</c> (Medium/Large/Huge), <c>UNCIV_BENCH_RES</c> (WxH, default 1920x1080),
-/// <c>UNCIV_BENCH_FRAMES</c> (frames per measurement, default 300), <c>UNCIV_BENCH_VIEWS</c> (comma list, default all). Run it with
+/// <c>UNCIV_BENCH_FRAMES</c> (frames per measurement, default 300), <c>UNCIV_BENCH_VIEWS</c> (comma list, default all), <c>UNCIV_BENCH_CLEAN</c>=1 (hide HUD, minimap, panels and yield chips, for documentation pictures). Run it with
 /// <c>Unciv.Godot.Harness/tools/gpu-bench.sh</c>, which also picks the renderer and the adapter.
 /// </summary>
 public sealed partial class GpuBenchScenario : Scenario
@@ -91,6 +91,15 @@ public sealed partial class GpuBenchScenario : Scenario
         host.AddChild(screen);
         screen.Start(localHost, AssetRegistry.ForRuleset(game.Ruleset));
         screen.Hud.HoldBanner = true;
+        if (System.Environment.GetEnvironmentVariable("UNCIV_BENCH_CLEAN") == "1")
+        {
+            // T291: documentation pictures of the map itself, without the HUD, minimap, unit panel or yield chips (never used for timings)
+            screen.Hud.Visible = false;
+            screen.World.Visible = false;
+            screen.Minimap.Visible = false;
+            screen.Panel.Visible = false;
+            screen.Overlays.ShowYields = false;
+        }
         var map = screen.Map;
         var probe = new Probe();
         host.AddChild(probe);

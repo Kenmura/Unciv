@@ -251,6 +251,24 @@ class ScreenshotGallery(unittest.TestCase):
         self.assertIn("**C002 Thing C002**: no UI", page)
         self.assertEqual(self.run_tool("screenshots.py", "--check").returncode, 0)
 
+    def test_doc_images_are_linked_and_checked(self):
+        doc = self.mig / "design" / "images" / "u"
+        doc.mkdir(parents=True)
+        (doc / "a.png").write_bytes(b"x")
+        entry = {"about": "A", "doc_note": "Real GPU.", "shots": [{"doc": "u/a.png", "caption": "Cap"}]}
+        self.write_map({"C001": entry, "C002": {"none": "n"}})
+        self.assertEqual(self.run_tool("screenshots.py").returncode, 0)
+        page = (self.mig / "SCREENSHOTS.md").read_text()
+        self.assertIn("![Cap](design/images/u/a.png)", page)
+        self.assertIn("documentation image, not a golden", page)
+        self.assertIn("Real GPU.", page)
+        self.assertNotIn("Scenario `", page.split("## C001")[1])
+        self.assertEqual(self.run_tool("screenshots.py", "--check").returncode, 0)
+        (doc / "a.png").unlink()
+        r = self.run_tool("screenshots.py", "--check")
+        self.assertEqual(r.returncode, 1)
+        self.assertIn("missing doc image", r.stdout)
+
     def test_missing_golden_fails_check(self):
         self.write_map({"C001": {"scenario": "s", "about": "A", "shots": [{"golden": "s/zzz.png", "caption": "C"}]},
                         "C002": {"none": "n"}})
