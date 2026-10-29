@@ -376,11 +376,11 @@
     "shots": [
       {
         "golden": "espionage/screen.png",
-        "caption": "The espionage screen: each spy with rank, location, action and a Move button, a full-width coup button (label wrapped, never clipped) under the table for the spy in the city-state, then the places with the spies present."
+        "caption": "The espionage screen in its frame: a table of the spies with rank, location, action, a Move button and, for the spy in the city-state, a red coup button; the places table below and the primary Assign spies button in the footer."
       },
       {
         "golden": "espionage/selecting.png",
-        "caption": "Move was pressed on the first spy: Move became Cancel and the places the engine offers it show Move here."
+        "caption": "Move was pressed on the first spy: Move became Cancel and the places the engine offers it show a Move here button at the end of their rows."
       },
       {
         "golden": "espionage/moved.png",
@@ -388,7 +388,7 @@
       },
       {
         "golden": "espionage/coup.png",
-        "caption": "The spy in the city-state is staging a coup; its button now calls the coup off."
+        "caption": "The spy in the city-state is staging a coup; its button now says Call off."
       },
       {
         "golden": "espionage/assign.png",
@@ -432,7 +432,7 @@
     "shots": [
       {
         "golden": "overview-espionage/espionage.png",
-        "caption": "Espionage tab: two spies with the destinations the engine offers and a coup button for the spy in the city-state."
+        "caption": "Espionage tab: a table of the spies (rank, location, action) with a red Coup 3 button on the spy in the city-state, then a chip per destination the engine offers each spy."
       },
       {
         "golden": "overview-espionage/moved.png",
@@ -440,33 +440,33 @@
       },
       {
         "golden": "overview-espionage/coup.png",
-        "caption": "The resident spy is staging a coup; its button now calls the coup off."
+        "caption": "The resident spy is staging a coup; its button now says Call off."
       },
       {
         "golden": "overview-espionage/politics.png",
-        "caption": "Politics tab: status, attitude and influence for each civ met (the unmet civ is absent) and the diplomatic vote line."
+        "caption": "Politics tab: a table with status, attitude, influence, borders and peace treaty for each civ met (the unmet civ is absent) and the diplomatic vote line."
       }
     ]
   },
   "C023": {
     "scenario": "overview",
-    "about": "Empire overview: tabs for stats, cities, units, resources, ranking, religion and espionage; Go to buttons jump to a city or unit.",
+    "about": "Empire overview (redesigned in C074 on ScreenFrame and DataTable): tabs for stats, cities, units, resources, ranking, religion, espionage and politics; Go to buttons jump to a city or unit.",
     "shots": [
       {
         "golden": "overview/stats.png",
-        "caption": "Stats tab: the engine's per-turn numbers and the score breakdown."
+        "caption": "Stats tab (redesigned in C074): a two-column grid of cards (Empire, Economy, Progress, Score) with stat icons and the indented score breakdown, inside the screen frame with underline tabs."
       },
       {
         "golden": "overview/cities.png",
-        "caption": "Cities tab: the capital and a puppet city with population, health, current build and a Go to button each."
+        "caption": "Cities tab: a DataTable of the capital and a puppet city, numbers right-aligned, with a Go to arrow button at the end of each row."
       },
       {
         "golden": "overview/units.png",
-        "caption": "Units tab: own units only, with position, health, moves and order."
+        "caption": "Units tab: own units only in a sortable table with position, health, moves (numbers right-aligned), order and a Go to button per row."
       },
       {
         "golden": "overview/ranking.png",
-        "caption": "Ranking tab: one table per category, best first; unmet civs are shown as Unknown civilization."
+        "caption": "Ranking tab: one table per category side by side, best first with the rank right-aligned; unmet civs are shown as Unknown civilization."
       }
     ]
   },
@@ -1243,5 +1243,11 @@
         "caption": "At 1280x720 the city screen keeps its structure: buildable list rows spread over the extra width, with cost and Buy chips at the right edge."
       }
     ]
+  },
+  "C074": {
+    "none": "Overview and espionage on DataTable: the redesigned screens are shown under C023 (overview/*), C050 (overview-espionage/*) and C051 (espionage/*), whose goldens were re-recorded."
+  },
+  "C070": {
+    "none": "Tech tree redesign: shown under C019 (tech/*), whose captions and goldens were re-recorded in C070."
   }
 }

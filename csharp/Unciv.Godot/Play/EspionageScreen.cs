@@ -9,57 +9,78 @@ using Unciv.Queries.Empire;
 namespace Unciv.GodotClient.Play;
 
 /// <summary>
-/// C051: the espionage screen (Kotlin <c>EspionageScreen</c>). Left, the viewer's spies with rank, location, action, a Move button and, when the engine allows a coup, a coup
-/// button; right, the places a spy can be (the hideout, the cities the engine offers, with the viewer's spies in them). Pressing Move on a spy turns the places it may go to
-/// into "Move here" buttons (the button now says Cancel); "Assign spies" asks the owner to open the multi-spy picker (<see cref="DecisionPickerModel.MoveSpies"/>). Every list is
-/// <see cref="EspionageModel"/> over the engine's <see cref="SpyDestinationsQuery"/> answer, which only ever describes the viewer's own spies. The screen's only change to
-/// the world is the spy command it sends through the <see cref="IGameSession"/>.
+/// C051, redesigned in C074: the espionage screen (Kotlin <c>EspionageScreen</c>) in a <see cref="ScreenFrame"/>. Above, a <see cref="DataTable"/> of the viewer's spies (rank, location, action) whose
+/// trailing cell holds the row's Move button and, when the engine allows a coup, a coup button ("Coup 35%", the whole sentence as its tooltip); below, a table of the places a spy can be (the
+/// hideout, the cities the engine offers, with the viewer's spies in them). Pressing Move on a spy turns the places it may go to into "Move here" buttons (the button now says Cancel); "Assign spies"
+/// in the footer asks the owner to open the multi-spy picker (<see cref="DecisionPickerModel.MoveSpies"/>). Every list is <see cref="EspionageModel"/> over the engine's
+/// <see cref="SpyDestinationsQuery"/> answer, which only ever describes the viewer's own spies. The screen's only change to the world is the spy command it sends through the <see cref="IGameSession"/>.
 /// </summary>
 public partial class EspionageScreen : PanelContainer
 {
     private readonly IGameSession session;
     private readonly GameQueries queries;
-    private readonly Label message = new() { Name = "Message" };
-    private readonly Button assign = new() { Name = "EspionageAssign" };
-    private readonly VBoxContainer body = new() { Name = "EspionageBody", SizeFlagsVertical = SizeFlags.ExpandFill };
+    private readonly UiTheme theme;
     private readonly Dictionary<string, Button> moveButtons = [];
     private readonly Dictionary<string, Button> coupButtons = [];
     private readonly Dictionary<string, Button> hereButtons = [];
+    private ScreenFrame frame = null!; // JUSTIFY: C074 assigned by BuildFrame in the constructor
+    private Label message = null!; // JUSTIFY: C074 assigned by BuildFrame in the constructor
+    private Button assign = null!; // JUSTIFY: C074 assigned by BuildFrame in the constructor
+    private ScrollContainer scroll = null!; // JUSTIFY: C074 assigned by BuildFrame in the constructor
+    private VBoxContainer body = null!; // JUSTIFY: C074 assigned by BuildFrame in the constructor
     private SpyDestinationsResult? result;
     private EspionageSpec? spec;
     private string? selectedSpy;
     private string? notice;
+    private string messageText = "";
     private int generation;
 
     public EspionageScreen(IGameSession gameSession, UiTheme uiTheme)
     {
         session = gameSession;
         queries = new GameQueries(gameSession);
+        theme = uiTheme;
         Name = "EspionagePanel";
         Visible = false;
         MouseFilter = MouseFilterEnum.Stop;
         Theme = uiTheme.Theme;
+        BuildFrame();
+    }
 
-        var column = new VBoxContainer();
-        AddChild(column);
-        var head = new HBoxContainer();
-        column.AddChild(head);
-        var heading = new Label { Text = "Espionage".Tr(), SizeFlagsHorizontal = SizeFlags.ExpandFill };
-        heading.AddThemeFontSizeOverride("font_size", uiTheme.Px(20));
-        head.AddChild(heading);
-        assign.Text = "Assign spies".Tr();
+    public override void _EnterTree() => theme.LayoutChanged += OnLayoutChanged;
+
+    public override void _ExitTree() => theme.LayoutChanged -= OnLayoutChanged;
+
+    /// <summary>Sizes are fixed when a view is built, so a change of scale or breakpoint builds the frame again and redraws the answer it has.</summary>
+    private void OnLayoutChanged()
+    {
+        BuildFrame();
+        if (Visible) Rebuild();
+    }
+
+    private void BuildFrame()
+    {
+        if (frame != null)
+        {
+            RemoveChild(frame); // at once: a queued free would leave the old frame in the layout until the frame ends
+            frame.QueueFree();
+        }
+        frame = new ScreenFrame(theme, "Espionage", closeLabel: "Close espionage");
+        frame.CloseRequested += Close;
+        AddChild(frame);
+        assign = new Button { Name = "EspionageAssign", Text = "Assign spies".Tr(), Disabled = spec == null || !spec.CanAssign };
         assign.Pressed += () => AssignRequested?.Invoke();
-        head.AddChild(assign);
-        var close = new Button { Name = "EspionageClose", Text = "Close espionage".Tr() };
-        close.Pressed += Close;
-        head.AddChild(close);
-        message.AutowrapMode = TextServer.AutowrapMode.WordSmart;
+        frame.SetFooter([(assign, ChoiceRole.Primary)]);
+        var column = new VBoxContainer();
+        column.AddThemeConstantOverride("separation", theme.Px(UiTokens.S2));
+        message = new Label { Name = "Message", ThemeTypeVariation = UiVariants.LabelSecondary, AutowrapMode = TextServer.AutowrapMode.WordSmart, Text = messageText, Visible = messageText.Length > 0 };
         column.AddChild(message);
-        var scroll = new ScrollContainer { Name = "EspionageScroll", HorizontalScrollMode = ScrollContainer.ScrollMode.Auto, SizeFlagsVertical = SizeFlags.ExpandFill };
-        body.SizeFlagsHorizontal = SizeFlags.ExpandFill;
-        body.AddThemeConstantOverride("separation", 8);
+        scroll = new ScrollContainer { Name = "EspionageScroll", HorizontalScrollMode = ScrollContainer.ScrollMode.Auto, SizeFlagsVertical = SizeFlags.ExpandFill };
+        body = new VBoxContainer { Name = "EspionageBody", SizeFlagsHorizontal = SizeFlags.ExpandFill };
+        body.AddThemeConstantOverride("separation", theme.Px(UiTokens.S3));
         scroll.AddChild(body);
         column.AddChild(scroll);
+        frame.SetContent(column);
     }
 
     /// <summary>The spy whose Move button was pressed (the place buttons then say "Move here"), or null.</summary>
@@ -71,9 +92,15 @@ public partial class EspionageScreen : PanelContainer
     /// <summary>The text shown instead of the tables (espionage off), or null.</summary>
     public string? Notice => notice;
 
-    public string MessageText => message.Text;
+    public string MessageText => messageText;
+
+    /// <summary>The frame of the screen (title, close button, footer).</summary>
+    public ScreenFrame Frame => frame;
 
     public Button AssignButton => assign;
+
+    /// <summary>Scrolls the tables so the control is inside the visible part (a click needs it there).</summary>
+    public void EnsureVisible(Control control) => scroll.EnsureControlVisible(control);
 
     public Button? MoveButton(string spy) => moveButtons.GetValueOrDefault(spy);
 
@@ -139,37 +166,32 @@ public partial class EspionageScreen : PanelContainer
         if (spec == null || result == null)
         {
             notice = "Espionage is not enabled in this game.";
-            body.AddChild(new Label { Text = notice.Tr() });
+            body.AddChild(new EmptyState(theme, null, notice));
             assign.Disabled = true;
             return;
         }
         assign.Disabled = !spec.CanAssign;
         SetMessage(selectedSpy == null ? "" : $"Choose where {selectedSpy} goes.".TrText());
-        var panes = new VBoxContainer { Name = "EspionagePanes" };
-        panes.AddThemeConstantOverride("separation", 16);
-        body.AddChild(panes);
-        panes.AddChild(BuildSpies(spec));
-        panes.AddChild(BuildLocations(spec, result));
+        body.AddChild(BuildSpies(spec));
+        body.AddChild(BuildLocations(spec, result));
     }
 
     private Control BuildSpies(EspionageSpec page)
     {
         var box = new VBoxContainer { Name = "SpyTable" };
+        box.AddThemeConstantOverride("separation", theme.Px(UiTokens.S1));
+        box.AddChild(new SectionHeader("Spies"));
         if (page.Empty.Length > 0)
         {
-            box.AddChild(new Label { Text = page.Empty.Tr() });
+            box.AddChild(new EmptyState(theme, null, page.Empty));
             return box;
         }
-        var grid = new GridContainer { Columns = 5 };
-        grid.AddThemeConstantOverride("h_separation", 14);
-        box.AddChild(grid);
-        foreach (string heading in new[] { "Spy", "Spy rank", "Location", "Action", "" }) grid.AddChild(new Label { Text = heading.Tr() });
-        foreach (var spy in page.Spies)
+        var table = new DataTable([new DataColumn("Spy"), new DataColumn("Spy rank", true), new DataColumn("Location"), new DataColumn("Action")], actions: true) { Name = "SpyData" };
+        table.SetRows(page.Spies.Select(it => (IReadOnlyList<string>)[it.Name, it.Rank, it.Location.TrText(), it.Action.TrText()]).ToList(), index =>
         {
-            grid.AddChild(new Label { Text = spy.Name });
-            grid.AddChild(new Label { Text = spy.Rank });
-            grid.AddChild(new Label { Text = spy.Location.TrText() });
-            grid.AddChild(new Label { Text = spy.Action.TrText() });
+            var spy = page.Spies[index];
+            var actions = new HBoxContainer { Name = $"SpyActions_{spy.Name}" };
+            actions.AddThemeConstantOverride("separation", theme.Px(UiTokens.S1));
             var move = new Button { Name = $"Move_{spy.Name}", Text = (selectedSpy == spy.Name ? "Cancel" : "Move").Tr(), Disabled = !spy.CanMove };
             string name = spy.Name;
             move.Pressed += () =>
@@ -178,52 +200,42 @@ public partial class EspionageScreen : PanelContainer
                 Rebuild();
             };
             moveButtons[spy.Name] = move;
-            grid.AddChild(move);
-        }
-        // The coup buttons sit under the table, one wrapping full-width row per spy: a long (translated) label wraps instead of widening the table past the screen
-        foreach (var spy in page.Spies.Where(it => it.Coup != null))
-        {
-            var coup = spy.Coup!;
-            var row = new HBoxContainer { Name = $"CoupRow_{spy.Name}" };
-            row.AddChild(new Label { Text = spy.Name });
-            var button = new Button
+            actions.AddChild(move);
+            if (spy.Coup is { } coup)
             {
-                Name = $"Coup_{spy.Name}", Text = spy.CoupLabel.TrText(), SizeFlagsHorizontal = SizeFlags.ExpandFill, AutowrapMode = TextServer.AutowrapMode.WordSmart,
-            };
-            button.Pressed += () => Fire(Send(coup));
-            coupButtons[spy.Name] = button;
-            row.AddChild(button);
-            box.AddChild(row);
-        }
+                var button = OverviewScreen.CoupButton(theme, spy.Name, spy.CoupShort, spy.CoupLabel, danger: coup.Stage);
+                button.Name = $"Coup_{spy.Name}";
+                button.Pressed += () => Fire(Send(coup));
+                coupButtons[spy.Name] = button;
+                actions.AddChild(button);
+            }
+            return actions;
+        });
+        box.AddChild(table);
         return box;
     }
 
     private Control BuildLocations(EspionageSpec page, SpyDestinationsResult answer)
     {
         var box = new VBoxContainer { Name = "LocationTable" };
+        box.AddThemeConstantOverride("separation", theme.Px(UiTokens.S1));
+        box.AddChild(new SectionHeader("Places"));
         var targets = selectedSpy == null ? [] : EspionageModel.Targets(answer, selectedSpy);
-        var grid = new GridContainer { Columns = 4 };
-        grid.AddThemeConstantOverride("h_separation", 14);
-        box.AddChild(grid);
-        foreach (string heading in new[] { "City", "Civilization", "Spy present", "" }) grid.AddChild(new Label { Text = heading.Tr() });
-        foreach (var location in page.Locations)
+        var table = new DataTable([new DataColumn("City"), new DataColumn("Civilization"), new DataColumn("Spy present")], actions: true) { Name = "LocationData" };
+        table.SetRows(page.Locations.Select(it => (IReadOnlyList<string>)[it.Name.TrText(), it.Civ.TrText(), it.SpiesPresent]).ToList(), index =>
         {
-            grid.AddChild(new Label { Text = location.Name.TrText() });
-            grid.AddChild(new Label { Text = location.Civ.TrText() });
-            grid.AddChild(new Label { Text = location.SpiesPresent });
-            if (EspionageModel.TargetFor(targets, location) is { } target)
+            var location = page.Locations[index];
+            if (EspionageModel.TargetFor(targets, location) is not { } target) return null;
+            var button = new Button { Name = "Here_" + (location.CityId ?? ""), Text = "Move here".Tr() };
+            button.Pressed += () =>
             {
-                var button = new Button { Name = "Here_" + (location.CityId ?? ""), Text = "Move here".Tr() };
-                button.Pressed += () =>
-                {
-                    selectedSpy = null;
-                    Fire(Send(target.Command));
-                };
-                hereButtons[location.CityId ?? ""] = button;
-                grid.AddChild(button);
-            }
-            else grid.AddChild(new Control());
-        }
+                selectedSpy = null;
+                Fire(Send(target.Command));
+            };
+            hereButtons[location.CityId ?? ""] = button;
+            return button;
+        });
+        box.AddChild(table);
         return box;
     }
 
@@ -253,5 +265,10 @@ public partial class EspionageScreen : PanelContainer
         }
     }
 
-    private void SetMessage(string text) => message.Text = text;
+    private void SetMessage(string text)
+    {
+        messageText = text;
+        message.Text = text;
+        message.Visible = text.Length > 0;
+    }
 }

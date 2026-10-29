@@ -428,25 +428,25 @@ Scenario `trade`.
 
 ## C023 Overview screens: empire, cities, units, resources, ranking, religion, espionage
 
-Empire overview: tabs for stats, cities, units, resources, ranking, religion and espionage; Go to buttons jump to a city or unit.
+Empire overview (redesigned in C074 on ScreenFrame and DataTable): tabs for stats, cities, units, resources, ranking, religion, espionage and politics; Go to buttons jump to a city or unit.
 
 Scenario `overview`.
 
-![Stats tab: the engine's per-turn numbers and the score breakdown.](../Unciv.Godot.Harness/golden/overview/stats.png)
+![Stats tab (redesigned in C074): a two-column grid of cards (Empire, Economy, Progress, Score) with stat icons and the indented score breakdown, inside the screen frame with underline tabs.](../Unciv.Godot.Harness/golden/overview/stats.png)
 
-*Stats tab: the engine's per-turn numbers and the score breakdown.* (`overview/stats.png`)
+*Stats tab (redesigned in C074): a two-column grid of cards (Empire, Economy, Progress, Score) with stat icons and the indented score breakdown, inside the screen frame with underline tabs.* (`overview/stats.png`)
 
-![Cities tab: the capital and a puppet city with population, health, current build and a Go to button each.](../Unciv.Godot.Harness/golden/overview/cities.png)
+![Cities tab: a DataTable of the capital and a puppet city, numbers right-aligned, with a Go to arrow button at the end of each row.](../Unciv.Godot.Harness/golden/overview/cities.png)
 
-*Cities tab: the capital and a puppet city with population, health, current build and a Go to button each.* (`overview/cities.png`)
+*Cities tab: a DataTable of the capital and a puppet city, numbers right-aligned, with a Go to arrow button at the end of each row.* (`overview/cities.png`)
 
-![Units tab: own units only, with position, health, moves and order.](../Unciv.Godot.Harness/golden/overview/units.png)
+![Units tab: own units only in a sortable table with position, health, moves (numbers right-aligned), order and a Go to button per row.](../Unciv.Godot.Harness/golden/overview/units.png)
 
-*Units tab: own units only, with position, health, moves and order.* (`overview/units.png`)
+*Units tab: own units only in a sortable table with position, health, moves (numbers right-aligned), order and a Go to button per row.* (`overview/units.png`)
 
-![Ranking tab: one table per category, best first; unmet civs are shown as Unknown civilization.](../Unciv.Godot.Harness/golden/overview/ranking.png)
+![Ranking tab: one table per category side by side, best first with the rank right-aligned; unmet civs are shown as Unknown civilization.](../Unciv.Godot.Harness/golden/overview/ranking.png)
 
-*Ranking tab: one table per category, best first; unmet civs are shown as Unknown civilization.* (`overview/ranking.png`)
+*Ranking tab: one table per category side by side, best first with the rank right-aligned; unmet civs are shown as Unknown civilization.* (`overview/ranking.png`)
 
 ## C024 Victory and defeat screen, game over
 
@@ -914,21 +914,21 @@ Overview espionage and global politics tabs in a game with espionage on: spy mov
 
 Scenario `overview-espionage`.
 
-![Espionage tab: two spies with the destinations the engine offers and a coup button for the spy in the city-state.](../Unciv.Godot.Harness/golden/overview-espionage/espionage.png)
+![Espionage tab: a table of the spies (rank, location, action) with a red Coup 3 button on the spy in the city-state, then a chip per destination the engine offers each spy.](../Unciv.Godot.Harness/golden/overview-espionage/espionage.png)
 
-*Espionage tab: two spies with the destinations the engine offers and a coup button for the spy in the city-state.* (`overview-espionage/espionage.png`)
+*Espionage tab: a table of the spies (rank, location, action) with a red Coup 3 button on the spy in the city-state, then a chip per destination the engine offers each spy.* (`overview-espionage/espionage.png`)
 
 ![The first spy was sent to Rome's capital; the page shows its new location.](../Unciv.Godot.Harness/golden/overview-espionage/moved.png)
 
 *The first spy was sent to Rome's capital; the page shows its new location.* (`overview-espionage/moved.png`)
 
-![The resident spy is staging a coup; its button now calls the coup off.](../Unciv.Godot.Harness/golden/overview-espionage/coup.png)
+![The resident spy is staging a coup; its button now says Call off.](../Unciv.Godot.Harness/golden/overview-espionage/coup.png)
 
-*The resident spy is staging a coup; its button now calls the coup off.* (`overview-espionage/coup.png`)
+*The resident spy is staging a coup; its button now says Call off.* (`overview-espionage/coup.png`)
 
-![Politics tab: status, attitude and influence for each civ met (the unmet civ is absent) and the diplomatic vote line.](../Unciv.Godot.Harness/golden/overview-espionage/politics.png)
+![Politics tab: a table with status, attitude, influence, borders and peace treaty for each civ met (the unmet civ is absent) and the diplomatic vote line.](../Unciv.Godot.Harness/golden/overview-espionage/politics.png)
 
-*Politics tab: status, attitude and influence for each civ met (the unmet civ is absent) and the diplomatic vote line.* (`overview-espionage/politics.png`)
+*Politics tab: a table with status, attitude, influence, borders and peace treaty for each civ met (the unmet civ is absent) and the diplomatic vote line.* (`overview-espionage/politics.png`)
 
 ## C051 Espionage overview screen and spy coup/action buttons
 
@@ -936,21 +936,21 @@ Espionage screen: the spies and the places they can go, Move/Cancel/Move here, t
 
 Scenario `espionage`.
 
-![The espionage screen: each spy with rank, location, action and a Move button, a full-width coup button (label wrapped, never clipped) under the table for the spy in the city-state, then the places with the spies present.](../Unciv.Godot.Harness/golden/espionage/screen.png)
+![The espionage screen in its frame: a table of the spies with rank, location, action, a Move button and, for the spy in the city-state, a red coup button; the places table below and the primary Assign spies button in the footer.](../Unciv.Godot.Harness/golden/espionage/screen.png)
 
-*The espionage screen: each spy with rank, location, action and a Move button, a full-width coup button (label wrapped, never clipped) under the table for the spy in the city-state, then the places with the spies present.* (`espionage/screen.png`)
+*The espionage screen in its frame: a table of the spies with rank, location, action, a Move button and, for the spy in the city-state, a red coup button; the places table below and the primary Assign spies button in the footer.* (`espionage/screen.png`)
 
-![Move was pressed on the first spy: Move became Cancel and the places the engine offers it show Move here.](../Unciv.Godot.Harness/golden/espionage/selecting.png)
+![Move was pressed on the first spy: Move became Cancel and the places the engine offers it show a Move here button at the end of their rows.](../Unciv.Godot.Harness/golden/espionage/selecting.png)
 
-*Move was pressed on the first spy: Move became Cancel and the places the engine offers it show Move here.* (`espionage/selecting.png`)
+*Move was pressed on the first spy: Move became Cancel and the places the engine offers it show a Move here button at the end of their rows.* (`espionage/selecting.png`)
 
 ![The first spy was sent to Rome's capital: its row and the city's Spy present column show it.](../Unciv.Godot.Harness/golden/espionage/moved.png)
 
 *The first spy was sent to Rome's capital: its row and the city's Spy present column show it.* (`espionage/moved.png`)
 
-![The spy in the city-state is staging a coup; its button now calls the coup off.](../Unciv.Godot.Harness/golden/espionage/coup.png)
+![The spy in the city-state is staging a coup; its button now says Call off.](../Unciv.Godot.Harness/golden/espionage/coup.png)
 
-*The spy in the city-state is staging a coup; its button now calls the coup off.* (`espionage/coup.png`)
+*The spy in the city-state is staging a coup; its button now says Call off.* (`espionage/coup.png`)
 
 ![Assign spies: the multi-spy picker over the screen with the second spy chosen to return to the hideout.](../Unciv.Godot.Harness/golden/espionage/assign.png)
 
@@ -1255,3 +1255,5 @@ Done tickets with nothing meaningful to show.
 - **C059 Espionage screen: coup button clipped at 640px width**: Layout fix (wrapping coup button) of the espionage screen shown under C051; its re-recorded goldens espionage/*.png are listed there, with the wrapped coup row in screen.png.
 - **C060 Tutorial task completed-set: per-viewer and replay-safe (C054 review follow-up)**: Per-viewer, replay-safe tutorial-task state (no layout change); the card itself is shown under C054 (tutorial-tasks scenario) and the hotseat hand-over under C029.
 - **C064 Unique display text and hidden uniques in UI models**: Model-level text fix (unique display text, hidden uniques filtered); the decisions, tooltips and policy scenario goldens are pixel-unchanged.
+- **C070 Tech tree redesign**: Tech tree redesign: shown under C019 (tech/*), whose captions and goldens were re-recorded in C070.
+- **C074 (ticket not Done or unknown)**: Overview and espionage on DataTable: the redesigned screens are shown under C023 (overview/*), C050 (overview-espionage/*) and C051 (espionage/*), whose goldens were re-recorded.

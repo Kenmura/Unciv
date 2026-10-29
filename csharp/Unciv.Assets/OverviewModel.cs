@@ -7,11 +7,23 @@ using Unciv.Utils;
 
 namespace Unciv.Assets;
 
-/// <summary>A table the overview screen draws: column headings and rows of cells. <c>OverviewRow.Key</c> identifies the row for the jump button (city name, unit id) or is empty.</summary>
-public sealed record OverviewTable(IReadOnlyList<string> Columns, IReadOnlyList<OverviewRow> Rows, string Empty)
+/// <summary>C074: a typed column: the untranslated heading and whether its cells are numbers (the table right-aligns them in tabular figures and sorts them by value).</summary>
+public sealed record OverviewColumn(string Heading, bool Numeric = false)
+{
+    public static implicit operator OverviewColumn(string heading) => new(heading);
+}
+
+/// <summary>A table the overview screen draws: typed columns and rows of cells. <c>OverviewRow.Key</c> identifies the row for the jump button (city name, unit id) or is empty.</summary>
+public sealed record OverviewTable(IReadOnlyList<OverviewColumn> Columns, IReadOnlyList<OverviewRow> Rows, string Empty)
 {
     public int Count => Rows.Count;
 }
+
+/// <summary>C074: one labelled value of a stats card; <see cref="Stat"/> names the stat icon to show (gold, science, culture, faith, happiness) or is empty. <see cref="Indent"/> marks a breakdown line.</summary>
+public sealed record StatsEntry(string Label, string Value, string Stat = "", bool Indent = false);
+
+/// <summary>C074: a card of the stats page: a title and its entries.</summary>
+public sealed record StatsCard(string Title, IReadOnlyList<StatsEntry> Entries);
 
 public sealed record OverviewRow(string Key, IReadOnlyList<string> Cells, int X = -1, int Y = -1);
 
@@ -21,8 +33,8 @@ public sealed record PoliticsEntry(OverviewCiv Civ, DiplomacyPanelResult? Panel)
 /// <summary>One option of a spy's destination menu and the command that picks it.</summary>
 public sealed record SpyMove(string Label, MoveSpy Command);
 
-/// <summary>A spy of the espionage tab: <see cref="Moves"/> are only the destinations the engine offers (<see cref="SpyDestinationsQuery"/>), <see cref="Coup"/> is null unless a coup is possible.</summary>
-public sealed record SpyRow(string Name, string Summary, IReadOnlyList<SpyMove> Moves, SetSpyCoup? Coup, string CoupLabel);
+/// <summary>A spy of the espionage tab (C074: rank, location and action are the table's typed cells, a dead spy shows a dash and "Dead"; <see cref="CoupShort"/> is the coup button's text and <see cref="CoupLabel"/> its tooltip): <see cref="Moves"/> are only the destinations the engine offers (<see cref="SpyDestinationsQuery"/>), <see cref="Coup"/> is null unless a coup is possible.</summary>
+public sealed record SpyRow(string Name, string Rank, string Location, string Action, IReadOnlyList<SpyMove> Moves, SetSpyCoup? Coup, string CoupLabel, string CoupShort);
 
 /// <summary>
 /// C023: the empire overview screen's content as plain data, Godot-free so it is unit-tested. Cities and units come from the viewer's own snapshot and only the viewer's
@@ -49,34 +61,34 @@ public static class OverviewModel
 
     private static string Signed(float value) => (value >= 0f ? "+" : "") + F(value);
 
-    /// <summary>The stats page: one "Label: value" line per number of the engine's overview, then the score breakdown.</summary>
-    public static IReadOnlyList<string> StatsLines(EmpireOverviewResult overview)
+    /// <summary>
+    /// C074: the stats page as cards (Empire, Economy, Progress, Score): one entry per number of the engine's overview, the score breakdown as indented entries of the Score card.
+    /// Values are worded only; the per-turn numbers carry their sign.
+    /// </summary>
+    public static IReadOnlyList<StatsCard> StatsCards(EmpireOverviewResult overview)
     {
-        var lines = new List<string>
-        {
-            $"{overview.CivName} - turn {N(overview.Turn)}",
-            $"Gold: {N(overview.Gold)} ({Signed(overview.GoldPerTurn)} per turn)",
-            $"Science: {Signed(overview.SciencePerTurn)} per turn",
-            $"Culture: {Signed(overview.CulturePerTurn)} per turn",
-            $"Faith: {Signed(overview.FaithPerTurn)} per turn",
-            $"Happiness: {N(overview.Happiness)}",
-            $"Cities: {N(overview.Cities)}",
-            $"Units: {N(overview.Units)}",
-            $"Technologies researched: {N(overview.TechsResearched)}",
-            $"Policies adopted: {N(overview.PoliciesAdopted)}",
-            $"Score: {N(overview.Score)}",
-        };
-        foreach (var (name, value) in overview.ScoreBreakdown) lines.Add($"  {name}: {value.ToString("0.#", CultureInfo.InvariantCulture)}");
-        return lines;
+        var score = new List<StatsEntry> { new("Score", N(overview.Score)) };
+        foreach (var (name, value) in overview.ScoreBreakdown) score.Add(new StatsEntry(name, value.ToString("0.#", CultureInfo.InvariantCulture), Indent: true));
+        return
+        [
+            new("Empire", [new("Civilization", overview.CivName), new("Turn", N(overview.Turn)), new("Cities", N(overview.Cities)), new("Units", N(overview.Units))]),
+            new("Economy", [new("Gold", N(overview.Gold), "Gold"), new("Gold per turn", Signed(overview.GoldPerTurn), "Gold"), new("Happiness", N(overview.Happiness), "Happiness")]),
+            new("Progress",
+            [
+                new("Science per turn", Signed(overview.SciencePerTurn), "Science"), new("Culture per turn", Signed(overview.CulturePerTurn), "Culture"),
+                new("Faith per turn", Signed(overview.FaithPerTurn), "Faith"), new("Technologies researched", N(overview.TechsResearched)), new("Policies adopted", N(overview.PoliciesAdopted)),
+            ]),
+            new("Score", score),
+        ];
     }
 
     /// <summary>The civs the viewer knows with their war status, then the known civs' rankings when the game shows them.</summary>
-    public static OverviewTable KnownCivs(EmpireOverviewResult overview) => new(["Civilization", "Kind", "Status", "Score"],
+    public static OverviewTable KnownCivs(EmpireOverviewResult overview) => new(["Civilization", "Kind", "Status", new OverviewColumn("Score", true)],
         overview.KnownCivs.Select(it => new OverviewRow(it.CivName, [it.CivName, it.IsCityState ? "City-state" : "Major", it.IsDefeated ? "Defeated" : it.AtWar ? "At war" : "Peace",
             it.Rankings.TryGetValue("Score", out int score) ? N(score) : "-"])).ToList(), "You have met nobody yet.");
 
     /// <summary>The viewer's own cities (those with private detail), capital first then by name.</summary>
-    public static OverviewTable CityTable(ClientSnapshot snapshot) => new(["City", "Pop", "Health", "Building", "Buildings", "Notes"],
+    public static OverviewTable CityTable(ClientSnapshot snapshot) => new(["City", new OverviewColumn("Pop", true), "Health", "Building", new OverviewColumn("Buildings", true), "Notes"],
         snapshot.Cities.Where(it => it.Owner == snapshot.You && it.Own != null)
             .OrderByDescending(it => it.IsCapital).ThenBy(it => it.Name, StringComparer.Ordinal)
             .Select(it => new OverviewRow(it.Name, [it.Name, N(it.Population), $"{N(it.Health)}/{N(it.MaxHealth)}",
@@ -93,7 +105,7 @@ public static class OverviewModel
     }
 
     /// <summary>The viewer's own units (those with private detail) by name, then id.</summary>
-    public static OverviewTable UnitTable(ClientSnapshot snapshot) => new(["Unit", "Position", "Health", "Moves", "Order"],
+    public static OverviewTable UnitTable(ClientSnapshot snapshot) => new(["Unit", "Position", new OverviewColumn("Health", true), new OverviewColumn("Moves", true), "Order"],
         snapshot.Units.Where(it => it.Owner == snapshot.You && it.Own != null)
             .OrderBy(it => it.Name, StringComparer.Ordinal).ThenBy(it => it.Id)
             .Select(it => new OverviewRow(N(it.Id), [it.Name, $"{N(it.X)},{N(it.Y)}", N(it.Own!.Health), F(it.Own.CurrentMovement), UnitOrder(it)], it.X, it.Y)).ToList(),
@@ -103,7 +115,7 @@ public static class OverviewModel
         unit.Own!.Automated ? "Automated" : unit.Own.Action ?? (unit.IsFortified ? "Fortified" : unit.IsEmbarked ? "Embarked" : "-");
 
     /// <summary>The luxury and strategic resources the engine says the viewer has, in the engine's order.</summary>
-    public static OverviewTable ResourceTable(EmpireTopBarResult bar) => new(["Resource", "Type", "Amount"],
+    public static OverviewTable ResourceTable(EmpireTopBarResult bar) => new(["Resource", "Type", new OverviewColumn("Amount", true)],
         bar.Resources.Select(it => new OverviewRow(it.Name, [it.Name, it.Type, N(it.Amount)])).ToList(), "You have no luxury or strategic resources.");
 
     /// <summary>
@@ -111,7 +123,7 @@ public static class OverviewModel
     /// answer and is shown as "Unknown civilization"; the viewer is marked "(you)". The title of a table is the column's label.
     /// </summary>
     public static IReadOnlyList<(string Title, OverviewTable Table)> RankingTables(IReadOnlyList<RankingColumn> columns) => columns.Select(column =>
-        (column.Label, new OverviewTable(["Rank", "Civilization", "Value"],
+        (column.Label, new OverviewTable([new OverviewColumn("Rank", true), "Civilization", new OverviewColumn("Value", true)],
             column.Entries.Select((entry, index) => new OverviewRow(entry.Civ.CivName ?? "",
                 [N(index + 1), (entry.Civ.CivName ?? "Unknown civilization") + (entry.Civ.IsViewer ? " (you)" : ""), entry.Civ.IsDefeated ? "Defeated" : N(entry.Value)])).ToList(),
             "No rankings."))).ToList();
@@ -143,13 +155,10 @@ public static class OverviewModel
         foreach (var destination in spy.Destinations)
             moves.Add(new SpyMove(destination.Civ.Length > 0 ? $"{destination.CityName} ({destination.Civ})" : destination.CityName, new MoveSpy { Spy = spy.Name, CityId = destination.CityId }));
         bool staging = spy.Action == "Coup";
-        string summary = spy.IsAlive
-            ? $"{spy.Name} (rank {N(spy.Rank)}): {spy.Action} in {spy.Location}"
-            : $"{spy.Name}: dead";
-        string coupLabel = spy.CanDoCoup && spy.CoupChance is { } chance
-            ? (staging ? "Call off the coup" : $"Stage a coup ({KotlinMath.RoundToInt(chance * 100f).ToString(CultureInfo.InvariantCulture)}% chance)")
-            : "";
-        return new SpyRow(spy.Name, summary, moves, spy.CanDoCoup ? new SetSpyCoup { Spy = spy.Name, Stage = !staging } : null, coupLabel);
+        string percent = spy.CoupChance is { } chance ? KotlinMath.RoundToInt(chance * 100f).ToString(CultureInfo.InvariantCulture) : "";
+        string coupLabel = spy.CanDoCoup && spy.CoupChance != null ? (staging ? "Call off the coup" : $"Stage a coup ({percent}% chance)") : "";
+        string coupShort = coupLabel.Length == 0 ? "" : staging ? "Call off" : $"Coup {percent}%";
+        return new SpyRow(spy.Name, N(spy.Rank), spy.IsAlive ? spy.Location : "-", spy.IsAlive ? spy.Action : "Dead", moves, spy.CanDoCoup ? new SetSpyCoup { Spy = spy.Name, Stage = !staging } : null, coupLabel, coupShort);
     }).ToList();
 
     /// <summary>

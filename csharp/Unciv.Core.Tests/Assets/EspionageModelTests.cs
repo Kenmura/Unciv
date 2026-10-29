@@ -61,8 +61,10 @@ public class EspionageModelTests
             Spy("OddsButForbidden", "Sparta", "Surveillance", coup: false, chance: 0.5f),
         ]));
         Assert.Equal("Stage a coup (46% chance)", spec.Spies[0].CoupLabel);
+        Assert.Equal("Coup 46%", spec.Spies[0].CoupShort);
         Assert.Equal(("Idle", true), (spec.Spies[0].Coup!.Spy, spec.Spies[0].Coup!.Stage));
         Assert.Equal("Call off the coup", spec.Spies[1].CoupLabel);
+        Assert.Equal("Call off", spec.Spies[1].CoupShort);
         Assert.Equal(("Staging", false), (spec.Spies[1].Coup!.Spy, spec.Spies[1].Coup!.Stage));
         Assert.Null(spec.Spies[2].Coup);
         Assert.Equal("", spec.Spies[2].CoupLabel);

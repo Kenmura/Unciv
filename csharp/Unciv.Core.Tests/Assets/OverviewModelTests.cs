@@ -94,16 +94,33 @@ public class OverviewModelTests
     }
 
     [Fact]
-    public void StatsLinesWordTheEnginesNumbersAndBreakdown()
+    public void StatsCardsWordTheEnginesNumbersAndBreakdown()
     {
         var overview = new EmpireOverviewResult(12, "Babylon", 120, 3.5f, 4f, -1f, 0f, 8, 2, 5, 7, 1, 90,
             new Dictionary<string, double> { ["Cities"] = 20, ["Population"] = 12.5 }, new Dictionary<string, int>(), []);
-        var lines = OverviewModel.StatsLines(overview);
-        Assert.Equal("Babylon - turn 12", lines[0]);
-        Assert.Contains("Gold: 120 (+3.5 per turn)", lines);
-        Assert.Contains("Culture: -1 per turn", lines);
-        Assert.Contains("Score: 90", lines);
-        Assert.Equal(["  Cities: 20", "  Population: 12.5"], lines.Skip(lines.Count - 2));
+        var cards = OverviewModel.StatsCards(overview);
+        Assert.Equal(["Empire", "Economy", "Progress", "Score"], cards.Select(it => it.Title));
+        Assert.Equal([("Civilization", "Babylon"), ("Turn", "12"), ("Cities", "2"), ("Units", "5")], cards[0].Entries.Select(it => (it.Label, it.Value)));
+        Assert.Contains(new StatsEntry("Gold", "120", "Gold"), cards[1].Entries);
+        Assert.Contains(new StatsEntry("Gold per turn", "+3.5", "Gold"), cards[1].Entries);
+        Assert.Contains(new StatsEntry("Culture per turn", "-1", "Culture"), cards[2].Entries);
+        Assert.Contains(new StatsEntry("Technologies researched", "7"), cards[2].Entries);
+        Assert.Equal(new StatsEntry("Score", "90"), cards[3].Entries[0]);
+        Assert.Equal([new StatsEntry("Cities", "20", Indent: true), new StatsEntry("Population", "12.5", Indent: true)], cards[3].Entries.Skip(1));
+    }
+
+    [Fact]
+    public void NumberColumnsAreTypedSoTheTableAlignsAndSortsThem()
+    {
+        var cities = OverviewModel.CityTable(Snapshot([City("A")], []));
+        Assert.Equal([false, true, false, false, true, false], cities.Columns.Select(it => it.Numeric));
+        var units = OverviewModel.UnitTable(Snapshot([], [Unit(1, "Warrior")]));
+        Assert.Equal([false, false, true, true, false], units.Columns.Select(it => it.Numeric));
+        Assert.Equal([false, false, true], OverviewModel.ResourceTable(new EmpireTopBarResult(1, 0, 0, 0f, 0f, 0f, 0f, 0, 0, 0, 0, [])).Columns.Select(it => it.Numeric));
+        Assert.Equal([true, false, true], OverviewModel.RankingTables([new RankingColumn("Score", "Score", [])])[0].Table.Columns.Select(it => it.Numeric));
+        // every numeric column of the typed tables sorts by value: its cells parse as numbers
+        Assert.All(cities.Rows.Concat(units.Rows).SelectMany(row => row.Cells.Where((_, index) => (row.Cells.Count == 6 ? cities : units).Columns[index].Numeric)),
+            cell => Assert.NotNull(TableSorter.ParseNumber(cell)));
     }
 
     [Fact]
@@ -177,20 +194,22 @@ public class OverviewModelTests
             new SpyEntry("Cy", 1, "Dead", "Hideout", false, false, [], false, null),
         ]);
         var rows = OverviewModel.SpyRows(result);
-        Assert.Equal("Ann (rank 2): Coup in Sparta", rows[0].Summary);
+        Assert.Equal(["Ann", "2", "Sparta", "Coup"], [rows[0].Name, rows[0].Rank, rows[0].Location, rows[0].Action]);
         Assert.Equal(["Hideout", "Ur (Babylon)", "Kish"], rows[0].Moves.Select(it => it.Label));
         Assert.Null(rows[0].Moves[0].Command.CityId);
         Assert.Equal("c1", rows[0].Moves[1].Command.CityId);
         Assert.Equal("Ann", rows[0].Moves[2].Command.Spy);
         Assert.False(rows[0].Coup!.Stage); // already staged: the button calls it off
         Assert.Equal("Call off the coup", rows[0].CoupLabel);
+        Assert.Equal("Call off", rows[0].CoupShort);
         Assert.Empty(rows[1].Moves);
         Assert.Null(rows[1].Coup);
         Assert.Equal("", rows[1].CoupLabel);
-        Assert.Equal("Cy: dead", rows[2].Summary);
+        Assert.Equal(["Cy", "1", "-", "Dead"], [rows[2].Name, rows[2].Rank, rows[2].Location, rows[2].Action]);
         var staging = OverviewModel.SpyRows(new SpyDestinationsResult([new SpyEntry("Dee", 1, "Spying", "Ur", true, true, [], true, 0.5f)]));
         Assert.True(staging[0].Coup!.Stage);
         Assert.Equal("Stage a coup (50% chance)", staging[0].CoupLabel);
+        Assert.Equal("Coup 50%", staging[0].CoupShort);
     }
 
     private static OverviewCiv Civ(string name, bool cityState = false, bool defeated = false, bool atWar = false) => new(name, cityState, defeated, atWar, new Dictionary<string, int>());
@@ -213,7 +232,7 @@ public class OverviewModelTests
             new PoliticsEntry(Civ("Athens", cityState: true), Panel("Protector", "Friend", influence: 42.5f, ally: true)),
             new PoliticsEntry(Civ("Greece"), Panel("DefensivePact", "Ally", ours: true, theirs: true, treaty: 7)),
         ]);
-        Assert.Equal(["Civilization", "Kind", "Status", "Attitude", "Influence", "Borders", "Peace treaty"], table.Columns);
+        Assert.Equal(["Civilization", "Kind", "Status", "Attitude", "Influence", "Borders", "Peace treaty"], table.Columns.Select(it => it.Heading));
         Assert.Equal(["Rome", "Athens", "Greece"], table.Rows.Select(it => it.Key));
         Assert.Equal(["Rome", "Major", "War", "Enemy", "-", "-", "-"], table.Rows[0].Cells);
         Assert.Equal(["Athens", "City-state", "Protector", "Friend", "42.5 (ally)", "-", "-"], table.Rows[1].Cells);

@@ -3,6 +3,7 @@ using Unciv.Assets;
 using Unciv.Commands;
 using Unciv.GodotClient.Assets;
 using Unciv.GodotClient.Play;
+using Unciv.GodotClient.Ui;
 using Unciv.Harness;
 using Unciv.Models;
 using Unciv.Queries.Empire;
@@ -70,10 +71,19 @@ public sealed class OverviewEspionageScenario : Scenario
             new AssertQuery("only the spy in the city-state can stage a coup, and its button shows the engine's odds", () =>
             {
                 var entry = Entry(resident);
-                string expected = $"Stage a coup ({KotlinMath.RoundToInt(entry.CoupChance.NotNull() * 100f)}% chance)";
-                return screen.Overview.SpyButton(hidden.Name, -1) == null && screen.Overview.SpyButton(resident.Name, -1)?.Text == expected;
+                string percent = KotlinMath.RoundToInt(entry.CoupChance.NotNull() * 100f).ToString(System.Globalization.CultureInfo.InvariantCulture);
+                var button = screen.Overview.SpyButton(resident.Name, -1);
+                return screen.Overview.SpyButton(hidden.Name, -1) == null && button?.Text == $"Coup {percent}%" && button.TooltipText == $"Stage a coup ({percent}% chance)"
+                    && button.ThemeTypeVariation == UiVariants.ButtonDanger;
             }),
-            new Capture("espionage", "Espionage tab: two spies with their moves, and a coup button for the spy in the city-state"),
+            new AssertQuery("the spies are a typed table (rank right-aligned) that fits the screen, one row per spy, the coup button inside its row", () =>
+            {
+                var data = screen.Overview.DataTables(OverviewModel.Espionage)[0];
+                var coup = screen.Overview.SpyButton(resident.Name, -1).NotNull().GetGlobalRect();
+                return data.RowCount == 2 && data.Cell(0, 1).HorizontalAlignment == HorizontalAlignment.Right && data.GetGlobalRect().End.X <= screen.GetViewportRect().Size.X
+                    && coup.Position.X >= data.GetGlobalRect().Position.X && coup.End.X <= data.GetGlobalRect().End.X && coup.Size.X > 0;
+            }),
+            new Capture("espionage", "Espionage tab: a table of the two spies with rank, location and action and a red coup button on the spy in the city-state, then a chip for each place a spy may move to"),
 
             new Act("remember the command log", () => logged = session.Log.Count),
             new Click(() => Centre(screen.Overview.SpyButton(hidden.Name, RomeMove(hidden)))),
@@ -88,13 +98,13 @@ public sealed class OverviewEspionageScenario : Scenario
             new WaitFrames(3),
             new AssertQuery("the coup button stages the coup (SetSpyCoup) and then offers to call it off", () =>
                 session.Log.Count == logged + 2 && session.Log[^1].Type == "set-spy-coup" && session.Log[^1].Payload.GetProperty("Stage").GetBoolean() && resident.Action == SpyAction.Coup
-                && screen.Overview.SpyButton(resident.Name, -1)?.Text == "Call off the coup"),
+                && screen.Overview.SpyButton(resident.Name, -1)?.Text == "Call off" && screen.Overview.SpyButton(resident.Name, -1)?.TooltipText == "Call off the coup"),
             new Capture("coup", "The resident spy is staging a coup; the button now calls it off"),
             new Click(() => Centre(screen.Overview.SpyButton(resident.Name, -1))),
             new WaitFrames(3),
             new AssertQuery("calling it off sends SetSpyCoup with Stage false and the stage button returns", () =>
                 session.Log.Count == logged + 3 && session.Log[^1].Type == "set-spy-coup" && !session.Log[^1].Payload.GetProperty("Stage").GetBoolean() && resident.Action == SpyAction.CounterIntelligence
-                && screen.Overview.SpyButton(resident.Name, -1)?.Text.StartsWith("Stage a coup", StringComparison.Ordinal) == true),
+                && screen.Overview.SpyButton(resident.Name, -1)?.TooltipText.StartsWith("Stage a coup", StringComparison.Ordinal) == true),
 
             new Click(() => Centre(screen.Overview.TabButton(OverviewModel.Politics))),
             new WaitFrames(3),
@@ -110,7 +120,7 @@ public sealed class OverviewEspionageScenario : Scenario
                 return screen.Overview.SelectedTab == OverviewModel.Politics && table.Rows.Select(it => it.Key).SequenceEqual(overview.KnownCivs.Select(it => it.CivName))
                     && table.Count == 2 && table.Rows.All(it => it.Key != ScenarioGame.HumanB) && rowsMatch && !Ask(new DiplomaticVoteQuery()).CanVote;
             }),
-            new Capture("politics", "Politics tab: the relation with each civ you have met, and the diplomatic vote line"),
+            new Capture("politics", "Politics tab: a table with the relation with each civ you have met (status, attitude, influence, borders, peace treaty), and the diplomatic vote line"),
             new Press("Close overview"),
             new AssertQuery("the close button closes the screen; only the three spy commands were sent", () => !screen.IsOverviewVisible && session.Log.Count == logged + 3),
         ];

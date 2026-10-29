@@ -3,6 +3,7 @@ using Unciv.Assets;
 using Unciv.Commands;
 using Unciv.GodotClient.Assets;
 using Unciv.GodotClient.Play;
+using Unciv.GodotClient.Ui;
 using Unciv.Harness;
 using Unciv.Models;
 using Unciv.Queries.Empire;
@@ -69,31 +70,34 @@ public sealed class EspionageScenario : Scenario
                     && spec.Locations.Single(it => it.IsHideout).SpiesPresent == hidden.Name && spec.Locations.Single(it => it.CityId == null && it.Name == cityStateCity.Name).SpiesPresent == resident.Name
                     && !screen.Espionage.AssignButton.Disabled && screen.Espionage.MoveButton(hidden.Name)?.Disabled == false;
             }),
-            new AssertQuery("only the spy in the city-state has a coup button, with the engine's odds", () =>
+            new AssertQuery("only the spy in the city-state has a coup button: the short text with the engine's odds, the whole sentence as its tooltip", () =>
             {
-                string expected = $"Stage a coup ({KotlinMath.RoundToInt(Entry(resident).CoupChance.NotNull() * 100f)}% chance)";
-                return screen.Espionage.CoupButton(hidden.Name) == null && screen.Espionage.CoupButton(resident.Name)?.Text == expected;
+                string percent = KotlinMath.RoundToInt(Entry(resident).CoupChance.NotNull() * 100f).ToString(System.Globalization.CultureInfo.InvariantCulture);
+                var button = screen.Espionage.CoupButton(resident.Name);
+                return screen.Espionage.CoupButton(hidden.Name) == null && button?.Text == $"Coup {percent}%" && button.TooltipText == $"Stage a coup ({percent}% chance)";
             }),
-            new AssertQuery("the coup button is fully inside the 640px screen and its whole label is shown (wrapped, never clipped)", () =>
+            new AssertQuery("the spy table sits in a frame, fits the 640px screen with every row action inside it and the footer holds the primary Assign spies button", () =>
             {
-                var button = screen.Espionage.CoupButton(resident.Name).NotNull();
-                var rect = button.GetGlobalRect();
-                return rect.Position.X >= 0 && rect.End.X <= screen.GetViewportRect().Size.X && button.AutowrapMode != TextServer.AutowrapMode.Off
-                    && button.GetCombinedMinimumSize().X <= rect.Size.X;
+                var table = screen.Espionage.FindChild("SpyData", true, false) as DataTable;
+                var rect = screen.Espionage.CoupButton(resident.Name).NotNull().GetGlobalRect();
+                float width = screen.GetViewportRect().Size.X;
+                return table != null && table.RowCount == 2 && table.Cell(0, 1).HorizontalAlignment == HorizontalAlignment.Right && table.GetGlobalRect().End.X <= width
+                    && rect.Position.X >= 0 && rect.End.X <= width && rect.Size.X > 0 && screen.Espionage.Frame.TitleText == "Espionage"
+                    && screen.Espionage.Frame.FooterActions.Contains(screen.Espionage.AssignButton) && screen.Espionage.AssignButton.ThemeTypeVariation == UiVariants.ButtonPrimary;
             }),
-            // C059 review: the English label is short, so also stretch it to a long translation: the row must stay inside the screen, wrap onto more lines and keep the label whole
-            new Act("give the coup button a long translated-length label", () => screen.Espionage.CoupButton(resident.Name).NotNull().Text =
-                "Stage a coup (35% chance) in this city-state, a long translated label that has to wrap onto several lines instead of widening the table past the screen"),
+            // C059 review, kept in C074: the coup text is short, but a long translation must still not widen the row past the screen (the button clips instead)
+            new Act("give the coup button a long translated-length text", () => screen.Espionage.CoupButton(resident.Name).NotNull().Text =
+                "Stage a coup (35% chance) in this city-state, a long translated label that has to be clipped instead of widening the table past the screen"),
             new WaitFrames(3),
-            new AssertQuery("a long coup label wraps onto several lines inside the 640px screen (the row grows taller, not wider)", () =>
+            new AssertQuery("a long coup text is clipped: the button and the table stay inside the 640px screen", () =>
             {
-                var button = screen.Espionage.CoupButton(resident.Name).NotNull();
-                var rect = button.GetGlobalRect();
-                return rect.Position.X >= 0 && rect.End.X <= screen.GetViewportRect().Size.X && rect.Size.Y > 40f && button.GetCombinedMinimumSize().X <= rect.Size.X;
+                var rect = screen.Espionage.CoupButton(resident.Name).NotNull().GetGlobalRect();
+                var table = screen.Espionage.FindChild("SpyData", true, false) as Control;
+                return rect.Position.X >= 0 && rect.End.X <= screen.GetViewportRect().Size.X && table != null && table.GetGlobalRect().End.X <= screen.GetViewportRect().Size.X;
             }),
-            new Act("restore the coup label", () => screen.Espionage.CoupButton(resident.Name).NotNull().Text = $"Stage a coup ({KotlinMath.RoundToInt(Entry(resident).CoupChance.NotNull() * 100f)}% chance)"),
+            new Act("restore the coup text", () => screen.Espionage.CoupButton(resident.Name).NotNull().Text = $"Coup {KotlinMath.RoundToInt(Entry(resident).CoupChance.NotNull() * 100f)}%"),
             new WaitFrames(3),
-            new Capture("screen", "The espionage screen: the spies with rank, location and action, and the places they can be sent to"),
+            new Capture("screen", "The espionage screen in its frame: a table of the spies with rank, location and action, a Move button and a red coup button at the end of the spy in the city-state, then the table of places and the Assign spies button in the footer"),
 
             new Act("remember the command log", () => logged = session.Log.Count),
             new Click(() => Centre(screen.Espionage.MoveButton(hidden.Name))),
@@ -105,12 +109,14 @@ public sealed class EspionageScenario : Scenario
                 return session.Log.Count == logged && screen.Espionage.SelectedSpy == hidden.Name && screen.Espionage.MoveButton(hidden.Name)?.Text == "Cancel"
                     && shown.SequenceEqual(destinations) && destinations.Contains(romeCity.Id) && screen.Espionage.HereButton("") == null;
             }),
-            new Capture("selecting", "Move was pressed on the first spy: the places it may go to offer Move here and Move became Cancel"),
+            new Capture("selecting", "Move was pressed on the first spy: Move became Cancel and every place the engine offers it shows a Move here button at the end of its row"),
             new Click(() => Centre(screen.Espionage.MoveButton(hidden.Name))),
             new WaitFrames(2),
             new AssertQuery("Cancel clears the selection and the Move here buttons", () =>
                 screen.Espionage.SelectedSpy == null && screen.Espionage.HereButton(romeCity.Id) == null && screen.Espionage.MoveButton(hidden.Name)?.Text == "Move" && session.Log.Count == logged),
             new Click(() => Centre(screen.Espionage.MoveButton(hidden.Name))),
+            new WaitFrames(2),
+            new Act("scroll Rome's Move here into view", () => screen.Espionage.EnsureVisible(screen.Espionage.HereButton(romeCity.Id).NotNull())),
             new WaitFrames(2),
             new Click(() => Centre(screen.Espionage.HereButton(romeCity.Id))),
             new WaitFrames(3),
@@ -125,8 +131,8 @@ public sealed class EspionageScenario : Scenario
             new WaitFrames(3),
             new AssertQuery("the coup button staged the coup (SetSpyCoup) and now offers to call it off", () =>
                 session.Log.Count == logged + 2 && session.Log[^1].Type == "set-spy-coup" && session.Log[^1].Payload.GetProperty("Stage").GetBoolean() && resident.Action == SpyAction.Coup
-                && screen.Espionage.CoupButton(resident.Name)?.Text == "Call off the coup"),
-            new Capture("coup", "The spy in the city-state is staging a coup; its button now calls it off"),
+                && screen.Espionage.CoupButton(resident.Name)?.Text == "Call off" && screen.Espionage.CoupButton(resident.Name)?.TooltipText == "Call off the coup"),
+            new Capture("coup", "The spy in the city-state is staging a coup; its button now says Call off"),
             new Click(() => Centre(screen.Espionage.CoupButton(resident.Name))),
             new WaitFrames(3),
             new AssertQuery("calling it off sent SetSpyCoup with Stage false", () =>

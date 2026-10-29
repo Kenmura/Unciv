@@ -59,10 +59,12 @@ public sealed class OverviewScenario : Scenario
             new AssertQuery("the overview opens on the stats tab with the engine's numbers", () =>
             {
                 var overview = Ask(new EmpireOverviewQuery());
-                var lines = OverviewModel.StatsLines(overview);
+                var entries = OverviewModel.StatsCards(overview).SelectMany(it => it.Entries).ToList();
+                var cards = screen.Overview.FindChild("StatsCards", true, false) as GridContainer;
                 return screen.IsOverviewVisible && screen.Overview.SelectedTab == OverviewModel.Stats && overview.Gold == human.Gold && overview.Cities == human.Cities.Count
-                    && lines.Any(it => it.StartsWith("Gold: " + human.Gold, StringComparison.Ordinal)) && screen.Overview.Notice(OverviewModel.Stats) == null
-                    && screen.Overview.Tables(OverviewModel.Stats).Count == 1;
+                    && entries.Any(it => it.Label == "Gold" && it.Value == human.Gold.ToString(System.Globalization.CultureInfo.InvariantCulture)) && screen.Overview.Notice(OverviewModel.Stats) == null
+                    && screen.Overview.Tables(OverviewModel.Stats).Count == 1 && screen.Overview.Frame.TitleText == "Overview" && screen.Overview.Frame.CloseButton.Visible
+                    && cards is { Columns: 2 } && cards.GetChildCount() == 4 && cards.GetChildren().OfType<Control>().All(it => it.Size.X > 0 && it.GetGlobalRect().End.X <= screen.GetViewportRect().Size.X);
             }),
             new Capture("stats", "Stats: the empire's per-turn numbers, score breakdown and known civilizations"),
 
@@ -72,7 +74,27 @@ public sealed class OverviewScenario : Scenario
                 screen.Overview.SelectedTab == OverviewModel.Cities && screen.Overview.Tables(OverviewModel.Cities)[0].Rows.Select(it => it.Key).SequenceEqual(EngineCities())
                 && screen.Overview.Tables(OverviewModel.Cities)[0].Rows.Count == 2
                 && screen.Overview.Tables(OverviewModel.Cities)[0].Rows.Single(it => it.Key == puppet).Cells[5] == "Puppet"),
-            new Capture("cities", "Cities: one row per city with population, health, current build and notes"),
+            new AssertQuery("the table is typed: numbers are right-aligned, the table fits the screen and each row has its own Go to button", () =>
+            {
+                var data = screen.Overview.DataTables(OverviewModel.Cities)[0];
+                return data.Cell(0, 1).HorizontalAlignment == HorizontalAlignment.Right && data.Cell(0, 0).HorizontalAlignment == HorizontalAlignment.Left
+                    && data.GetGlobalRect().Position.X >= 0 && data.GetGlobalRect().End.X <= screen.GetViewportRect().Size.X
+                    && EngineCities().All(it => screen.Overview.JumpButton(OverviewModel.Cities, it) is { } jump && jump.IsVisibleInTree());
+            }),
+            new Capture("cities", "Cities: a sortable table of the capital and a puppet city with population, health, current build and notes, and a Go to button at the end of each row"),
+            new Click(() => Centre(screen.Overview.DataTables(OverviewModel.Cities)[0].HeaderButton(0))),
+            new WaitFrames(2),
+            new AssertQuery("clicking the City header sorts ascending by name (a triangle shows) and a second click reverses it; the Go to buttons stay with their rows", () =>
+            {
+                var data = screen.Overview.DataTables(OverviewModel.Cities)[0];
+                var names = EngineCities().Order(StringComparer.Ordinal).ToList();
+                bool ascending = data.SortColumn == 0 && data.SortAscending && Enumerable.Range(0, data.RowCount).Select(i => data.CellText(i, 0)).SequenceEqual(names)
+                    && data.HeaderButton(0).Text.EndsWith('▲');
+                data.SortBy(0, false);
+                bool descending = Enumerable.Range(0, data.RowCount).Select(i => data.CellText(i, 0)).SequenceEqual(names.AsEnumerable().Reverse())
+                    && data.HeaderButton(0).Text.EndsWith('▼');
+                return ascending && descending && screen.Overview.JumpButton(OverviewModel.Cities, puppet)?.GetParent().GetIndex() == data.Cell(names.Count - 1 - names.IndexOf(puppet), 0).GetParent().GetIndex() + 6;
+            }),
 
             new Click(() => Tab(OverviewModel.Units)),
             new WaitFrames(2),

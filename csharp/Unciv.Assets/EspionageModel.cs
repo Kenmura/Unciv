@@ -5,8 +5,8 @@ using Unciv.Utils;
 
 namespace Unciv.Assets;
 
-/// <summary>One spy of the espionage screen. <see cref="CanMove"/> is true when the engine offers the spy any destination; <see cref="Coup"/> is null unless the engine allows a coup.</summary>
-public sealed record EspionageSpyRow(string Name, string Rank, string Location, string Action, bool Alive, bool CanMove, SetSpyCoup? Coup, string CoupLabel);
+/// <summary>One spy of the espionage screen. <see cref="CoupShort"/> is the coup button's text ("Coup 35%", "Call off"; <see cref="CoupLabel"/> is the whole sentence, shown as its tooltip). <see cref="CanMove"/> is true when the engine offers the spy any destination; <see cref="Coup"/> is null unless the engine allows a coup.</summary>
+public sealed record EspionageSpyRow(string Name, string Rank, string Location, string Action, bool Alive, bool CanMove, SetSpyCoup? Coup, string CoupLabel, string CoupShort = "");
 
 /// <summary>One place of the screen's location table. <see cref="CityId"/> is null for the hideout and for a city the engine offers no spy (a spy of the viewer merely sits there). <see cref="SpiesPresent"/> lists only the viewer's own spies.</summary>
 public sealed record EspionageLocationRow(string? CityId, string Name, string Civ, string SpiesPresent, bool IsHideout = false);
@@ -32,11 +32,11 @@ public static class EspionageModel
         var spies = result.Spies.Select(spy =>
         {
             bool staging = spy.Action == "Coup";
-            string coupLabel = spy.CanDoCoup && spy.CoupChance is { } chance
-                ? staging ? "Call off the coup" : $"Stage a coup ({KotlinMath.RoundToInt(chance * 100f).ToString(CultureInfo.InvariantCulture)}% chance)"
-                : "";
+            string percent = spy.CoupChance is { } chance ? KotlinMath.RoundToInt(chance * 100f).ToString(CultureInfo.InvariantCulture) : "";
+            string coupLabel = spy.CanDoCoup && spy.CoupChance != null ? staging ? "Call off the coup" : $"Stage a coup ({percent}% chance)" : "";
+            string coupShort = coupLabel.Length == 0 ? "" : staging ? "Call off" : $"Coup {percent}%";
             return new EspionageSpyRow(spy.Name, N(spy.Rank), spy.IsAlive ? spy.Location : "-", spy.IsAlive ? spy.Action : "Dead", spy.IsAlive,
-                spy.IsAlive && (spy.CanMoveToHideout || spy.Destinations.Count > 0), spy.CanDoCoup ? new SetSpyCoup { Spy = spy.Name, Stage = !staging } : null, coupLabel);
+                spy.IsAlive && (spy.CanMoveToHideout || spy.Destinations.Count > 0), spy.CanDoCoup ? new SetSpyCoup { Spy = spy.Name, Stage = !staging } : null, coupLabel, coupShort);
         }).ToList();
 
         // Cities the engine offers to any spy, plus the ones a spy of the viewer is in already (the engine never offers the spy's own city)
