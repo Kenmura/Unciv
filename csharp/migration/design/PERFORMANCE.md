@@ -13,6 +13,10 @@
 - [Ranked hotspots](#ranked-hotspots)
 - [Result of T262](#result-of-t262)
 - [Targets recorded for T262 and T263](#targets-recorded-for-t262-and-t263)
+- [Parallelism](#parallelism)
+  - [Method and prototype](#method-and-prototype)
+  - [Candidates](#candidates)
+  - [Ordered list of safe candidates and the risks](#ordered-list-of-safe-candidates-and-the-risks)
 - [Follow-ups](#follow-ups)
 <!-- /toc -->
 
@@ -176,6 +180,59 @@ Rejected as not provably identical: civ-level dirty tracking of the refresh, ski
 - T262 (optimise): the top three hotspots are 1 (refresh), 2 (unit moves) and 3 (allocation); target **at least 30% off the late median turn time of the medium scenario**
   (fallback bound from the ticket: 10%), measured as the median of three runs in the same session before and after, with every per-turn hash equal to the golden list.
 - T263 (parallelism): per-recipient view building (hotspot 6) and the per-civ refresh work are the first candidates; the engine turn itself is sequential by rule.
+
+## Parallelism
+
+T263 spike. Rules that frame it: engine logic is single-threaded (BannedSymbols forbids `Thread`, `Parallel`, `Task.Run(Action)`), every per-turn state hash must stay equal to `design/perf-golden.json`, and a candidate is only recommended with a deterministic merge order and a hash-equality proof. Result: **one go (host-side per-recipient view building, outside the engine, behind a default-off switch), everything inside the engine turn is no-go.**
+
+### Method and prototype
+
+The prototype is a patch kept as text, not merged: `design/T263-parallel-prototype.patch` (against `Unciv.Cli/BenchRunner.cs` and a `UCS.Civ` probe point in `GameInfo.UpdateCivilizationState`).
+For the last 5 turns of the medium scenario, around every command it runs the host's per-recipient work (`ViewDeltaBuilder.Capture`, then `BuildWithDiff` + `ProtocolCodec.Encode`) twice from the same inputs: once sequentially (the path that feeds the next snapshot) and once with one task per recipient, alternating which goes first, and compares the encoded frames byte for byte.
+The run also checks `--golden design/perf-golden.json` (exit 0 = all 200 per-turn hashes equal). Machine: 20 logical cores, **shared**, load average between 10 and 88 during the runs, so every number below is a spread, not a point.
+(The bench had only 6 living majors at the end of the medium game, so "8 recipients" means 6.)
+
+| Recipients | Runs | Frames compared | Byte mismatches | Golden hashes | Speed-up of capture+build+encode, parallel vs sequential (each run) | Median |
+|---|---|---|---|---|---|---|
+| 6 | 6 | 3240 | 0 | all equal | 1.33 2.18 2.04 1.46 1.99 1.33 | 1.73x |
+| 3 | 3 | 810 | 0 | all equal | 1.38 1.03 1.05 | 1.05x |
+| 1 | 2 | 180 | 0 | all equal | 0.75 0.85 | 0.80x |
+
+Absolute per run (6 recipients, 90 commands): sequential 1.7-4.2 s, parallel 0.74-2.85 s. The gain is limited by the machine load (the other agents' builds took the cores) and by the allocation rate (the work allocates heavily, so threads contend on the GC); on an idle machine it should be higher, which was not measured. With one recipient there is nothing to parallelise and the task overhead makes it slower, so the switch must also fall back to the sequential path for fewer than two recipients.
+Capture (before the command) alone gains little (0.5-2.5x, noisy); the snapshot/diff/encode part carries the gain.
+
+### Candidates
+
+1. **Per-recipient view building in `GameHost`** (`CaptureViewMarks`, `BroadcastDelta`: Capture, SnapshotBuilder.Build, SnapshotDiff.Compute, BuildEvents, Encode).
+   - Shared mutable state: none written. It only reads the engine (GameView/TileMapView/CivView) and writes its own recipient's `PreviousSnapshot` (one recipient per task). Risk: engine getters that lazily fill caches (`??=`: 104 sites in 61 files of Unciv.Core; `KotlinLazy` itself is locked) could race when two recipients read the same object; no mismatch in 4230 frames, but that is evidence, not proof, so the follow-up adds an audit and a guard test.
+   - Merge order: results are collected into an array indexed by session position and sent in the existing `sessions.Values` order; each frame depends only on (state, recipient, seq), never on another recipient, so the order cannot change any frame (shown above: byte-equal frames).
+   - Engine state hashes: untouched, because the work runs on the host actor between commands while the engine is idle (the actor awaits all tasks before the next command). Golden hashes equal in all 11 runs.
+   - Expected gain: view building is ~5.4 ms per recipient per command, ~110 ms/turn with one player and ~860 ms with eight; measured 1.3-2.2x with 6 recipients under load, so about 860 ms -> 400-650 ms at 8 recipients. No gain for one player.
+Verdict: go (conditional: default-off switch, never for fewer than 2 recipients, preceded by the cache audit). It is no replacement for the incremental diff builder (T178 follow-up), which removes the cost instead of spreading it and also helps one player.
+2. **Per-civ `UpdateCivilizationState` / `RefreshTransientCaches`** (hotspot 1).
+   - Shared mutable state, concrete: `Tile.SetExplored` replaces the tile's `exploredBy` set (copy-on-write on a field shared by all civs, so two civs exploring the same tile lose an update); `CivInfoTransientCache.UpdateViewableTiles` calls `MakeCivilizationsMeet` which mutates both civs' diplomacy dictionaries and `metCiv.AddNotification` (another civ's notification list, order visible in state and hashes); `UpdateCivResources` reads the city states' state, which is why `UpdateCivilizationState` processes city states first (a hard ordering edge, so at least two waves); `CapitalConnectionsFinder` reads every civ's tiles and cities; `CityStats.Update` can fire notifications and `ChooseNextConstruction`.
+   - Merge order: would need a split into read-only compute per civ and a serial apply in civ-index order (city states first), i.e. a rewrite of the refresh, not a wrapper; a plain parallel loop cannot be hash-identical (lost updates and notification order).
+   - Gain bound (Amdahl, measured last-quarter ms per turn of the `UCS.Civ` probe, summed over the 19 passes): majors 36 29 30 27 23 22 ms, city states 3-9 ms each, total about 225 ms per turn, longest civ 36 ms, so at most ~6x on those 225 ms (~35% of an engine turn) before the two-wave constraint, and each of the 19 passes per turn is a separate ~12 ms fork-join. The achievable gain is far below that, while T262-style de-duplication (322 per-civ passes instead of 17) removes the same time without threads.
+Verdict: no-go. Revisit only after the refresh is deduplicated and split into compute and apply phases, and then only the read-only compute part.
+3. **Per-unit visible-tile computation** (`UCS.UnitVisibleTiles`, 40 ms per turn, ~6%).
+   - Read-only `GetViewableTilesList` could be computed in parallel and applied serially, but the apply (explored, meetings, triggered uniques) is the shared-state part above and the ceiling is ~6% of a turn.
+Verdict: no-go (ceiling too low for the risk; an algorithmic cache, listed under follow-ups, is the better route).
+4. **AI decisions per civ** (`AI.AutomateUnits` 156 ms, `AutomateUnitMoves` 142 ms per turn).
+   - Each decision mutates the shared game immediately (unit moves, city founding, diplomacy) and later civs see the result; all of it draws from the one seeded RNG in call order. Speculative parallel evaluation would need re-validation of every decision against the changed state, which changes the outcome whenever it invalidates.
+Verdict: no-go. A read-only sub-step (a pathfinding query within one unit's move) is possible but fine-grained and per-call dispatch cost exceeds it (0.64 ms per unit move).
+5. **State hash computation** (`Hash.FullHash`: 5 ms per human turn start, under 2% of a turn).
+Verdict: no-go (nothing to gain; serialising a live game concurrently with the engine would need a copy).
+6. **Per-civ start/end of turn** (`Start.Cities` 47 ms, `End.Cities` 10 ms).
+   - Share the RNG, notifications and the same cross-civ reads as 2.
+Verdict: no-go.
+7. **Map generation** (game start only, not turn work).
+   - Consumes one RNG sequentially in step order; the spike did not measure it because it does not occur during a game.
+Verdict: no-go.
+
+### Ordered list of safe candidates and the risks
+
+1. Cache-write audit plus a read-only guard for host view building (precondition). 2. Parallel per-recipient view building behind a default-off host option. Nothing else is safe today.
+Risks: lazy `??=` caches read from several threads (audit), allocation pressure making the gain smaller than the core count suggests (GC settings, such as concurrent GC or server GC, are a host decision to measure with it), thread-pool starvation of the host's network tasks on a small server (cap the degree of parallelism), and the temptation to extend the pattern into the engine turn (excluded above).
 
 ## Follow-ups
 

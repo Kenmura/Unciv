@@ -1,0 +1,133 @@
+diff --git a/csharp/Unciv.Cli/BenchRunner.cs b/csharp/Unciv.Cli/BenchRunner.cs
+index ec429848e5..c6f122a3ee 100644
+--- a/csharp/Unciv.Cli/BenchRunner.cs
++++ b/csharp/Unciv.Cli/BenchRunner.cs
+@@ -54,7 +54,7 @@ public static class BenchRunner
+     ];
+ 
+     // The phases that are attributed to a civ (the subject of the scope).
+-    private static readonly string[] CivPhases = ["TurnManager.StartTurn", "TurnManager.AutomateTurn", "TurnManager.EndTurn"];
++    private static readonly string[] CivPhases = ["TurnManager.StartTurn", "TurnManager.AutomateTurn", "TurnManager.EndTurn", "UCS.Civ"];
+ 
+     private static readonly JsonSerializerOptions JsonOptions = new() { WriteIndented = true };
+ 
+@@ -79,6 +79,7 @@ public static class BenchRunner
+         };
+         var options = new Options(!noProbe, turns, hostTurns, recipients, ruleset);
+         var results = scenarios.Select(it => RunAndPrint(it, options, output)).ToList();
++        ParProto.Print(recipients);
+         var report = new JsonObject
+         {
+             ["machine"] = Machine(),
+@@ -444,6 +445,19 @@ public static class BenchRunner
+     /// view before, build the snapshot diff and delta after, encode it. Measured on its own recorder around each command; the time it takes is added to the
+     /// engine recorder's skew, so the engine numbers are those of a game without recipients. Events are not passed (the filtered-event part is small).
+     /// </summary>
++    private static class ParProto
++    {
++        public static long SeqCapture, ParCapture, SeqBuild, ParBuild;
++        public static int Commands, Frames, Mismatches;
++
++        public static void Print(int recipients)
++        {
++            Console.Error.WriteLine($"PARPROTO recipients={recipients} commands={Commands} frames={Frames} mismatches={Mismatches} "
++                + $"capture seq={Ms(SeqCapture)}ms par={Ms(ParCapture)}ms build+encode seq={Ms(SeqBuild)}ms par={Ms(ParBuild)}ms "
++                + $"speedup={(SeqCapture + SeqBuild) / (double)Math.Max(1, ParCapture + ParBuild):F2}x");
++        }
++    }
++
+     private sealed class HostMeasurement(GameInfo game, BenchProbe probe, int recipientCount, ScenarioResult result)
+     {
+         private readonly Recorder recorder = new();
+@@ -462,22 +476,46 @@ public static class BenchRunner
+             probe.AfterCommand = After;
+         }
+ 
++        // T263 PROTOTYPE (not merged): capture / build / encode run once sequentially (the real path) and once with one task per recipient from the
++        // same inputs (alternating which goes first); the encoded frames must be identical.
++        private List<ViewDeltaBuilder.ViewMark> parMarks = [];
++
+         private void Before() => Measure(() =>
+         {
+             marks = [];
++            var parFirst = (seq & 1) == 0;
++            if (parFirst) ParCapture();
++            var t0 = Timestamp();
+             foreach (var (civ, _) in recipients)
+             {
+                 recorder.Enter("Host.Capture", null);
+                 marks.Add(ViewDeltaBuilder.Capture(game, civ));
+                 recorder.Exit("Host.Capture", null);
+             }
++            ParProto.SeqCapture += Timestamp() - t0;
++            if (!parFirst) ParCapture();
+         });
+ 
++        private void ParCapture()
++        {
++            var t0 = Timestamp();
++            var tasks = recipients.Select(it => Task.Run(() => ViewDeltaBuilder.Capture(game, it.Civ))).ToArray();
++            Task.WaitAll(tasks);
++            parMarks = tasks.Select(it => it.Result).ToList();
++            ParProto.ParCapture += Timestamp() - t0;
++        }
++
+         private void After() => Measure(() =>
+         {
+             var status = new TurnStatusDto { Ended = [], Deadline = null, Phase = "Playing" };
+             seq++;
+             result.HostCommands++;
++            var befores = recipients.Select(it => it.Snapshot).ToList();
++            var parFirst = (seq & 1) == 0;
++            string[] parFrames = [];
++            if (parFirst) parFrames = ParBuild(befores, status);
++            var t0 = Timestamp();
++            var frames = new List<string>();
+             for (var i = 0; i < recipients.Count; i++)
+             {
+                 var (civ, before) = recipients[i];
+@@ -485,12 +523,31 @@ public static class BenchRunner
+                 var (delta, after) = ViewDeltaBuilder.BuildWithDiff(game, civ, before, marks[i], [], seq, status);
+                 recorder.Exit("Host.BuildDelta", null);
+                 recorder.Enter("Host.Encode", null);
+-                _ = ProtocolCodec.Encode(delta);
++                frames.Add(ProtocolCodec.Encode(delta));
+                 recorder.Exit("Host.Encode", null);
+                 recipients[i] = (civ, after);
+             }
++            ParProto.SeqBuild += Timestamp() - t0;
++            if (!parFirst) parFrames = ParBuild(befores, status);
++            ParProto.Commands++;
++            for (var i = 0; i < frames.Count; i++)
++            {
++                ParProto.Frames++;
++                if (frames[i] != parFrames[i]) ParProto.Mismatches++;
++            }
+         });
+ 
++        private string[] ParBuild(List<ClientSnapshot> befores, TurnStatusDto status)
++        {
++            var t0 = Timestamp();
++            var s = seq;
++            var tasks = Enumerable.Range(0, recipients.Count).Select(i => Task.Run(() =>
++                ProtocolCodec.Encode(ViewDeltaBuilder.BuildWithDiff(game, recipients[i].Civ, befores[i], parMarks[i], [], s, status).Delta))).ToArray();
++            Task.WaitAll(tasks);
++            ParProto.ParBuild += Timestamp() - t0;
++            return tasks.Select(it => it.Result).ToArray();
++        }
++
+         private void Measure(Action work)
+         {
+             var start = Timestamp();
+diff --git a/csharp/Unciv.Core/Logic/GameInfo.cs b/csharp/Unciv.Core/Logic/GameInfo.cs
+index a244e96f12..bff65da16b 100644
+--- a/csharp/Unciv.Core/Logic/GameInfo.cs
++++ b/csharp/Unciv.Core/Logic/GameInfo.cs
+@@ -770,6 +770,7 @@ public partial class GameInfo : IsPartOfGameInfoSerialization, IHasGameInfoSeria
+             // update city-state resource first since the happiness of major civ depends on it.
+             // See issue: https://github.com/yairm210/Unciv/issues/7781
+             .OrderByDescending(it => it.IsCityState).ToList())
++        using (TurnProbe.Measure("UCS.Civ", civInfo.CivId))
+         {
+             using (TurnProbe.Measure("UCS.UnitVisibleTiles"))
+                 foreach (var unit in civInfo.Units.GetCivUnits().ToList())
