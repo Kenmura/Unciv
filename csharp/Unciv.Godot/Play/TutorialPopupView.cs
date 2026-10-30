@@ -51,7 +51,7 @@ public partial class TutorialPopupView : Modal
     {
         Current = page;
         SetHeader(page.Title);
-        body.CustomMinimumSize = new Vector2(Fit(480), 0f);
+        Fit(480, body); // T323: re-fitted on a live resize
         body.Text = page.Text.TrText();
         counter.Visible = page.StepCount > 1;
         var inv = System.Globalization.CultureInfo.InvariantCulture;

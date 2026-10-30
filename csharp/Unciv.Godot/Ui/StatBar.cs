@@ -28,7 +28,7 @@ public partial class StatBar : HBoxContainer
         SizeFlagsHorizontal = SizeFlags.ExpandFill;
         Caption = caption;
         SetProgress(value, max);
-        Restyle();
+        theme.Fit(this, Restyle); // T323: a window resize can change the breakpoint without a scale change; Fit also runs once now
     }
 
     public string Stat { get; }
@@ -53,14 +53,6 @@ public partial class StatBar : HBoxContainer
         bar.MaxValue = double.IsFinite(max) ? Math.Max(max, 0) : 0;
         bar.Value = double.IsFinite(value) ? Math.Clamp(value, 0, bar.MaxValue) : 0;
     }
-
-    public override void _EnterTree()
-    {
-        theme.ScaleChanged += Restyle;
-        Restyle();
-    }
-
-    public override void _ExitTree() => theme.ScaleChanged -= Restyle;
 
     private void Restyle()
     {

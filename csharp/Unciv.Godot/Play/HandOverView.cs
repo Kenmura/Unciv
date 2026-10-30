@@ -64,7 +64,7 @@ public partial class HandOverView : Modal
     {
         CivId = view.CivId;
         SetHeader(view.Heading);
-        message.CustomMinimumSize = new Vector2(Fit(Modal.MinWidth), 0);
+        Fit(Modal.MinWidth, message); // T323: re-fitted on a live resize
         message.Text = view.Message.TrText();
         ready.Text = view.ButtonText.TrText();
         failure.Visible = false;

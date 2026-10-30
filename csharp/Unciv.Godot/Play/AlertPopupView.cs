@@ -44,7 +44,7 @@ public partial class AlertPopupView : Modal
     {
         Current = popup;
         SetHeader(popup.Title, icon: AssetKey.Of(RulesetAssetKeys.UiIcon, "ExclamationMark"));
-        body.CustomMinimumSize = new Vector2(Fit(440), 0f);
+        Fit(440, body); // T323: re-fitted on a live resize
         body.Text = popup.Body.TrText();
         byId.Clear();
         ids.Clear();

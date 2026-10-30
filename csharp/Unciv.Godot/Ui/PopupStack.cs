@@ -58,8 +58,9 @@ public partial class PopupStack : Control
         AddChild(modal);
         modal.Init(theme);
         modal.SetHeader(spec.Title);
-        float width = modal.Fit(Modal.MinWidth);
-        modal.Body.AddChild(new Label { Text = spec.Body.TrText(), AutowrapMode = TextServer.AutowrapMode.WordSmart, CustomMinimumSize = new Vector2(width, 0) });
+        var bodyLabel = new Label { Text = spec.Body.TrText(), AutowrapMode = TextServer.AutowrapMode.WordSmart };
+        modal.Fit(Modal.MinWidth, bodyLabel); // T323: the wrap width follows a live resize
+        modal.Body.AddChild(bodyLabel);
         modal.SetActions(spec.Choices.Select((choice, i) =>
         {
             int index = i;

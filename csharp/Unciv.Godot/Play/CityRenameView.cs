@@ -50,7 +50,7 @@ public partial class CityRenameView : Modal
     {
         cityId = id;
         current = name;
-        nameField.CustomMinimumSize = new Vector2(Fit(360), 0);
+        Fit(360, nameField); // T323: re-fitted on a live resize
         nameField.Text = name;
         Update();
         Visible = true;

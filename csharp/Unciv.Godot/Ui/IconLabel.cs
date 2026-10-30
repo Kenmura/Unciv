@@ -17,8 +17,7 @@ public partial class IconLabel : HBoxContainer
             ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize,
             StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered,
             TextureFilter = TextureFilterEnum.LinearWithMipmaps,
-            CustomMinimumSize = new Vector2(theme.Px(UiTheme.IconSize), theme.Px(UiTheme.IconSize)),
-        };
+        }.FitMin(theme, UiTheme.IconSize, UiTheme.IconSize); // T323: follows the live scale
         AddChild(picture);
         AddChild(label);
         label.VerticalAlignment = VerticalAlignment.Center;
@@ -26,7 +25,7 @@ public partial class IconLabel : HBoxContainer
         if (trim)
         {
             label.TextOverrunBehavior = TextServer.OverrunBehavior.TrimEllipsis;
-            label.CustomMinimumSize = new Vector2(theme.Px(40), 0f);
+            label.FitMin(theme, 40);
             label.SizeFlagsHorizontal = SizeFlags.ExpandFill;
             label.TooltipText = text;
             label.MouseFilter = MouseFilterEnum.Pass;

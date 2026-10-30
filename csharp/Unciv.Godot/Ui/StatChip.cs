@@ -16,7 +16,7 @@ public partial class StatChip : HBoxContainer
     public StatChip(UiTheme theme, string stat, string text, int? deltaValue = null)
     {
         Stat = stat;
-        AddThemeConstantOverride("separation", theme.Px(UiTokens.S1));
+        this.FitConstant(theme, "separation", UiTokens.S1); // T323
         AddChild(new IconBadge(theme, AssetKey.Of(RulesetAssetKeys.StatIcon, stat), ProceduralAssets.ToColor(PlaceholderPalette.ForStat(stat)), ProceduralAssets.ToColor(UiTokens.TextPrimary), 20));
         AddChild(valueLabel);
         AddChild(deltaLabel);

@@ -46,7 +46,7 @@ public partial class TradeProposalView : Modal
     {
         Current = popup;
         SetHeader(popup.Title);
-        body.CustomMinimumSize = new Vector2(Fit(440), 0f);
+        Fit(440, body); // T323: re-fitted on a live resize
         foreach (var child in body.GetChildren())
         {
             body.RemoveChild(child); // at once: a queued free would leave the old lines in the layout until the frame ends

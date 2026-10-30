@@ -15,10 +15,11 @@ public partial class ListPanel : PanelContainer
     private readonly ButtonGroup group = new();
     private readonly List<Button> items = [];
 
+    // T323: size is in unscaled pixels and follows the live scale
     public ListPanel(UiTheme theme, string title, Vector2 size)
     {
         this.theme = theme;
-        CustomMinimumSize = size;
+        this.FitMin(theme, (int)size.X, (int)size.Y);
         var column = new VBoxContainer { SizeFlagsVertical = SizeFlags.ExpandFill };
         AddChild(column);
         TitleLabel = new Label { Text = title.TrText() };
@@ -61,7 +62,7 @@ public partial class ListPanel : PanelContainer
         {
             button.Icon = theme.Icon(key);
             button.ExpandIcon = true;
-            button.AddThemeConstantOverride("icon_max_width", theme.Px(UiTheme.IconSize));
+            button.FitConstant(theme, "icon_max_width", UiTheme.IconSize);
         }
         button.Pressed += () => Selected?.Invoke(index);
         items.Add(button);

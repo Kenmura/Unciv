@@ -38,6 +38,9 @@ public partial class Modal : Control
     private readonly VBoxContainer footer = new() { Name = "ModalFooter" };
     private UiTheme? theme;
     private bool opaque;
+    private int preferredWidth;
+    private Control[] wrapped = [];
+    private (ScrollContainer Scroll, Control Content, float Share)? scrollFit;
 
     public Modal()
     {
@@ -89,9 +92,16 @@ public partial class Modal : Control
         theme = uiTheme;
         Theme = uiTheme.Theme;
         panel.Bind(uiTheme, UiTokens.RadiusPanel);
-        column.AddThemeConstantOverride("separation", uiTheme.Px(UiTokens.S3));
-        headerRow.AddThemeConstantOverride("separation", uiTheme.Px(UiTokens.S3));
-        footer.AddThemeConstantOverride("separation", uiTheme.Px(UiTokens.S2));
+        // T323: the separations, the header icon, the panel width, the wrapped body controls and the scroll height follow the live window
+        uiTheme.Fit(this, () =>
+        {
+            column.AddThemeConstantOverride("separation", uiTheme.Px(UiTokens.S3));
+            headerRow.AddThemeConstantOverride("separation", uiTheme.Px(UiTokens.S3));
+            footer.AddThemeConstantOverride("separation", uiTheme.Px(UiTokens.S2));
+            if (headerIcon.Visible) headerIcon.CustomMinimumSize = new Vector2(uiTheme.Px(40), uiTheme.Px(40));
+            if (preferredWidth > 0) ApplyWidth();
+            if (scrollFit is { } sf && IsInstanceValid(sf.Scroll) && IsInstanceValid(sf.Content)) ApplyScroll(sf.Scroll, sf.Content, sf.Share);
+        });
         ApplyScrim();
     }
 
@@ -126,17 +136,35 @@ public partial class Modal : Control
     /// Sizes the panel for <paramref name="preferredWidth"/> unscaled pixels (clamped to <see cref="MinWidth"/>..<see cref="MaxWidth"/> and to the window) and returns the width
     /// the owner's body text can wrap at. Call before filling <see cref="Body"/>, while the modal is in the tree.
     /// </summary>
-    public float Fit(int preferredWidth)
+    public float Fit(int preferredWidth, params Control[] wrapping)
+    {
+        _ = theme ?? throw new InvalidOperationException("Init first");
+        this.preferredWidth = preferredWidth;
+        wrapped = wrapping;
+        return ApplyWidth();
+    }
+
+    /// <summary>The panel's minimum width at the live scale and window; the controls given to <see cref="Fit"/> get the body width as their minimum width again.</summary>
+    private float ApplyWidth()
     {
         var ui = theme ?? throw new InvalidOperationException("Init first");
         float window = IsInsideTree() ? GetViewportRect().Size.X : 640f;
         float width = Math.Min(ui.Px(Math.Clamp(preferredWidth, MinWidth, MaxWidth)), window * ViewportShare);
         panel.CustomMinimumSize = new Vector2(width, 0);
-        return Math.Max(ui.Px(120), width - 2 * ui.Px(UiTokens.S4) - 2 * ui.Px(UiTokens.BorderWidth));
+        float body = Math.Max(ui.Px(120), width - 2 * ui.Px(UiTokens.S4) - 2 * ui.Px(UiTokens.BorderWidth));
+        foreach (var it in wrapped)
+            if (IsInstanceValid(it)) it.CustomMinimumSize = new Vector2(body, it.CustomMinimumSize.Y);
+        return body;
     }
 
     /// <summary>C077: sizes a scroll area that holds <paramref name="content"/> in the body to the content's height, but at most <paramref name="share"/> of the window, so a tall body scrolls and the footer stays on screen. Call after the content is filled.</summary>
     public void FitScroll(ScrollContainer scroll, Control content, float share = 0.55f)
+    {
+        scrollFit = (scroll, content, share);
+        ApplyScroll(scroll, content, share);
+    }
+
+    private void ApplyScroll(ScrollContainer scroll, Control content, float share)
     {
         float window = IsInsideTree() ? GetViewportRect().Size.Y : 480f;
         scroll.CustomMinimumSize = new Vector2(scroll.CustomMinimumSize.X, Math.Min(content.GetCombinedMinimumSize().Y, window * share));
@@ -162,8 +190,16 @@ public partial class Modal : Control
             return;
         }
         var row = new HFlowContainer { Name = "ModalActions", Alignment = FlowContainer.AlignmentMode.End };
-        row.AddThemeConstantOverride("h_separation", theme?.Px(UiTokens.S2) ?? UiTokens.S2);
-        row.AddThemeConstantOverride("v_separation", theme?.Px(UiTokens.S2) ?? UiTokens.S2);
+        if (theme != null)
+        {
+            row.FitConstant(theme, "h_separation", UiTokens.S2);
+            row.FitConstant(theme, "v_separation", UiTokens.S2);
+        }
+        else
+        {
+            row.AddThemeConstantOverride("h_separation", UiTokens.S2);
+            row.AddThemeConstantOverride("v_separation", UiTokens.S2);
+        }
         foreach (var (button, _) in actions.OrderBy(it => Order(it.Role))) row.AddChild(button);
         footer.AddChild(row);
     }

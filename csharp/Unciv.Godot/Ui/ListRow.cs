@@ -13,6 +13,7 @@ public partial class ListRow : Button
 {
     private readonly UiTheme theme;
     private readonly HBoxContainer content = new();
+    private readonly TextureRect? iconRect;
     private readonly Label titleLabel = new() { ThemeTypeVariation = UiVariants.LabelBodyStrong, VerticalAlignment = VerticalAlignment.Center };
     private readonly Label subtitleLabel = new() { ThemeTypeVariation = UiVariants.LabelSmall, Visible = false };
     private readonly Label trailingLabel = new() { ThemeTypeVariation = UiVariants.LabelNumber, VerticalAlignment = VerticalAlignment.Center, Visible = false };
@@ -28,18 +29,14 @@ public partial class ListRow : Button
         SetMeta(IconButton.LabelMeta, title);
         content.MouseFilter = MouseFilterEnum.Ignore;
         content.SetAnchorsPreset(LayoutPreset.FullRect);
-        content.OffsetLeft = theme.Px(UiTokens.S3);
-        content.OffsetRight = -theme.Px(UiTokens.S3);
-        content.AddThemeConstantOverride("separation", theme.Px(UiTokens.S2));
         if (icon is { } key)
         {
-            content.AddChild(new TextureRect
+            content.AddChild(iconRect = new TextureRect
             {
                 Texture = theme.Icon(key),
                 ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize,
                 StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered,
                 TextureFilter = TextureFilterEnum.LinearWithMipmaps,
-                CustomMinimumSize = new Vector2(theme.Px(UiTheme.IconSize), theme.Px(UiTheme.IconSize)),
                 SizeFlagsVertical = SizeFlags.ShrinkCenter,
                 MouseFilter = MouseFilterEnum.Ignore,
             });
@@ -77,6 +74,7 @@ public partial class ListRow : Button
         trailingLabel.Visible = !string.IsNullOrEmpty(trailing);
         trailingLabel.Text = trailing ?? "";
         Toggled += _ => QueueRedraw();
+        theme.Fit(this, Refit); // T323: margins, separation, icon and height follow the live window
     }
 
     /// <summary>The untranslated title (also the harness handle).</summary>
@@ -112,6 +110,11 @@ public partial class ListRow : Button
     /// <summary>The row is as tall as its text needs (the one-line height of a control at least), because a button does not size itself from its children.</summary>
     private void Refit()
     {
+        content.OffsetLeft = theme.Px(UiTokens.S3);
+        content.OffsetRight = -theme.Px(UiTokens.S3);
+        content.AddThemeConstantOverride("separation", theme.Px(UiTokens.S2));
+        if (iconRect != null) iconRect.CustomMinimumSize = new Vector2(theme.Px(UiTheme.IconSize), theme.Px(UiTheme.IconSize));
+        QueueRedraw();
         if (!IsInsideTree()) return;
         float height = content.GetCombinedMinimumSize().Y + 2 * theme.Px(UiTokens.S1);
         CustomMinimumSize = new Vector2(0, Math.Max(Math.Max(theme.Px(UiTokens.RowHeight), theme.MinTargetPx), height));

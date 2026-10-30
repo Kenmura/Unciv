@@ -52,7 +52,8 @@ public partial class TooltipHost : Control
         this.theme = theme;
         Theme = theme.Theme; // the game screen is not under a ScreenManager: without its own theme the tip came out as a bare grey box
         this.Fill(); MouseFilter = MouseFilterEnum.Ignore;
-        text.CustomMinimumSize = new Vector2(theme.Px(MinTextWidth), 0);
+        // T323: the tip's text width follows the live scale (a shown tip is re-measured, a hidden one is reset to the minimum)
+        theme.Fit(this, () => text.CustomMinimumSize = new Vector2(panel.Visible ? TextWidth() : theme.Px(MinTextWidth), 0));
         panel.MouseFilter = MouseFilterEnum.Ignore;
         text.MouseFilter = MouseFilterEnum.Ignore;
         panel.AddChild(text);
@@ -64,6 +65,9 @@ public partial class TooltipHost : Control
     public bool IsShowing => panel.Visible;
 
     public string ShownText => text.Text;
+
+    /// <summary>The minimum width of the tip's text now (the harness checks that it follows the live scale).</summary>
+    public float TextMinWidth => text.CustomMinimumSize.X;
 
     public Control? Hovered => hovered;
 

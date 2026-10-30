@@ -211,6 +211,9 @@ public sealed class LayoutMatrixScenario : Scenario
         steps.Add(new Act("open options", () => M().Push(new OptionsScreen(run.Settings, T(), null, ["Retro", "Neon"]))));
         steps.AddRange(check(at, "options", () => M().Top.NotNull()));
         steps.Add(new Act("back", () => M().Pop()));
+        steps.Add(new Act("show the shared widgets", () => M().Push(at.Gallery = new WidgetGallery(T()))));
+        steps.AddRange(check(at, "widgets", () => M().Top.NotNull()));
+        steps.Add(new Act("back", () => M().Pop()));
         steps.Add(new Act("show a modal", () => M().Popups.Show(new PopupSpec("Leave the game?", "Progress since the last save is lost.", [new PopupChoice("Cancel"), new PopupChoice("Leave", null, ChoiceRole.Primary)]))));
         steps.AddRange(check(at, "modal", () => M().Popups));
         steps.Add(new Act($"{at.Size}: free the menus", () => at.Sub.NotNull().QueueFree()));
@@ -234,6 +237,22 @@ public sealed class LayoutMatrixScenario : Scenario
             }));
             steps.AddRange(Check(at, name, root));
             steps.Add(new AssertQuery($"{name} {label}: the main menu column follows the live scale", () => name != "main-menu" || MenuColumnWidth(root()) == at.Theme.NotNull().Px(260)));
+            // T323: the join column and the shared widgets (list row, list panel, icon label, stat chip, stat bar, tooltip) and the modal are at the live scale, not the one they were built at
+            steps.Add(new AssertQuery($"{name} {label}: the join column follows the live scale", () => name != "join" || ColumnWidth(root(), "JoinColumn") == at.Theme.NotNull().Px(420)));
+            steps.Add(new AssertQuery($"{name} {label}: the shared widgets follow the live scale", () =>
+            {
+                if (name != "widgets") return true;
+                var wrong = at.Gallery.NotNull().Wrong(at.Theme.NotNull());
+                foreach (string it in wrong) GD.PrintErr($"[layout-matrix] {at.Size} widgets: {it}");
+                return wrong.Count == 0;
+            }));
+            steps.Add(new AssertQuery($"{name} {label}: the modal panel is at the live width", () =>
+            {
+                if (name != "modal") return true;
+                var ui = at.Theme.NotNull();
+                var modal = root().FindChildren("*", "", true, false).OfType<Modal>().FirstOrDefault();
+                return modal != null && Math.Abs(modal.Frame.CustomMinimumSize.X - Math.Min(ui.Px(Modal.MinWidth), at.Sub.NotNull().Size.X * Modal.ViewportShare)) < 0.5f;
+            }));
         }
         Phase("1366x768", () => { });
         Phase("3840x2160", () => at.Sub.NotNull().Size = new Vector2I(3840, 2160));
@@ -242,6 +261,8 @@ public sealed class LayoutMatrixScenario : Scenario
         Phase("scale-1", () => at.Theme.NotNull().SetScale(1f));
         return [.. steps];
     }
+
+    private static float ColumnWidth(Node screen, string name) => screen.FindChild(name, true, false) is Control column ? column.CustomMinimumSize.X : -1f;
 
     private static float MenuColumnWidth(Node menu) => menu.FindChild("MenuColumn", true, false) is Control column ? column.CustomMinimumSize.X : -1f;
 
@@ -297,6 +318,8 @@ public sealed class LayoutMatrixScenario : Scenario
         public ClientSession? LobbySession { get; set; }
 
         public ServerLobby? Lobby { get; set; }
+
+        public WidgetGallery? Gallery { get; set; }
     }
 
     /// <summary>Not judged by the target-height check: the city grid's tile buttons (map cells, not controls to hit) and check boxes (a label row whose height is its text line).</summary>

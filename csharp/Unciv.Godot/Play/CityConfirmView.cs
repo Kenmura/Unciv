@@ -35,7 +35,7 @@ public partial class CityConfirmView : Modal
     {
         pending = action.Command;
         SetHeader(action.Label);
-        question.CustomMinimumSize = new Vector2(Fit(Modal.MinWidth), 0);
+        Fit(Modal.MinWidth, question); // T323: re-fitted on a live resize
         question.Text = (action.Confirm ?? "").TrText();
         confirm.Text = action.Label.TrText();
         Visible = true;
