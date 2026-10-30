@@ -88,6 +88,7 @@
 - [T252 (ticket not Done or unknown)](#t252-ticket-not-done-or-unknown)
 - [T256 (ticket not Done or unknown)](#t256-ticket-not-done-or-unknown)
 - [T284 (ticket not Done or unknown)](#t284-ticket-not-done-or-unknown)
+- [T285 (ticket not Done or unknown)](#t285-ticket-not-done-or-unknown)
 - [T286 (ticket not Done or unknown)](#t286-ticket-not-done-or-unknown)
 - [Missing screenshots](#missing-screenshots)
 <!-- /toc -->
@@ -1785,6 +1786,24 @@ Scenario `phone-tables`.
 ![Espionage on a phone: the spy table with Move and Coup buttons, Assign spies in the footer.](../Unciv.Godot.Harness/golden/phone-tables/espionage.png)
 
 *Espionage on a phone: the spy table with Move and Coup buttons, Assign spies in the footer.* (`phone-tables/espionage.png`)
+
+## T285 (ticket not Done or unknown)
+
+The Civilopedia on a 2400x1080 400 ppi phone profile: category icon buttons raised to 48 dp (120 px; they were 110 to 117 px), no clipped or overlapping text, nothing behind a container that cannot scroll.
+
+Scenario `phone-pedia`.
+
+![Civilopedia on a phone: category icon buttons, entry list and the first entry's page side by side; the sidebar, list and page each scroll.](../Unciv.Godot.Harness/golden/phone-pedia/category.png)
+
+*Civilopedia on a phone: category icon buttons, entry list and the first entry's page side by side; the sidebar, list and page each scroll.* (`phone-pedia/category.png`)
+
+![Civilopedia unit page on a phone: header card with cost chip, then linked text.](../Unciv.Godot.Harness/golden/phone-pedia/unit.png)
+
+*Civilopedia unit page on a phone: header card with cost chip, then linked text.* (`phone-pedia/unit.png`)
+
+![Civilopedia search on a phone: results over every category with the category as subtitle.](../Unciv.Godot.Harness/golden/phone-pedia/search.png)
+
+*Civilopedia search on a phone: results over every category with the category as subtitle.* (`phone-pedia/search.png`)
 
 ## T286 (ticket not Done or unknown)
 

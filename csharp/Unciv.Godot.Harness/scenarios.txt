@@ -60,3 +60,4 @@ touch-orders
 phone-menus
 phone-tables
 phone-city
+phone-pedia

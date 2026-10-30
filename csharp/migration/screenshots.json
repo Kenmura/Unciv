@@ -1724,5 +1724,23 @@
         "caption": "City production on a phone: the queue with 48 dp Top/Up/Down/Remove and buy chips, the buildable list, and the built buildings with Sell buttons; each column scrolls."
       }
     ]
+  },
+  "T285": {
+    "scenario": "phone-pedia",
+    "about": "The Civilopedia on a 2400x1080 400 ppi phone profile: category icon buttons raised to 48 dp (120 px; they were 110 to 117 px), no clipped or overlapping text, nothing behind a container that cannot scroll.",
+    "shots": [
+      {
+        "golden": "phone-pedia/category.png",
+        "caption": "Civilopedia on a phone: category icon buttons, entry list and the first entry's page side by side; the sidebar, list and page each scroll."
+      },
+      {
+        "golden": "phone-pedia/unit.png",
+        "caption": "Civilopedia unit page on a phone: header card with cost chip, then linked text."
+      },
+      {
+        "golden": "phone-pedia/search.png",
+        "caption": "Civilopedia search on a phone: results over every category with the category as subtitle."
+      }
+    ]
   }
 }
