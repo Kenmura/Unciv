@@ -254,6 +254,7 @@ public sealed class GraphicsModelTests : IDisposable
     [Fact]
     public void DeviceTypeWinsOverTheName()
     {
+        Assert.Equal("", GraphicsModel.IntegratedNote(GraphicsQuality.Low));
         Assert.True(GraphicsModel.IsIntegrated(true, Gpu));
         Assert.False(GraphicsModel.IsIntegrated(false, "Intel(R) Graphics (ARL)"));
         Assert.True(GraphicsModel.IsIntegrated(null, "Intel(R) Graphics (ARL)"));
