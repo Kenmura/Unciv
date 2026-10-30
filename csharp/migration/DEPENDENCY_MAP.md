@@ -126,7 +126,7 @@ xychart-beta
 | T315 | **On deck** (after T310) | T310 | 0 | Unit model polish: spear and pike length, emplaced crew guns, rider hats, thin props |
 | T274 | In-Progress [Claude-T274] | T273 | 1 | Host migration 4/5: crash election (loss detection, signed HostLossVote quorum, split-brain refusal, superseded-host mode, forced take-over, kill-the-host scenarios) |
 | T278 | Available (waiting on ) | T260, T276 | 1 | Android on-device verification: TLS join, lifecycle reconnect, frame time and APK size on a mid-range phone |
-| T310 | Needs-Review [Claude] | T308 | 1 | Tell units of one class apart at the default zoom and fix the shrunk modern infantry |
+| T310 | In-Review [Claude] | T308 | 1 | Tell units of one class apart at the default zoom and fix the shrunk modern infantry |
 | T290 | Blocked | T271 | 0 | Real-device frame-time pass: Windows, macOS, Android phone |
 | T300 | In-Progress [Claude] | none | 0 | Replace text-letter placeholder icons (resource chips etc.) with real pictorial icons |
 | T301 | In-Progress [Claude] | none | 0 | Maximizing a windowed game freaks out and may crash |
