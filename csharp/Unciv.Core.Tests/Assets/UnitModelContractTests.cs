@@ -303,7 +303,7 @@ public sealed class UnitModelContractTests
     }
 
     [Fact]
-    public void TooWideFails() => Assert.Contains("radius", Assert.Single(UnitModelContract.Check(Make([-0.9f, 0f, -0.1f], [0.1f, 0.7f, 0.1f]))));
+    public void TooWideFails() => Assert.Contains("radius", Assert.Single(UnitModelContract.Check(Make([-1.3f, 0f, -0.1f], [0.1f, 0.7f, 0.1f]))));
 
     [Fact]
     public void MissingTeamColorMaterialFails() => Assert.Contains("TeamColor", Assert.Single(UnitModelContract.Check(Make(Feet, Head, material: "Skin"))));

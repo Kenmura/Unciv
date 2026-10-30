@@ -546,9 +546,9 @@ def ears(c, k=1.0, mat="fur"):
     return [tube([[cx + s * 0.12 * k, y0 + 0.14, cz], [cx + s * 0.15 * k, y0 + 0.24 * k, cz], [cx + s * 0.15 * k, y0 + 0.3 * k, cz]], [0.07 * k, 0.05 * k, 0.012], 7, mat, PAL[mat], c.only("head")) for s in (-1, 1)]
 
 
-def mohawk(c, k=1.0, height=0.3, mat="team"):
+def mohawk(c, k=1.0, height=0.55, mat="team"):
     cx, y0, cz = _head(c)
-    return [box_prim([cx, y0 + 0.08 + height * k / 2, cz - 0.02], [0.03, height * k / 2, 0.2 * k], mat, PAL[mat], c.only("head"))]
+    return [box_prim([cx, y0 + 0.08 + height * k / 2, cz - 0.02], [0.07, height * k / 2, 0.3 * k], mat, PAL[mat], c.only("head"))]
 
 
 def feathers(c, k=1.0, n=7, length=0.36, spread=1.1):
@@ -618,7 +618,7 @@ def chute(c, r=0.36):
 
 def radio(c):
     cy, cz = _back(c)
-    return [box_prim([0.0, cy - 0.12, cz - 0.18], [0.2, 0.26, 0.14], "iron", PAL["iron"], c.only("chest")), tube([[0.12, cy + 0.1, cz - 0.2], [0.14, cy + 0.5, cz - 0.24], [0.15, cy + 0.72, cz - 0.26]], [0.012, 0.01, 0.006], 5, "dark", PAL["dark"], c.only("chest"))]
+    return [box_prim([0.0, cy - 0.12, cz - 0.18], [0.2, 0.26, 0.14], "iron", PAL["iron"], c.only("chest")), tube([[0.12, cy + 0.1, cz - 0.2], [0.14, cy + 0.6, cz - 0.24], [0.15, cy + 1.0, cz - 0.26]], [0.032, 0.028, 0.02], 5, "dark", PAL["dark"], c.only("chest"))]
 
 
 def launcher_tube(c):
@@ -725,6 +725,67 @@ def crew_gun(node, kind):
     return out
 
 
+def _ground(c):
+    return min(c.pos["foot.l"][1], c.pos["foot.r"][1]) - 0.07
+
+
+def crew_carriage(c, kind):
+    """T315: a crew weapon stands on its own tripod, carriage or truck in front of the gunner instead of being held in his hands (the old hand-held guns floated at the hip). The whole weapon is one rigid
+    part on the root joint, so it never swings with the arms; the gunner stands behind it. Source units of the proportioned body (about 2.0 tall), z to the front."""
+    jw = c.only("root")
+    gy = _ground(c)
+    z0 = c.body_hi[2] + 0.45
+    out = []
+
+    def T(path, r, mat="iron", seg=7):
+        return tube([[p[0], p[1], p[2]] for p in path], r if isinstance(r, list) else [r] * len(path), seg, mat, PAL[mat], jw)
+
+    def wheel(x, y, z, radius, mat="wood", thick=0.05):
+        return lathe([(0.0, -thick), (radius, -thick), (radius, thick), (0.0, thick)], 14, [x, y, z], mat, PAL[mat], jw, basis=rot_z(math.pi / 2))
+
+    def legs(top, spread, n=3, rear=0.0):
+        return [T([top, [top[0] + math.sin(a) * spread, gy, top[2] + math.cos(a) * spread - rear]], 0.028, "iron", 5) for a in [i * 2 * math.pi / n + 0.5 for i in range(n)]]
+
+    if kind == "mg":  # a tripod with a long barrel, a drum and an ammunition box
+        top = [0.0, gy + 0.78, z0]
+        out += legs(top, 0.5)
+        out.append(T([[0, gy + 0.85, z0 - 0.3], [0, gy + 0.88, z0 + 0.3], [0, gy + 0.9, z0 + 0.8]], [0.075, 0.06, 0.05]))
+        out.append(box_prim([0.0, gy + 1.04, z0 - 0.05], [0.14, 0.12, 0.14], "iron", PAL["iron"], jw))
+        out.append(box_prim([0.28, gy + 0.55, z0 - 0.1], [0.12, 0.1, 0.16], "wood", PAL["wood"], jw))
+    elif kind == "gatling":  # two big wheels, a trail, a barrel cluster and a hopper
+        for sx in (-1, 1):
+            out.append(wheel(sx * 0.55, gy + 0.45, z0, 0.45))
+        out.append(T([[-0.55, gy + 0.45, z0], [0.0, gy + 0.45, z0], [0.55, gy + 0.45, z0]], 0.04, "wood"))
+        out.append(T([[0, gy + 0.55, z0 - 0.7], [0, gy + 0.65, z0 - 0.35], [0, gy + 0.9, z0]], 0.05, "wood"))
+        for k in range(6):
+            a = k * math.pi / 3
+            x, y = math.cos(a) * 0.1, gy + 1.0 + math.sin(a) * 0.1
+            out.append(T([[x, y, z0 - 0.1], [x, y, z0 + 0.5], [x, y, z0 + 0.9]], 0.04))
+        out.append(box_prim([0.0, gy + 1.28, z0 - 0.05], [0.12, 0.14, 0.18], "iron", PAL["iron"], jw))
+    elif kind == "at":  # a shield plate, a long thin barrel, two wheels and trails
+        for sx in (-1, 1):
+            out.append(wheel(sx * 0.5, gy + 0.32, z0, 0.32, "iron"))
+            out.append(T([[sx * 0.25, gy + 0.5, z0], [sx * 0.2, gy + 0.2, z0 - 0.5], [sx * 0.3, gy, z0 - 0.75]], 0.035, "wood"))
+        out.append(box_prim([0.0, gy + 0.75, z0 + 0.15], [0.4, 0.34, 0.03], "iron", PAL["iron"], jw))
+        out.append(T([[0, gy + 0.75, z0 - 0.3], [0, gy + 0.8, z0 + 0.5], [0, gy + 0.85, z0 + 1.05]], [0.085, 0.06, 0.05]))
+    elif kind == "aa":  # a pedestal with four outriggers and two barrels pointing up
+        out += legs([0.0, gy + 0.45, z0], 0.55, 4)
+        out.append(T([[0, gy, z0], [0, gy + 0.5, z0], [0, gy + 0.72, z0]], 0.1))
+        out.append(box_prim([0.0, gy + 0.8, z0], [0.25, 0.08, 0.25], "iron", PAL["iron"], jw))
+        for sx in (-1, 1):
+            out.append(T([[sx * 0.12, gy + 0.9, z0 - 0.15], [sx * 0.12, gy + 1.55, z0 + 0.35], [sx * 0.12, gy + 2.1, z0 + 0.75]], [0.075, 0.055, 0.045]))
+    else:  # sam: a truck bed on four wheels, two raised missiles and a dish behind
+        out.append(box_prim([0.0, gy + 0.42, z0], [0.38, 0.1, 0.95], "iron", PAL["iron"], jw))
+        for sx in (-1, 1):
+            for sz in (-0.6, 0.6):
+                out.append(wheel(sx * 0.4, gy + 0.22, z0 + sz, 0.22, "dark", 0.07))
+        for sx in (-1, 1):
+            out.append(T([[sx * 0.17, gy + 0.6, z0 - 0.6], [sx * 0.17, gy + 1.15, z0 - 0.05], [sx * 0.17, gy + 1.7, z0 + 0.5]], [0.09, 0.09, 0.07]))
+            out.append(T([[sx * 0.17, gy + 1.7, z0 + 0.5], [sx * 0.17, gy + 1.76, z0 + 0.56]], [0.07, 0.01], "metal", 6))
+        out.append(lathe([(0.0, 0.0), (0.3, 0.1), (0.33, 0.14), (0.0, 0.05)], 14, [0, gy + 0.85, z0 - 0.75], "metal", PAL["metal"], jw, basis=[[1, 0, 0], [0, 0.6, 0.8], [0, -0.8, 0.6]]))
+    return out
+
+
 def bow_parts_look(node, size, kind):
     out = bow_parts(node, size)
     if kind == "repeater":  # the Chu-Ko-Nu: a big magazine box on top of the crossbow
@@ -756,7 +817,7 @@ def lance(node, length=2.2, flag=True):
 # ---------------------------------------------------------------------------------------------------------------------------------------------------------- the styles
 
 def _k(rider):
-    return 1.55 if rider else 1.0
+    return 2.1 if rider else 1.0
 
 
 def _std_extras(c, rider, look, defaults):
@@ -772,7 +833,7 @@ def _std_extras(c, rider, look, defaults):
 BACKS = {
     "skis": skis, "chute": chute, "radio": radio, "launcher": launcher_tube, "back_shield": back_shield, "pole": back_pole, "pike": back_pike, "back_sword": back_sword, "carnyx": carnyx,
     "bedroll": bedroll_sash, "horn": powder_horn, "plates": shoulder_plate, "pack": lambda c: back_pack(c, 0.8, roll=False), "pack_roll": lambda c: back_pack(c, 0.9, roll=True),
-    "big_chute": lambda c: chute(c, 0.46), "quiver": quiver, "bigpack": lambda c: back_pack(c, 1.15, roll=True),
+    "big_chute": lambda c: chute(c, 0.46), "bigpole": lambda c: back_pole(c, 1.7, 0.6), "quiver": quiver, "bigpack": lambda c: back_pack(c, 1.15, roll=True),
 }
 
 
@@ -807,7 +868,7 @@ def style_sword(rider, look):
 
 
 def style_spear(rider, look):
-    length = look.get("length", 1.4)
+    length = look.get("length", 1.85)
 
     def extras(c):
         return spear_node(length, "Spear") + tabard(c, width=0.5) + leg_wraps(c) + (hat(c, "cone", _k(rider)) if "hat" not in look else headgear(c, look["hat"], _k(rider))) + _std_extras(c, rider, {k: v for k, v in look.items() if k != "hat"}, {})
@@ -865,8 +926,8 @@ def style_crew(rider, look):
     kind = look.get("gun", "mg")
     hat_name = look.get("hat", "stahl")
     body = look.get("body", "Mage")
-    return Style(P_LEAN, drop=("2H_Staff", "Mage_Cape", "Mage_Hat", "2H_Crossbow", "1H_Crossbow", "Knife", "Knife_Offhand"), att=ATT_MAGE, nodes=lambda c, h: hold(h, "handslot.r", "Gun", XBOW_FRAME),
-                 extras=lambda c: crew_gun("Gun", kind) + headgear(c, hat_name, _k(rider)) + tabard(c, width=0.55) + leg_wraps(c) + _std_extras(c, rider, {k: v for k, v in look.items() if k not in ("hat", "gun")}, {}), cls=make_classify(body, bare=False))
+    return Style(P_LEAN, drop=("2H_Staff", "Mage_Cape", "Mage_Hat", "2H_Crossbow", "1H_Crossbow", "Knife", "Knife_Offhand"), att=ATT_MAGE,
+                 extras=lambda c: crew_carriage(c, kind) + headgear(c, hat_name, _k(rider)) + tabard(c, width=0.55) + leg_wraps(c) + _std_extras(c, rider, {k: v for k, v in look.items() if k not in ("hat", "gun")}, {}), cls=make_classify(body, bare=False))
 
 
 def style_settler(rider, look):
@@ -902,7 +963,7 @@ def style_great(kind):
             elif kind == "missionary":
                 out += hat_hood(c, "team") + book("Prop", 0.8) + back_pack(c, 0.9, roll=False)
             else:  # inquisitor
-                out += hat_wide(c, "dark", 0.4, 0.1) + cross_staff("Prop") + tabard(c, width=0.5)
+                out += hat_wide(c, "dark", 0.55, 0.12) + cross_staff("Prop", 1.7, 0.8) + tabard(c, width=0.5)
             return out
         body = {"scientist": "Mage", "artist": "Mage", "merchant": "Barbarian", "engineer": "Barbarian", "prophet": "Mage", "general": "Mage", "missionary": "Mage", "inquisitor": "Mage"}[kind]
         atts = {**ATT_BRUTE, **ATT_MAGE, **ATT_KNIGHT}
@@ -925,18 +986,18 @@ LOOKS = {
     },
     "sword": {
         "great": dict(hat="great", plume=False, tabard=0.4, sword2=0.85), "tiara": dict(hat="tiara", plume=False, badge=1.45), "legion": dict(hat="crest_stahl", plume=False, rect=1.5),
-        "lands": dict(hat="cap_feathers", plume=False, sword2=0.82), "samurai": dict(hat="kabuto_crescent", plume=False, back="pole", sword2=0.82), "crest": dict(hat="crest_stahl", plume=False),
-        "plain_cap": dict(hat="cap", plume_h=0.3), "conq": dict(hat="morion", plume=False), "sipahi": dict(hat="turban", plume=False), "hakka": dict(hat="slouch_plume", plume=False),
+        "lands": dict(hat="kettle", plume=False, sword2=0.82, back="bedroll"), "samurai": dict(hat="kabuto_crescent", plume=False, back="pole", sword2=0.82), "crest": dict(hat="crest_stahl", plume=False),
+        "plain_cap": dict(hat="cap", plume_h=0.3), "conq": dict(hat="kettle", plume=True, plume_h=0.6), "sipahi": dict(hat="turban", plume=False), "hakka": dict(hat="slouch_plume", plume=False, back="bigpole"),
         "cav": dict(hat="kepi", plume=False, lance=2.2), "hussar": dict(hat="kalpak", plume=False), "cata": dict(hat="kabuto", plume_h=0.3),
     },
-    "spear": {"hoplite": dict(hat="crest_cap", round=1.5, length=1.3), "pike": dict(hat="morion", spike=0.9, length=1.65, back="back_sword"), "lancer": dict(length=2.0)},
+    "spear": {"hoplite": dict(hat="crest_cap", round=1.5, length=1.6), "pike": dict(hat="morion", spike=0.9, length=2.55, back="back_sword"), "lancer": dict(length=2.4)},
     "bow": {
         "phrygian": dict(hat="phrygian", quiver=False, size=1.0), "kalpak": dict(hat="kalpak", size=1.2), "kettle": dict(hat="kettle", size=1.5), "repeater": dict(hat="jingasa", bow="repeater", size=1.2, quiver=False),
         "rider_kalpak": dict(hat="kalpak"), "rider_turban": dict(hat="turban"),
     },
     "javelin": {"sling": dict(hat="cap", held="sling"), "atlatl": dict(hat="fan", held="atlatl"), "skirm": dict(back="pack")},
     "musket": {
-        "morion": dict(hat="morion", back="horn"), "cavalier": dict(hat="slouch_plume", back="bedroll"), "janissary": dict(hat="borek", gun=dict(length=0.8, thick=1.6), back="pack"), "minute": dict(back=["horn", "pack_roll"]),
+        "morion": dict(hat="crest_cap", back="horn", gun=dict(length=1.35, tilt=45.0)), "cavalier": dict(hat="slouch_plume", back="bedroll"), "janissary": dict(hat="borek", gun=dict(length=0.8, thick=1.6), back="pack"), "minute": dict(back=["horn", "pack_roll"]),
         "tercio": dict(hat="bonnet", back="pike"), "carolean": dict(hat="tricorne_plume", back="back_sword"),
     },
     "rifle": {
@@ -967,7 +1028,7 @@ def build(folder, body, keep, clips, style_name, seat=None, rider_height=None, h
     """The styled model of one unit as (doc, binary): the same contract as `bum.reduce_body` (one skeleton, six clips, TeamColor, feet at y = 0).
 
     T310: the figure's scale comes from the proportioned BODY (its height must come out as `height`), never from its gear: a hat, a long gun or a pike must not shrink the unit. The gear is
-    built to fit the contract caps (radius 0.62 in the bind pose, total height 0.98); `asset.extras.bodyFit` records the scale actually used over the full-size scale (1.0 = full size) and
+    built to fit the contract caps (radius 1.05 in the bind pose, total height 1.33; T315); `asset.extras.bodyFit` records the scale actually used over the full-size scale (1.0 = full size) and
     `UnitSilhouetteTests` demands at least 0.97."""
     rider = bool(seat)
     look_name = look
@@ -1008,12 +1069,12 @@ def build(folder, body, keep, clips, style_name, seat=None, rider_height=None, h
         fit = 1.0
     else:
         full = height / (plain_hi[1] - plain_lo[1])
-        radius = max(abs(lo[0]), abs(hi[0]), abs(lo[2]), abs(hi[2]))  # the contract measures the bind pose (arms out, a long gun held sideways): at most 0.62
-        scale = min(full, 0.98 / (hi[1] - lo[1]), 0.62 / radius)
+        radius = max(abs(lo[0]), abs(hi[0]), abs(lo[2]), abs(hi[2]))  # the contract measures the bind pose (arms out, a long gun held sideways): at most 1.05 (T315: contract 1.1)
+        scale = min(full, 1.33 / (hi[1] - lo[1]), 1.05 / radius)
         fit = scale / full
         rig["scale"] = [scale] * 3
         rig["translation"] = [0.0, -lo[1] * scale, 0.0]
-        LAST.update(fit=fit, radius_fit=0.62 / radius / full, height_fit=0.98 / (hi[1] - lo[1]) / full)
+        LAST.update(fit=fit, radius_fit=1.05 / radius / full, height_fit=1.33 / (hi[1] - lo[1]) / full)
         if os.environ.get("UNCIV_STYLE_DEBUG"):
             print(f"  fit {style_name}/{look_name}: {fit:.3f} (radius {LAST['radius_fit']:.3f}, height {LAST['height_fit']:.3f})", file=sys.stderr)
     m.doc["asset"] = {"version": "2.0", "generator": "build-unit-style.py (T295)", "extras": {"bodyFit": round(fit, 3)}}

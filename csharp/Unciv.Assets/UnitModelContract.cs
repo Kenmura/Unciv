@@ -25,9 +25,10 @@ public static class UnitModelContract
     public static readonly IReadOnlyList<string> ClipNames = [IdleClip, WalkClip, AttackClip, RangedAttackClip, HitClip, DeathClip];
 
     public const float MinHeight = 0.4f;
-    public const float MaxHeight = 1.0f;
-    /// <summary>Wider than the 0.25 of the plan because a rig stands in its bind pose (arms out, a crossbow held out front) here (0.5 until C083 added the crossbow bodies); the footprint of the playing animation is the art pipeline's concern.</summary>
-    public const float MaxRadius = 0.65f;
+    /// <summary>T315: 1.35 (was 1.0) so a spear, pike or lance can be longer than the man (a figure stands 0.85 high); the body itself is still 0.85.</summary>
+    public const float MaxHeight = 1.35f;
+    /// <summary>Wider than the 0.25 of the plan because a rig stands in its bind pose (arms out, a crossbow held out front) here (0.5 until C083 added the crossbow bodies; T315: 1.1, because in the bind pose a held spear or pike lies forward at full length: it stands up in the idle pose, so only the bind pose is this wide); the footprint of the playing animation is the art pipeline's concern.</summary>
+    public const float MaxRadius = 1.1f;
     public const float FeetTolerance = 0.02f;
 
     /// <summary>Everything wrong with the file, empty when it satisfies the contract.</summary>

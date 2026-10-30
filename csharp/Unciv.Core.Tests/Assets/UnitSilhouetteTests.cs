@@ -28,6 +28,12 @@ public sealed class UnitSilhouetteTests
     private const float MinCivilianDistance = 0.30f;
     /// <summary>T310: the scale a figure got over the scale its body alone allows (1 = full size): no gear may shrink a unit. The musket, rifle, crew, crossbow and spear figures were 0.66 to 0.81.</summary>
     private const float MinBodyFit = 0.96f;
+    /// <summary>T315: two riders whose outlines differ by less than <see cref="OutlineEnough"/> (the horse fills most of the mask, so most riders differ little) must have mounts of clearly different coats (distance of the
+    /// linear colour factors): the tall tan riders of the T310 sheet (Horseman, Horse Archer, Cavalry, Lancer, Hussar, Cossack) were told apart only by a hat.</summary>
+    private const float MinCoatDistance = 0.2f;
+    private const float OutlineEnough = 0.30f;
+    /// <summary>T315: the pike reaches this much further than the spear (the bind pose lays a held spear forward; before T315 the contract caps made it only 1.18 times).</summary>
+    private const float PikeOverSpear = 1.3f;
 
     private static readonly string Pack = FindPack();
 
@@ -43,7 +49,7 @@ public sealed class UnitSilhouetteTests
 
     private static bool IsCivilian(string style) => style is "settler" or "worker" || style.StartsWith("great_", StringComparison.Ordinal);
 
-    private sealed record Unit(string Name, string Style, string Look, string Mount);
+    private sealed record Unit(string Name, string Style, string Look, string Mount, Vector3 Horse = default);
 
     /// <summary>The styled units, foot units and riders separately. A rider's class also names his mount (a horse and its trappings, a chariot, each kind and variant of elephant), since the mount fills most of the outline.</summary>
     private static (List<Unit> Foot, List<Unit> Mounted) Units()
@@ -56,8 +62,11 @@ public sealed class UnitSilhouetteTests
             var kind = mount.TryGetProperty("kind", out var k) ? k.GetString() : "horse";
             return mount.TryGetProperty("variant", out var v) ? $"{kind}/{v.GetString()}" : kind!;
         }
+        // T315: the colour of the mount's coat (the generated horse's default when attachments.json gives none)
+        static Vector3 HorseOf(JsonElement unit) =>
+            unit.TryGetProperty("mount", out var mount) && mount.TryGetProperty("colour", out var c) ? new Vector3(c[0].GetSingle(), c[1].GetSingle(), c[2].GetSingle()) : new Vector3(0.3f, 0.2f, 0.13f);
         List<Unit> Of(JsonElement units) => [.. units.EnumerateObject().Where(it => it.Value.TryGetProperty("style", out _)).Select(it =>
-            new Unit(it.Name, it.Value.GetProperty("style").GetString()!, it.Value.TryGetProperty("look", out var l) ? l.GetString()! : "", MountOf(it.Value)))];
+            new Unit(it.Name, it.Value.GetProperty("style").GetString()!, it.Value.TryGetProperty("look", out var l) ? l.GetString()! : "", MountOf(it.Value), HorseOf(it.Value)))];
         return (Of(root.GetProperty("units")), Of(root.GetProperty("mounted").GetProperty("units")));
     }
 
@@ -235,6 +244,63 @@ public sealed class UnitSilhouetteTests
         Assert.True(mounted.Select(u => u.Style + "/" + u.Mount).Distinct().Count() >= 15, "each trapping of a mount is a class of its own");
         var failures = Failures(mounted, (_, _) => MinRiderDistance);
         Assert.True(failures.Count == 0, "rider silhouettes too alike:\n" + string.Join("\n", failures));
+    }
+
+    [Fact]
+    public void RidersWithAlikeOutlinesHaveMountsOfDifferentCoats()
+    {
+        var (_, mounted) = Units();
+        var masks = mounted.ToDictionary(u => u.Name, u => Masks(u.Name));
+        var failures = new List<string>();
+        foreach (var a in mounted)
+            foreach (var b in mounted.Where(b => string.CompareOrdinal(b.Name, a.Name) > 0))
+            {
+                var outline = Distance(masks[a.Name], masks[b.Name]);
+                var coat = Vector3.Distance(a.Horse, b.Horse);
+                if (outline < OutlineEnough && coat < MinCoatDistance)
+                    failures.Add(string.Create(CultureInfo.InvariantCulture, $"{a.Name} and {b.Name}: outlines differ by {outline:0.000} and coats by {coat:0.000}"));
+            }
+        Assert.True(failures.Count == 0, "riders told apart by neither outline nor coat:\n" + string.Join("\n", failures));
+    }
+
+    [Fact]
+    public void ThePikeIsMuchLongerThanTheSpear()
+    {
+        Assert.True(Reach("Pikeman") >= Reach("Spearman") * PikeOverSpear, $"pike {Reach("Pikeman"):0.00} against spear {Reach("Spearman"):0.00}");
+        Assert.True(Reach("Pikeman") >= Reach("Hoplite") * PikeOverSpear, "pike against the hoplite's spear");
+    }
+
+    [Fact]
+    public void CrewGunsStandOnTheirOwnCarriageAndAreNotHeld()
+    {
+        var (foot, _) = Units();
+        var crew = foot.Where(u => u.Style == "crew").ToList();
+        Assert.True(crew.Count >= 5, "the crew weapons");
+        foreach (var unit in crew)
+        {
+            var glb = File.ReadAllBytes(Path.Combine(Pack, "models", "unit", unit.Name + ".glb"));
+            using var doc = JsonDocument.Parse(glb.AsMemory(20, BinaryPrimitives.ReadInt32LittleEndian(glb.AsSpan(12))));
+            var names = doc.RootElement.GetProperty("nodes").EnumerateArray().Select(n => n.TryGetProperty("name", out var nm) ? nm.GetString() : null).ToList();
+            Assert.DoesNotContain("Gun", names);
+            Assert.True(Reach(unit.Name) > 0.45f, $"{unit.Name}: the carriage stands out in front of the gunner");
+        }
+    }
+
+    [Theory]
+    [InlineData("Mohawk Warrior", "Pictish Warrior", 0.25f)]
+    [InlineData("Longbowman", "Samurai", 0.30f)]
+    [InlineData("Hussar", "Cossack", 0.25f)]
+    [InlineData("Infantry", "Rifleman", 0.12f)]
+    public void TheConfusablePairsOfTheT310ReviewAreWellApart(string a, string b, float need) =>
+        Assert.True(Distance(Masks(a), Masks(b)) >= need, $"{a} and {b} differ by {Distance(Masks(a), Masks(b)):0.000}, need {need:0.00}");
+
+    /// <summary>The farthest a vertex of the bind pose stands from the unit's origin, sideways (what the contract's radius measures).</summary>
+    private static float Reach(string unit)
+    {
+        var glb = File.ReadAllBytes(Path.Combine(Pack, "models", "unit", unit + ".glb"));
+        var jsonLength = BinaryPrimitives.ReadInt32LittleEndian(glb.AsSpan(12));
+        using var doc = JsonDocument.Parse(glb.AsMemory(20, jsonLength));
+        return Triangles(doc.RootElement, glb, 20 + jsonLength + 8).Max(t => new[] { t.A, t.B, t.C }.Max(v => MathF.Max(MathF.Abs(v.X), MathF.Abs(v.Z))));
     }
 
     [Fact]
