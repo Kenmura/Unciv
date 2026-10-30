@@ -139,7 +139,7 @@ public class Terrain : RulesetStatsObject, IRulesetTerrainParameterView, ICivilo
     private readonly KotlinLazy<bool> isIce;
 
     /// <summary>Terrain filter matching is "pure" - input always returns same output, and it's called a bajillion times</summary>
-    private readonly ConcurrentDictionary<string, bool> cachedMatchesFilterResult = new(StringComparer.Ordinal); // T296: written lazily from host view building threads
+    private readonly ConcurrentDictionary<string, bool> cachedMatchesFilterResult = new(StringComparer.Ordinal);
 
     private TerrainType? type;
 

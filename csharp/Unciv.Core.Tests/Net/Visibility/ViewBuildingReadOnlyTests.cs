@@ -7,6 +7,7 @@ using Unciv.Harness;
 using Unciv.Logic;
 using Unciv.Logic.Files;
 using Unciv.Net.Visibility;
+using Unciv.Utils;
 using Xunit.Abstractions;
 
 namespace Unciv.Core.Tests.Net.Visibility;
@@ -108,6 +109,29 @@ public sealed class ViewBuildingReadOnlyTests(ITestOutputHelper output)
         var field = owner.GetField(fieldName, BindingFlags.Instance | BindingFlags.NonPublic);
         Assert.NotNull(field);
         Assert.Equal(typeof(System.Collections.Concurrent.ConcurrentDictionary<string, bool>), field.FieldType);
+    }
+
+    [Fact]
+    public void Fingerprint_SeesWritesInsideCollectionsAndLazyValues()
+    {
+        var game = ScenarioGame.Create().Game;
+        var before = ObjectGraphFingerprint.Of(game);
+        var civ = game.Civilizations.First(it => it.Cities.Count > 0);
+
+        // a key added to a dictionary cache
+        var cache = (System.Collections.Concurrent.ConcurrentDictionary<string, bool>)typeof(Unciv.Logic.City.CityConstructions)
+            .GetField("containedBuildingFiltersCache", BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(civ.Cities[0].CityConstructions)!;
+        cache["T296 probe"] = true;
+        Assert.NotEmpty(Differences(before, ObjectGraphFingerprint.Of(game)));
+        cache.TryRemove("T296 probe", out _);
+        Assert.Empty(Differences(before, ObjectGraphFingerprint.Of(game)));
+
+        // a lazy value forced for the first time (a fresh one, so the test does not depend on what the game already evaluated)
+        var lazy = new KotlinLazy<int>(() => 1);
+        var holder = new List<object> { lazy };
+        var lazyBefore = ObjectGraphFingerprint.Of(holder);
+        _ = lazy.Value;
+        Assert.NotEmpty(Differences(lazyBefore, ObjectGraphFingerprint.Of(holder)));
     }
 
     [Fact]

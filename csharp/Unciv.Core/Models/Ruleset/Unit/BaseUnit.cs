@@ -54,7 +54,7 @@ public class BaseUnit : RulesetObject, ICivilopediaText, INonPerpetualConstructi
     private bool? isWaterUnit;
     private IRulesetConstructionView? ruleset;
     private int cachedForceEvaluation = -1;
-    private readonly ConcurrentDictionary<string, bool> cachedMatchesFilterResult = new(StringComparer.Ordinal); // T296: written lazily from host view building threads
+    private readonly ConcurrentDictionary<string, bool> cachedMatchesFilterResult = new(StringComparer.Ordinal);
 
     public BaseUnit()
     {

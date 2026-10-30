@@ -42,7 +42,7 @@ public class Building : RulesetStatsObject, INonPerpetualConstruction, ICivilope
         KotlinMath.DoubleToInt(Math.Pow(30.0 * (double)(float)Cost, 0.75) * (double)HurryCostModifier.ToPercent() / 10) * 10;
 
     private IRulesetConstructionView? ruleset;
-    private readonly ConcurrentDictionary<string, bool> cachedMatchesFilterResult = new(StringComparer.Ordinal); // T296: written lazily from host view building threads
+    private readonly ConcurrentDictionary<string, bool> cachedMatchesFilterResult = new(StringComparer.Ordinal);
     private readonly KotlinLazy<string?> improvementToCreate;
 
     public Building()

@@ -60,7 +60,7 @@ public class CityConstructions : IsPartOfGameInfoSerialization
 
     private List<Building> builtBuildingObjects = [];
 
-    private readonly ConcurrentDictionary<string, bool> containedBuildingFiltersCache = new(StringComparer.Ordinal); // T296: written lazily from host view building threads
+    private readonly ConcurrentDictionary<string, bool> containedBuildingFiltersCache = new(StringComparer.Ordinal);
 
     [JsonIgnore]
     public UniqueMap BuiltBuildingUniqueMap { get; } = new();
