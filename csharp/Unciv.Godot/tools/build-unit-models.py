@@ -259,6 +259,23 @@ ELEPHANT_VARIANTS = {
 }
 ELEPHANT_COLOUR = [0.36, 0.34, 0.33, 1.0]
 
+# T310: the horses of the cavalry differ by what they wear, so the riders of one style (nine sword riders) are told apart at the default zoom by the animal as well as by the rider: a plain horse, a
+# horse in a long hanging caparison, in plate barding, in full barding (both, plus a crest), with a tall head plume, with a standard pole on the saddle, with a bedroll and a hanging saddle cloth, and
+# the camel (a hump and a long neck). Each part: (joint, centre, size) in the horse's own frame, rigid on the joint like the rest of the mount.
+HORSE_VARIANTS = {
+    "plain": [],
+    "caparison": [("body", (0.125, 0.19, 0.0), (0.03, 0.36, 0.66)), ("body", (-0.125, 0.19, 0.0), (0.03, 0.36, 0.66)), ("body", (0.0, 0.3, 0.29), (0.26, 0.32, 0.03)), ("body", (0.0, 0.3, -0.29), (0.26, 0.32, 0.03))],
+    "barded": [("body", (0.115, 0.3, 0.0), (0.03, 0.3, 0.5)), ("body", (-0.115, 0.3, 0.0), (0.03, 0.3, 0.5)), ("neck", (0.0, 0.5, 0.34), (0.15, 0.26, 0.15)), ("head", (0.0, 0.64, 0.47), (0.13, 0.13, 0.24)),
+               ("head", (0.0, 0.75, 0.41), (0.03, 0.12, 0.03))],
+    "cataphract": [("body", (0.13, 0.19, 0.0), (0.03, 0.36, 0.66)), ("body", (-0.13, 0.19, 0.0), (0.03, 0.36, 0.66)), ("body", (0.0, 0.3, 0.29), (0.28, 0.34, 0.03)), ("body", (0.0, 0.3, -0.29), (0.28, 0.34, 0.03)),
+                   ("neck", (0.0, 0.5, 0.34), (0.17, 0.28, 0.17)), ("head", (0.0, 0.64, 0.47), (0.14, 0.14, 0.26)), ("body", (0.0, 0.47, 0.0), (0.30, 0.04, 0.5))],
+    "plumed": [("head", (0.0, 0.8, 0.42), (0.06, 0.2, 0.06)), ("head", (0.0, 0.9, 0.42), (0.14, 0.06, 0.06)), ("body", (0.11, 0.3, 0.0), (0.02, 0.14, 0.4)), ("body", (-0.11, 0.3, 0.0), (0.02, 0.14, 0.4))],
+    "pennant": [("body", (0.0, 0.62, -0.2), (0.025, 0.7, 0.025)), ("body", (0.0, 0.88, -0.35), (0.025, 0.18, 0.3)), ("body", (0.0, 0.45, -0.3), (0.2, 0.1, 0.08))],
+    "saddlecloth": [("body", (0.0, 0.5, -0.27), (0.22, 0.22, 0.1)), ("body", (0.12, 0.3, -0.05), (0.04, 0.2, 0.34)), ("body", (-0.12, 0.3, -0.05), (0.04, 0.2, 0.34)), ("tail", (0.0, 0.2, -0.32), (0.12, 0.28, 0.06))],
+    "cantle": [("body", (0.0, 0.34, 0.3), (0.32, 0.36, 0.05)), ("body", (0.0, 0.66, -0.22), (0.32, 0.34, 0.04)), ("body", (0.0, 0.5, 0.2), (0.26, 0.04, 0.2)), ("head", (0.0, 0.7, 0.43), (0.12, 0.2, 0.05))],
+    "camel": [("body", (0.0, 0.54, -0.02), (0.17, 0.22, 0.22)), ("neck", (0.0, 0.7, 0.36), (0.09, 0.34, 0.09)), ("head", (0.0, 0.86, 0.5), (0.08, 0.1, 0.2)), ("body", (0.0, 0.2, 0.0), (0.26, 0.04, 0.5))],
+}
+
 # C095: the chariot is the horse rig scaled to 0.8 and moved forward, drawing a two-wheeled cart (floor, rails, axle, yoke pole, spoked wheels on the joints wheel_l and wheel_r) that the rider stands on
 CHARIOT_SCALE, CHARIOT_SHIFT = 0.8, 0.1
 CART_Z, WHEEL_Y, WHEEL_R, WHEEL_X = -0.25, 0.11, 0.10, 0.17
@@ -335,6 +352,8 @@ def build_horse(scale=1.0, colour=None, kind="horse", variant=None):
     joints_def, parts_def = MOUNTS[kind][0], MOUNTS[kind][1]
     if kind == "elephant":
         parts_def = parts_def + ELEPHANT_VARIANTS[variant or "rails"]
+    elif kind == "horse" and variant:  # T310
+        parts_def = parts_def + [part for name in variant.split("+") for part in HORSE_VARIANTS[name]]  # "a+b": both
     b = Builder()
     doc = b.doc
     world = {name: tuple(c * scale for c in pos) for name, _, pos in joints_def}
@@ -601,10 +620,13 @@ def main(source, pack):
     models = os.path.join(pack, "models", "unit")
     os.makedirs(models, exist_ok=True)
     keys = {}
+    only = set(filter(None, os.environ.get("UNCIV_UNITS_ONLY", "").split(",")))  # T310: a development filter ("Warrior,Brute"): only these units are rebuilt (the manifest is not touched)
     for name, unit in data["units"].items():
+        if only and name not in only:
+            continue
         doc, binary = read_glb(os.path.join(source, data["bodies"][unit["body"]]))
         if "style" in unit:  # T295: the gritty unit style (build-unit-style.py)
-            doc, binary = style_module().build(source, unit["body"], unit["keep"], clips_for(data, unit), unit["style"])
+            doc, binary = style_module().build(source, unit["body"], unit["keep"], clips_for(data, unit), unit["style"], look=unit.get("look"))
         else:
             doc, binary = reduce_body(doc, binary, set(unit["keep"]), clips_for(data, unit), data["height"])
         path = os.path.join(models, name + ".glb")
@@ -612,10 +634,12 @@ def main(source, pack):
         keys[f"unit/{name}"] = f"models/unit/{name}.glb"
     mounted = data["mounted"]
     for name, unit in mounted["units"].items():
+        if only and name not in only:
+            continue
         rider, rider_bin = read_glb(os.path.join(source, data["bodies"][unit["body"]]))
         clips = clips_for(data, unit)
         if "style" in unit:  # T295
-            rider, rider_bin = style_module().build(source, unit["body"], unit["keep"], clips, unit["style"], seat=mounted["seat"], rider_height=mounted["riderHeight"])
+            rider, rider_bin = style_module().build(source, unit["body"], unit["keep"], clips, unit["style"], seat=mounted["seat"], rider_height=mounted["riderHeight"], look=unit.get("look"))
         else:
             rider, rider_bin = reduce_body(rider, rider_bin, set(unit["keep"]), clips, mounted["riderHeight"], seat=mounted["seat"])
         mount = unit.get("mount", {})
@@ -636,6 +660,8 @@ def main(source, pack):
             path = os.path.join(models, name + ".glb")
             print(f"unit/{name}: {write_glb(path, doc, binary)} bytes (rigid)")
         keys[f"unit/{name}"] = f"models/unit/{name}.glb"
+    if only:
+        return
     manifest = {"keys": dict(sorted(keys.items())), "pack": "units"}
     with open(os.path.join(pack, "manifest.json"), "w") as f:
         json.dump(manifest, f, indent=2)

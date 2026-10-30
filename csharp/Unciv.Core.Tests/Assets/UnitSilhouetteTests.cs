@@ -15,12 +15,19 @@ public sealed class UnitSilhouetteTests
 {
     private const int W = 40, H = 56;
     private const float Pitch = 50f * MathF.PI / 180f;
-    /// <summary>Two foot units of different classes: at least this far apart (1 - intersection over union), averaged over the four sides.</summary>
+    /// <summary>Two foot units of different styles (axe, spear, bow, rifle, ...): at least this far apart (1 - intersection over union), averaged over the four sides. T310: checked for EVERY pair of units, not one
+    /// representative per style.</summary>
     private const float MinDistance = 0.18f;
-    /// <summary>Two riders of different classes: the mount fills most of the outline, so the rider's gear decides a smaller part.</summary>
-    private const float MinRiderDistance = 0.13f;
-    /// <summary>A civilian (Settler, Worker, great person) against a soldier: the confusion the owner named as unacceptable.</summary>
+    /// <summary>T310: two units of one style (Warrior, Maori Warrior and Brute; Rifleman and Marine) differ by their look: another hat, load on the back, gun or shield.</summary>
+    private const float MinLookDistance = 0.10f;
+    /// <summary>Two riders: the mount fills most of the outline, so the rider's gear and the mount's trappings decide a smaller part. T308 0.13, raised by T310; checked for every pair of riders.</summary>
+    private const float MinRiderDistance = 0.15f;
+    /// <summary>T310: the three war elephants seen from the default view, above the rider threshold.</summary>
+    private const float MinElephantDistance = 0.16f;
+    /// <summary>A civilian (Settler, Worker, great person) against a soldier: the confusion the owner named as unacceptable. T310: every pair.</summary>
     private const float MinCivilianDistance = 0.30f;
+    /// <summary>T310: the scale a figure got over the scale its body alone allows (1 = full size): no gear may shrink a unit. The musket, rifle, crew, crossbow and spear figures were 0.66 to 0.81.</summary>
+    private const float MinBodyFit = 0.96f;
 
     private static readonly string Pack = FindPack();
 
@@ -36,21 +43,22 @@ public sealed class UnitSilhouetteTests
 
     private static bool IsCivilian(string style) => style is "settler" or "worker" || style.StartsWith("great_", StringComparison.Ordinal);
 
-    /// <summary>Unit name to style, foot units and riders separately (a rider's mount dominates his outline: riders are compared among themselves only).</summary>
-    private static (Dictionary<string, string> Foot, Dictionary<string, string> Mounted) Styles()
+    private sealed record Unit(string Name, string Style, string Look, string Mount);
+
+    /// <summary>The styled units, foot units and riders separately. A rider's class also names his mount (a horse and its trappings, a chariot, each kind and variant of elephant), since the mount fills most of the outline.</summary>
+    private static (List<Unit> Foot, List<Unit> Mounted) Units()
     {
         using var data = JsonDocument.Parse(File.ReadAllText(Path.Combine(Pack, "attachments.json")));
         var root = data.RootElement;
-        // T308: a rider's class is his style on his mount (a horse, a chariot, each kind and variant of elephant), since the mount fills most of the outline
-        static string Class(JsonElement unit)
+        static string MountOf(JsonElement unit)
         {
-            var style = unit.GetProperty("style").GetString()!;
-            if (!unit.TryGetProperty("mount", out var mount)) return style + "/horse";
+            if (!unit.TryGetProperty("mount", out var mount)) return "horse";
             var kind = mount.TryGetProperty("kind", out var k) ? k.GetString() : "horse";
-            return mount.TryGetProperty("variant", out var v) ? $"{style}/{kind}/{v.GetString()}" : $"{style}/{kind}";
+            return mount.TryGetProperty("variant", out var v) ? $"{kind}/{v.GetString()}" : kind!;
         }
-        Dictionary<string, string> Of(JsonElement units, bool mounted) => units.EnumerateObject().Where(it => it.Value.TryGetProperty("style", out _)).ToDictionary(it => it.Name, it => mounted ? Class(it.Value) : it.Value.GetProperty("style").GetString()!);
-        return (Of(root.GetProperty("units"), false), Of(root.GetProperty("mounted").GetProperty("units"), true));
+        List<Unit> Of(JsonElement units) => [.. units.EnumerateObject().Where(it => it.Value.TryGetProperty("style", out _)).Select(it =>
+            new Unit(it.Name, it.Value.GetProperty("style").GetString()!, it.Value.TryGetProperty("look", out var l) ? l.GetString()! : "", MountOf(it.Value)))];
+        return (Of(root.GetProperty("units")), Of(root.GetProperty("mounted").GetProperty("units")));
     }
 
     private static bool[][] Masks(string unit)
@@ -180,39 +188,72 @@ public sealed class UnitSilhouetteTests
         return union == 0 ? 0f : 1f - (float)inter / union;
     });
 
-    private static List<string> Failures(Dictionary<string, string> styles, bool civilianRule, float minDistance)
+    private static List<string> Failures(List<Unit> units, Func<Unit, Unit, float> need)
     {
-        // one representative per style (the first listed): units of one style share their outline by design
-        var reps = styles.GroupBy(it => it.Value).ToDictionary(g => g.Key, g => g.First().Key);
-        var masks = reps.ToDictionary(it => it.Key, it => Masks(it.Value));
+        var masks = units.ToDictionary(u => u.Name, u => Masks(u.Name));
         var failures = new List<string>();
-        foreach (var a in reps.Keys.Order(StringComparer.Ordinal))
-            foreach (var b in reps.Keys.Order(StringComparer.Ordinal).Where(it => string.CompareOrdinal(it, a) > 0))
+        foreach (var a in units)
+            foreach (var b in units.Where(b => string.CompareOrdinal(b.Name, a.Name) > 0))
             {
-                var d = Distance(masks[a], masks[b]);
-                var need = civilianRule && IsCivilian(a) != IsCivilian(b) ? MinCivilianDistance : minDistance;
-                if (d < need) failures.Add(string.Create(CultureInfo.InvariantCulture, $"{a} ({reps[a]}) and {b} ({reps[b]}) differ by {d:0.000}, need {need:0.00}"));
+                var d = Distance(masks[a.Name], masks[b.Name]);
+                var min = need(a, b);
+                if (d < min) failures.Add(string.Create(CultureInfo.InvariantCulture, $"{a.Name} ({a.Style}/{a.Look}) and {b.Name} ({b.Style}/{b.Look}) differ by {d:0.000}, need {min:0.00}"));
             }
         return failures;
     }
 
-    [Fact]
-    public void EveryFootUnitClassHasItsOwnSilhouetteAndCiviliansAreNotSoldiers()
+    private static float BodyFit(string unit)
     {
-        var (foot, _) = Styles();
-        Assert.True(foot.Count >= 50, "the styled foot units");
-        var failures = Failures(foot, civilianRule: true, MinDistance);
+        var glb = File.ReadAllBytes(Path.Combine(Pack, "models", "unit", unit + ".glb"));
+        using var doc = JsonDocument.Parse(glb.AsMemory(20, BinaryPrimitives.ReadInt32LittleEndian(glb.AsSpan(12))));
+        return doc.RootElement.GetProperty("asset").GetProperty("extras").GetProperty("bodyFit").GetSingle();
+    }
+
+    [Fact]
+    public void EveryFootUnitIsToldApartFromEveryOtherAndCiviliansAreNotSoldiers()
+    {
+        var (foot, _) = Units();
+        Assert.True(foot.Count >= 55, "the styled foot units");
+        var failures = Failures(foot, (a, b) =>
+            IsCivilian(a.Style) != IsCivilian(b.Style) ? MinCivilianDistance : a.Style != b.Style ? MinDistance : MinLookDistance);
         Assert.True(failures.Count == 0, "silhouettes too alike:\n" + string.Join("\n", failures));
     }
 
     [Fact]
-    public void ARiderClassIsRecognisedByItsGearAmongRiders()
+    public void EveryUnitOfAStyleHasItsOwnLook()
     {
-        var (_, mounted) = Styles();
+        var (foot, mounted) = Units();
+        foreach (var group in foot.Concat(mounted).GroupBy(u => (u.Style, u.Mount)).Where(g => g.Count() > 1 && !IsCivilian(g.Key.Style)))
+            Assert.True(group.Select(u => u.Look + "/" + u.Mount).Distinct().Count() == group.Count(), $"units of style {group.Key.Style} on {group.Key.Mount} share a look: {string.Join(", ", group.Select(u => u.Name))}");
+    }
+
+    [Fact]
+    public void ARiderIsRecognisedByHisGearAndHisMountAmongRiders()
+    {
+        var (_, mounted) = Units();
         Assert.True(mounted.Count >= 15, "the styled riders");
-        Assert.True(mounted.Values.Distinct().Count() >= 9, "each kind of mount is a class of its own");
-        var failures = Failures(mounted, civilianRule: false, MinRiderDistance);
+        Assert.True(mounted.Select(u => u.Style + "/" + u.Mount).Distinct().Count() >= 15, "each trapping of a mount is a class of its own");
+        var failures = Failures(mounted, (_, _) => MinRiderDistance);
         Assert.True(failures.Count == 0, "rider silhouettes too alike:\n" + string.Join("\n", failures));
+    }
+
+    [Fact]
+    public void TheThreeWarElephantsAreToldApartFromTheDefaultView()
+    {
+        var (_, mounted) = Units();
+        var elephants = mounted.Where(u => u.Mount.StartsWith("elephant", StringComparison.Ordinal)).ToList();
+        Assert.Equal(3, elephants.Count);
+        Assert.Equal(3, elephants.Select(u => u.Mount).Distinct().Count());
+        var failures = Failures(elephants, (_, _) => MinElephantDistance);
+        Assert.True(failures.Count == 0, "elephants too alike:\n" + string.Join("\n", failures));
+    }
+
+    [Fact]
+    public void NoGearShrinksAFootFigure()
+    {
+        var (foot, _) = Units();
+        var shrunk = foot.Where(u => BodyFit(u.Name) < MinBodyFit).Select(u => $"{u.Name} {BodyFit(u.Name):0.000}").ToList();
+        Assert.True(shrunk.Count == 0, "figures below full size (the contract caps the bind-pose radius at 0.62 and the height at 0.98; shorten the gear):\n" + string.Join("\n", shrunk));
     }
 
     [Fact]
@@ -220,7 +261,8 @@ public sealed class UnitSilhouetteTests
     {
         // the check can fail: a unit against itself has distance 0, which is below every threshold
         var masks = Masks("Settler");
-        Assert.True(Distance(masks, masks) < MinDistance);
+        Assert.True(Distance(masks, masks) < MinLookDistance);
         Assert.True(Distance(masks, Masks("Archer")) > 0f);
+        Assert.True(Distance(Masks("Rifleman"), Masks("Marine")) >= MinLookDistance, "two units of one style are told apart");
     }
 }
