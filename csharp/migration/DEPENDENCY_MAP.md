@@ -76,7 +76,7 @@ flowchart TD
   classDef done fill:#eeeeee,stroke:#999999,color:#666,stroke-dasharray:4 3
   class C099 waiting
   class T260 blocked
-  class T263 prog
+  class T263 review
   class T273 prog
   class T274 ondeck
   class T275 waiting
@@ -141,7 +141,7 @@ xychart-beta
 | T274 | **On deck** (after T273) | T273 | 1 | Host migration 4/5: crash election (loss detection, signed HostLossVote quorum, split-brain refusal, superseded-host mode, forced take-over, kill-the-host scenarios) |
 | T296 | **On deck** (after T263) | T263 | 1 | Audit lazy engine caches reachable from host view building and add a read-only guard test (T263 precondition) |
 | T260 | Blocked | T259, C042 | 4 | Android APK build: unblock the .NET export (net9.0 target or Gradle), Android preset, debug-signed arm64 APK from tools/package.sh android |
-| T263 | In-Progress [Claude-T263] | T261 | 2 | Parallelism spike: which turn work can run in parallel without breaking determinism (go/no-go) |
+| T263 | Needs-Review [Claude-T263] | T261 | 2 | Parallelism spike: which turn work can run in parallel without breaking determinism (go/no-go) |
 | T273 | In-Progress [Claude-T273] | T272, T267 | 2 | Host migration 3/5: graceful hand-off and promotion (HostHandoff, promote from standby store, client redirect, rolledBack resync) |
 | T277 | Available (waiting on T260) | T260, T276 | 1 | Android CI: build the APK (arm64 plus x86_64) as an artifact and smoke it on an emulator |
 | T294 | In-Progress [Claude-warrior] | none | 1 | Gritty realistic unit look: Warrior design options for owner choice |
