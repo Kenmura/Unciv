@@ -139,12 +139,12 @@ public sealed class StandbyStoreTests : IDisposable
             StandbyStore.Open(root, id, limits).Dispose();
             var dir = StandbyStore.DirectoryFor(root, id)!;
             File.WriteAllText(Path.Combine(dir, "x"), "x");
+            if (id == "old-1") StandbyStore.RecordConsent(root, id); // still a successor for it: never pruned
             foreach (var file in Directory.GetFiles(dir)) File.SetLastWriteTimeUtc(file, new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc).AddDays(-age));
             Directory.SetLastWriteTimeUtc(dir, new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc).AddDays(-age));
         }
-        StandbyStore.RecordConsent(root, "old-1"); // still a successor for it: never pruned
         StandbyStore.Open(root, "new-3", limits).Dispose(); // written now: newer than the fixed 2026 dates above
-        Assert.True(Directory.Exists(StandbyStore.DirectoryFor(root, "old-1")!));
+        Assert.True(File.Exists(Path.Combine(StandbyStore.DirectoryFor(root, "old-1")!, "x")));
         Assert.False(Directory.Exists(StandbyStore.DirectoryFor(root, "old-2")!));
         Assert.True(Directory.Exists(StandbyStore.DirectoryFor(root, "old-3")!));
         Assert.True(Directory.Exists(StandbyStore.DirectoryFor(root, "new-3")!));

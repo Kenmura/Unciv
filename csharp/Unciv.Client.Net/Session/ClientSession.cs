@@ -463,7 +463,12 @@ public sealed class ClientSession : IAsyncDisposable
 
     private void MarkStandbyBroken()
     {
-        lock (standbyGate) standbyBroken = true; // the disk cannot take the copy: nothing further is acked, the host's stream turns lagging
+        lock (standbyGate)
+        {
+            standbyBroken = true; // the disk cannot take the copy: nothing further is acked, the host's stream turns lagging
+            standbyWriter = null; // and nothing more is queued: no worker may be left behind a full channel
+            standbyFrames?.Writer.TryComplete();
+        }
         Emit(new StandbyRejected("store-io"));
     }
 
