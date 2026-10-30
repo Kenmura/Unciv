@@ -22,6 +22,9 @@ public static class StandbyStates
 
     /// <summary>T272: reachable and subscribed but too far behind (too many unacked entries, no ack for too long, or a backed-up connection): entries are dropped and a snapshot resync follows once it catches up.</summary>
     public const string Lagging = "lagging";
+
+    /// <summary>T292: the designated successor was subscribed but the stream ended because of a fault (a protocol violation, the host's store failing, a snapshot over the limit). Nothing is replicated until the successor subscribes again.</summary>
+    public const string Stopped = "stopped";
 }
 
 /// <summary>The fixed trust notice every player sees before joining (design/HOST-MIGRATION.md section 1).</summary>
@@ -85,6 +88,12 @@ public sealed record StandbyLimits
 
     /// <summary>T272: the stream stops sending while this many frames wait in the session's outbound queue, so replication never fills the queue a slow-reader disconnect is judged on.</summary>
     public int MaxQueuedFrames { get; init; } = 96;
+
+    /// <summary>T292: the successor's <c>commands.log</c> is rotated (the old log dropped, not kept) when a snapshot arrives and the log is larger than this, as the host does with its own log. 0 never rotates.</summary>
+    public long RotateLogBytes { get; init; } = 4L * 1024 * 1024;
+
+    /// <summary>T292: at most this many games keep a copy under <c>standby/</c>; opening one more removes the least recently written of the others (a game that ended long ago).</summary>
+    public int MaxStandbyGames { get; init; } = 8;
 
     /// <summary>T272: a successor refuses a single command or checkpoint line longer than this.</summary>
     public int MaxLineChars { get; init; } = 4 * 1024 * 1024;

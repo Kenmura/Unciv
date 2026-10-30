@@ -428,7 +428,7 @@ public sealed class FileGameStore : IGameStore, IReplicationSource
     }
 
     // Where the log's lines about seqs after `seq` begin (a byte offset), and the checkpoint line for `seq` itself when the log has one.
-    private static (int PrefixLength, string? CheckpointLine) SplitAt(byte[] all, long seq)
+    internal static (int PrefixLength, string? CheckpointLine) SplitAt(byte[] all, long seq)
     {
         var position = Array.IndexOf(all, (byte)'\n') + 1; // after the header
         string? checkpointLine = null;

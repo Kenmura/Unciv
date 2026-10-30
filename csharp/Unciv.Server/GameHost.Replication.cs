@@ -91,7 +91,9 @@ public sealed partial class GameHost
             }
             catch (Exception e) when (e is GameStoreException or IOException or UnauthorizedAccessException or InvalidOperationException or ObjectDisposedException)
             {
-                StopStandbyStream(); // a store that cannot be read ends the stream; the successor resubscribes after its next reconnect
+                // A store that cannot be read ends the stream. It is reported (state "stopped", an error to the successor) instead of falling back to "ready"; the successor resubscribes with a backoff.
+                var stream = standbyStream;
+                if (stream != null) await FailStandbyStreamAsync(stream, "store-io");
             }
         });
         if (!written) Volatile.Write(ref standbyStepPosted, 0);
@@ -113,6 +115,28 @@ public sealed partial class GameHost
         if (current == null) return false;
         Standby.SetReplication(null, 0);
         return true;
+    }
+
+    /// <summary>
+    /// T292: ends the stream because of a fault (ack violation, store IO error, snapshot too large) and says so: the standby state becomes <see cref="StandbyStates.Stopped"/> (it stays there until the
+    /// successor subscribes again; the probe's "ready" would claim a copy that is no longer being kept) and the successor gets a <c>standby-protocol</c> error carrying <paramref name="detail"/>.
+    /// </summary>
+    private async Task FailStandbyStreamAsync(StandbyStream stream, string detail)
+    {
+        var lag = 0;
+        try
+        {
+            lag = (int)Math.Min(int.MaxValue, Math.Max(0, store!.LastSeq - Math.Max(stream.AckedSeq, 0)));
+        }
+        catch (Exception e) when (e is GameStoreException or IOException or ObjectDisposedException or InvalidOperationException)
+        {
+            // the store is the thing that failed: report the lag as unknown (0)
+        }
+        if (!ReferenceEquals(Volatile.Read(ref standbyStream), stream) || !StopStandbyStream()) return;
+        Standby.SetReplication(StandbyStates.Stopped, lag);
+        await SafeSendAsync(stream.Target, new Error { Code = ErrorCodes.StandbyViolation, Detail = detail });
+        await SafeSendAsync(stream.Target, StatusMessage());
+        await AnnounceSuccessorAsync();
     }
 
     private int PacingCap() => Math.Max(2, Math.Min(Standby.Limits.MaxQueuedFrames, limits.MaxQueuedFrames / 2));
@@ -194,9 +218,7 @@ public sealed partial class GameHost
         {
             if (ack.Seq < stream.AckedSeq || ack.Seq > Math.Min(stream.SentSeq, store!.LastSeq))
             {
-                StopStandbyStream();
-                await SafeSendAsync(from, new Error { Code = ErrorCodes.StandbyViolation });
-                await AnnounceSuccessorAsync();
+                await FailStandbyStreamAsync(stream, "ack");
                 return;
             }
             if (ack.Seq > stream.AckedSeq) stream.LastProgressMillis = clock.NowMillis;
@@ -265,6 +287,19 @@ public sealed partial class GameHost
         await ReportReplicationAsync(stream);
     }
 
+    // T292: a successor that resubscribes in a loop (or a second sync after a lag) would hash the same snapshot again; the state at one seq is one file, so the hash is kept for the newest snapshot.
+    // The bytes are compared (cheap next to sha256) rather than trusted by seq alone, and only small snapshots are kept so the cache never holds a large buffer.
+    private const int SnapshotCacheMaxBytes = 8 * 1024 * 1024;
+    private (long Seq, byte[] Bytes, string Sha)? snapshotHashCache;
+
+    private string HashSnapshot(long seq, byte[] bytes)
+    {
+        if (snapshotHashCache is { } cached && cached.Seq == seq && cached.Bytes.AsSpan().SequenceEqual(bytes)) return cached.Sha;
+        var sha = StandbyStore.HashOf(bytes);
+        snapshotHashCache = bytes.Length <= SnapshotCacheMaxBytes ? (seq, bytes, sha) : null;
+        return sha;
+    }
+
     private bool IsLagging(StandbyStream stream, long now)
     {
         var acked = stream.AwaitingResetAck ? (stream.ResetSeq >= 0 ? stream.ResetSeq : store!.LastSeq) : stream.AckedSeq;
@@ -286,8 +321,7 @@ public sealed partial class GameHost
             }
             if (newest.Value.Bytes.Length > Standby.Limits.MaxSnapshotBytes)
             {
-                StopStandbyStream();
-                await SafeSendAsync(stream.Target, new Error { Code = ErrorCodes.StandbyViolation, Detail = "snapshot-too-large" });
+                await FailStandbyStreamAsync(stream, "snapshot-too-large");
                 return false;
             }
             LoadSnapshot(stream, newest.Value.Seq, newest.Value.Bytes);
@@ -331,7 +365,7 @@ public sealed partial class GameHost
         stream.SnapBytes = bytes;
         stream.SnapSeq = seq;
         stream.SnapNext = 0;
-        stream.SnapSha = StandbyStore.HashOf(bytes);
+        stream.SnapSha = HashSnapshot(seq, bytes);
         stream.SnapParts = Math.Max(1, (bytes.Length + chunk - 1) / chunk);
     }
 

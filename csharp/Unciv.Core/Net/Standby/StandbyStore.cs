@@ -69,8 +69,102 @@ public sealed class StandbyStore : IDisposable
     /// </summary>
     public static string? DirectoryFor(string dataRoot, string gameId)
     {
-        if (gameId.Length is 0 or > 64 || gameId[0] == '.' || !gameId.All(c => char.IsAsciiLetterOrDigit(c) || c is '-' or '_' or '.')) return null;
+        if (gameId.Length is 0 or > 64 || gameId[0] == '.' || gameId[^1] == '.' || !gameId.All(c => char.IsAsciiLetterOrDigit(c) || c is '-' or '_' or '.')) return null;
+        if (IsWindowsReserved(gameId)) return null;
         return Path.Combine(dataRoot, "standby", gameId);
+    }
+
+    // T292: Windows refuses (or redirects to a device) a directory named like a legacy device, with or without an extension ("con", "COM1.txt"): a host-chosen game id must not reach that.
+    private static bool IsWindowsReserved(string name)
+    {
+        var dot = name.IndexOf('.', StringComparison.Ordinal);
+        var stem = (dot < 0 ? name : name[..dot]).ToUpperInvariant();
+        if (stem is "CON" or "PRN" or "AUX" or "NUL" or "CONIN$" or "CONOUT$") return true;
+        return stem.Length == 4 && (stem.StartsWith("COM", StringComparison.Ordinal) || stem.StartsWith("LPT", StringComparison.Ordinal)) && stem[3] is >= '0' and <= '9';
+    }
+
+    private const string ConsentName = "consent.json";
+
+    /// <summary>T292: records that this player agreed (in this process or an earlier one) to keep a standby copy of <paramref name="gameId"/>. Per game: a copy of another game is not consent for this one.</summary>
+    public static bool RecordConsent(string dataRoot, string gameId)
+    {
+        var path = DirectoryFor(dataRoot, gameId);
+        if (path == null) return false;
+        try
+        {
+            Directory.CreateDirectory(path);
+            FileGameStore.WriteAtomic(Path.Combine(path, ConsentName), Encoding.UTF8.GetBytes(UncivJson.Serialize(new ConsentRecord { GameId = gameId })));
+            return true;
+        }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+        {
+            return false;
+        }
+    }
+
+    /// <summary>T292: removes the consent record of <paramref name="gameId"/> (the copy, if any, stays).</summary>
+    public static void ClearConsent(string dataRoot, string gameId)
+    {
+        if (DirectoryFor(dataRoot, gameId) is not { } path) return;
+        try { File.Delete(Path.Combine(path, ConsentName)); }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException) { /* best effort */ }
+    }
+
+    /// <summary>T292: true when <see cref="RecordConsent"/> stored a consent for exactly this game (a directory that merely exists, or a record of another game, does not count).</summary>
+    public static bool HasConsent(string dataRoot, string gameId)
+    {
+        var path = DirectoryFor(dataRoot, gameId);
+        if (path == null) return false;
+        try
+        {
+            var file = Path.Combine(path, ConsentName);
+            return File.Exists(file) && UncivJson.Deserialize<ConsentRecord>(File.ReadAllText(file)) is { Consented: true } record && string.Equals(record.GameId, gameId, StringComparison.Ordinal);
+        }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException or JsonException)
+        {
+            return false;
+        }
+    }
+
+    private sealed record ConsentRecord
+    {
+        [System.Text.Json.Serialization.JsonPropertyName("gameId")]
+        public string GameId { get; init; } = "";
+
+        [System.Text.Json.Serialization.JsonPropertyName("consented")]
+        public bool Consented { get; init; } = true;
+    }
+
+    // T292: bounds the standby/ tree. Only directories this class could have created (safe names) are considered, the one being opened is never removed, and a failure to delete is ignored.
+    private static void PruneOtherGames(string dataRoot, string keep, int maxGames)
+    {
+        if (maxGames <= 0) return;
+        try
+        {
+            var root = Path.Combine(dataRoot, "standby");
+            var others = new DirectoryInfo(root).GetDirectories()
+                .Where(it => !string.Equals(it.Name, keep, StringComparison.Ordinal) && DirectoryFor(dataRoot, it.Name) != null)
+                .OrderByDescending(LastWrite)
+                .Skip(maxGames - 1)
+                .ToList();
+            foreach (var old in others)
+            {
+                try { old.Delete(true); }
+                catch (Exception e) when (e is IOException or UnauthorizedAccessException) { /* in use or protected: stays */ }
+            }
+        }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+        {
+            // an unreadable tree is not pruned
+        }
+    }
+
+    private static DateTime LastWrite(DirectoryInfo directory)
+    {
+        var newest = directory.LastWriteTimeUtc;
+        foreach (var file in directory.GetFiles())
+            if (file.LastWriteTimeUtc > newest) newest = file.LastWriteTimeUtc;
+        return newest;
     }
 
     /// <summary>Opens (creating the directory when needed) the standby store of <paramref name="gameId"/> and recovers its position from what is on disk; a torn last log line is cut off.</summary>
@@ -78,6 +172,7 @@ public sealed class StandbyStore : IDisposable
     {
         var path = DirectoryFor(dataRoot, gameId) ?? throw new ArgumentException("Not a usable game id", nameof(gameId));
         var store = new StandbyStore(path, gameId, limits ?? new StandbyLimits());
+        PruneOtherGames(dataRoot, gameId, store.limits.MaxStandbyGames);
         Directory.CreateDirectory(path);
         store.Recover();
         return store;
@@ -220,8 +315,27 @@ public sealed class StandbyStore : IDisposable
     {
         if (log == null || snapshot.Seq > lastSeq) return Reject("snapshot-ahead-of-log"); // a snapshot of a state the log does not reach yet could not be replayed forward
         FileGameStore.WriteAtomic(PathOf(SnapshotName(snapshot.Seq)), snapshot.Bytes.ToArray());
+        if (limits.RotateLogBytes > 0 && log.Length > limits.RotateLogBytes) RotateLog(snapshot.Seq);
         foreach (var (_, path) in FileGameStore.ListSnapshots(directory).Skip(KeepSnapshots)) File.Delete(path);
         return StandbyApply.Applied;
+    }
+
+    // T292: the host rotates its own log at a snapshot; the copy does the same so it stays bounded, except that the old log is dropped (the copy is not an audit trail). commands.log restarts as the header, the
+    // checkpoint of the snapshot's seq and the lines after it; snapshots older than that could no longer be replayed forward. A crash leaves a complete commands.log, old or new.
+    private void RotateLog(long snapshotSeq)
+    {
+        var all = File.ReadAllBytes(PathOf(LogName));
+        var (prefixLength, checkpointLine) = FileGameStore.SplitAt(all, snapshotSeq);
+        var headerEnd = Array.IndexOf(all, (byte)'\n') + 1;
+        var rotated = new List<byte>(all.AsSpan(0, headerEnd).ToArray());
+        if (checkpointLine != null) rotated.AddRange(Encoding.UTF8.GetBytes(checkpointLine + "\n"));
+        rotated.AddRange(all.AsSpan(prefixLength).ToArray());
+        log?.Dispose();
+        log = null;
+        FileGameStore.WriteAtomic(PathOf(LogName), rotated.ToArray());
+        log = OpenLog();
+        foreach (var (seq, path) in FileGameStore.ListSnapshots(directory))
+            if (seq < snapshotSeq) File.Delete(path);
     }
 
     /// <summary>One verbatim log line. It must be a command of the next seq or a checkpoint of the current one; a repeat of what is already stored is accepted and ignored. Durable when this returns.</summary>

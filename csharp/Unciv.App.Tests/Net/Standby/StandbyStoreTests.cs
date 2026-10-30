@@ -70,6 +70,84 @@ public sealed class StandbyStoreTests : IDisposable
         if (ok) Assert.Equal(Path.Combine(root, "standby", id), path);
     }
 
+    [Theory]
+    [InlineData("con")]
+    [InlineData("CON")]
+    [InlineData("nul")]
+    [InlineData("Aux.txt")]
+    [InlineData("com1")]
+    [InlineData("LPT9.log")]
+    [InlineData("prn")]
+    [InlineData("game.")]
+    public void WindowsReservedNamesAndTrailingDots_AreRefused(string id) => Assert.Null(StandbyStore.DirectoryFor(root, id));
+
+    [Theory]
+    [InlineData("com10")]
+    [InlineData("console")]
+    [InlineData("lpt0x")]
+    [InlineData("a.con")]
+    public void NamesThatOnlyLookLikeReservedOnes_AreFine(string id) => Assert.NotNull(StandbyStore.DirectoryFor(root, id));
+
+    [Fact]
+    public void Consent_IsPerGame_AndCanBeCleared()
+    {
+        Assert.False(StandbyStore.HasConsent(root, GameId));
+        Assert.True(StandbyStore.RecordConsent(root, GameId));
+        Assert.True(StandbyStore.HasConsent(root, GameId));
+        Assert.False(StandbyStore.HasConsent(root, "game-2"));
+        Assert.False(StandbyStore.RecordConsent(root, "../x"));
+        StandbyStore.ClearConsent(root, GameId);
+        Assert.False(StandbyStore.HasConsent(root, GameId));
+        File.WriteAllText(Path.Combine(StandbyStore.DirectoryFor(root, GameId)!, "consent.json"), "{not json");
+        Assert.False(StandbyStore.HasConsent(root, GameId)); // a damaged record is no consent
+    }
+
+    [Fact]
+    public void ALogOverTheLimit_IsRotatedAtTheNextSnapshot_AndStillRecovers()
+    {
+        var limits = new StandbyLimits { RotateLogBytes = 600 };
+        var store = StandbyStore.Open(root, GameId, limits);
+        Assert.Equal(StandbyApply.Applied, store.Apply(Meta()));
+        foreach (var part in Chunks(Encoding.UTF8.GetBytes("snapshot-0"), 0, true, 40)) store.Apply(part);
+        for (var seq = 1; seq <= 12; seq++) Assert.Equal(StandbyApply.Applied, store.Apply(Entry(Command(seq), seq)));
+        Assert.Equal(StandbyApply.Applied, store.Apply(Entry(Checkpoint(12), 12)));
+        var logPath = Path.Combine(store.DirectoryPath, "commands.log");
+        var before = new FileInfo(logPath).Length;
+        Assert.True(before > limits.RotateLogBytes);
+        var lastLine = StandbyStore.LineHash(Command(12));
+
+        foreach (var part in Chunks(Encoding.UTF8.GetBytes("snapshot-12"), 12, false, 40)) Assert.NotEqual(StandbyApply.Rejected, store.Apply(part));
+        Assert.True(new FileInfo(logPath).Length < before);
+        Assert.False(Directory.Exists(Path.Combine(store.DirectoryPath, "history"))); // the old log is dropped, not kept
+        Assert.Single(Directory.GetFiles(store.DirectoryPath, "snapshot-*"));
+        Assert.Equal(12, store.HaveSeq);
+        Assert.Equal(StandbyApply.Applied, store.Apply(Entry(Command(13), 13)));
+        store.Dispose();
+
+        using var reopened = StandbyStore.Open(root, GameId, limits);
+        Assert.Equal(13, reopened.HaveSeq);
+        Assert.Equal(StandbyStore.LineHash(Command(13)), reopened.HaveLineSha256);
+        Assert.NotEqual(lastLine, reopened.HaveLineSha256);
+    }
+
+    [Fact]
+    public void TheStandbyTree_KeepsOnlyTheNewestGames()
+    {
+        var limits = new StandbyLimits { MaxStandbyGames = 2 };
+        foreach (var (id, age) in new[] { ("old-1", 3), ("old-2", 2) })
+        {
+            StandbyStore.Open(root, id, limits).Dispose();
+            var dir = StandbyStore.DirectoryFor(root, id)!;
+            File.WriteAllText(Path.Combine(dir, "x"), "x");
+            foreach (var file in Directory.GetFiles(dir)) File.SetLastWriteTimeUtc(file, new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc).AddDays(-age));
+            Directory.SetLastWriteTimeUtc(dir, new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc).AddDays(-age));
+        }
+        StandbyStore.Open(root, "new-3", limits).Dispose(); // written now: newer than the fixed 2026 dates above
+        Assert.False(Directory.Exists(StandbyStore.DirectoryFor(root, "old-1")!));
+        Assert.True(Directory.Exists(StandbyStore.DirectoryFor(root, "old-2")!));
+        Assert.True(Directory.Exists(StandbyStore.DirectoryFor(root, "new-3")!));
+    }
+
     [Fact]
     public void ResetSnapshot_InstallsTheStore_AndEntriesAppendVerbatim()
     {

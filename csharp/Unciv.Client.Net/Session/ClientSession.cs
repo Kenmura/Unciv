@@ -64,6 +64,13 @@ public sealed class ClientSessionOptions
 
     public int MaxReconnectAttempts { get; init; } = 5;
 
+    /// <summary>T292: waits before resubscribe attempt n (1-based) after the host answered a subscribe or stopped its stream with <c>standby-protocol</c>. The default backs off 1, 2, 4, ... 30 seconds; tests pass an immediate one.</summary>
+    public Func<int, CancellationToken, Task> StandbyResubscribeDelay { get; init; } =
+        (attempt, token) => Task.Delay(TimeSpan.FromSeconds(Math.Min(30, 1 << Math.Min(attempt - 1, 5))), token);
+
+    /// <summary>T292: resubscribe attempts per connection without progress in between (a stored frame resets the count).</summary>
+    public int MaxStandbyResubscribes { get; init; } = 5;
+
     /// <summary>How long connecting plus the join handshake may take (the TOFU prompt does not count) before the attempt is abandoned.</summary>
     public TimeSpan HandshakeTimeout { get; init; } = TimeSpan.FromSeconds(15);
 
@@ -141,13 +148,22 @@ public sealed class ClientSession : IAsyncDisposable
     private TaskCompletionSource? resyncWaiter;
 
     // T272: standby replication (receive-loop state; one connection at a time).
+    // T292: the frames are applied (and fsynced) by a worker, not the receive loop, so a slow disk never delays heartbeats, pongs or the game stream. Everything below up to standbyHave is guarded by standbyGate
+    // (the worker applies under it; closing the store waits for the frame in progress).
+    private readonly Lock standbyGate = new();
     private StandbyStore? standbyStore;
     private string? standbyGameId;
-    private bool standbyConsented;
+    private const string AnyGame = "*";
+    private string? standbyConsentedGame;
     private bool standbyBroken;
     private bool standbyRestarting;
     private int standbyRestarts;
+    private int standbyAppliedSinceReject;
+    private int standbyResubscribes;
+    private bool standbyResubscribePending;
+    private volatile bool standbyResubscribeDue;
     private long standbyLastAck = long.MinValue;
+    private Channel<Message>? standbyFrames;
     private long standbyHave = -1;
 
     /// <summary>T272: the last log seq of this player's standby copy (-1 when it holds none or is not a backup host). Counters only: the copy itself is never exposed.</summary>
@@ -308,7 +324,9 @@ public sealed class ClientSession : IAsyncDisposable
     /// <summary>Consents to the backup-host role offered by <see cref="StandbyOffered"/>: <paramref name="endpoints"/> are the addresses this player can be reached on, <paramref name="port"/> and <paramref name="fingerprint"/> those of its own listener. The host probes one endpoint before the standby counts as ready.</summary>
     public ValueTask AcceptStandbyAsync(IReadOnlyList<string> endpoints, int port, string fingerprint)
     {
-        standbyConsented = true; // from here the host's replication stream may be stored under StandbyRoot
+        // From here the host's replication stream of this game may be stored under StandbyRoot: in memory for this process and as a per-game record for the next one.
+        standbyConsentedGame = gameId ?? AnyGame; // a session joins one game: with its id not known yet the accept covers the game the host's next status names
+        if (gameId != null && options.StandbyRoot != null) StandbyStore.RecordConsent(options.StandbyRoot, gameId);
         return SendAsync(new StandbyAccept { Endpoints = [.. endpoints], Port = port, Fingerprint = fingerprint });
     }
 
@@ -350,24 +368,35 @@ public sealed class ClientSession : IAsyncDisposable
 
     private void EndStandbyReplication()
     {
-        standbyConsented = false;
+        var game = standbyGameId ?? gameId;
+        standbyConsentedGame = null;
+        if (game != null && options.StandbyRoot != null) StandbyStore.ClearConsent(options.StandbyRoot, game); // the designation ended: the copy stays, but nothing is stored into it until a new accept
         CloseStandbyStore();
     }
 
     private void CloseStandbyStore()
     {
-        standbyStore?.Dispose();
-        standbyStore = null;
-        standbyGameId = null;
-        standbyBroken = false;
-        standbyRestarting = false;
-        standbyRestarts = 0;
-        standbyLastAck = long.MinValue;
+        lock (standbyGate)
+        {
+            standbyFrames?.Writer.TryComplete();
+            standbyFrames = null;
+            standbyStore?.Dispose();
+            standbyStore = null;
+            standbyGameId = null;
+            standbyBroken = false;
+            standbyRestarting = false;
+            standbyRestarts = 0;
+            standbyAppliedSinceReject = 0;
+            standbyResubscribes = 0;
+            standbyResubscribePending = false;
+            standbyResubscribeDue = false;
+            standbyLastAck = long.MinValue;
+        }
     }
 
     /// <summary>
-    /// Subscribes to the host's replication stream, once per connection, resuming from what the standby copy holds. Only for a player that consented in this process or already keeps a copy of this game,
-    /// and only for a game id that is a safe directory name (it comes from the host).
+    /// Subscribes to the host's replication stream, once per connection, resuming from what the standby copy holds. Only for a player that consented to this game (in this process or by the per-game record
+    /// an earlier one left), and only for a game id that is a safe directory name (it comes from the host).
     /// </summary>
     private async Task SubscribeStandbyAsync(string? statusGameId, CancellationToken token)
     {
@@ -375,76 +404,185 @@ public sealed class ClientSession : IAsyncDisposable
         if (statusGameId != null && gameId != null && !string.Equals(statusGameId, gameId, StringComparison.Ordinal)) return; // only the game this session joined
         var id = statusGameId ?? gameId;
         if (id == null) return;
-        var path = StandbyStore.DirectoryFor(options.StandbyRoot, id);
-        if (path == null || (!standbyConsented && !Directory.Exists(path))) return;
+        if (StandbyStore.DirectoryFor(options.StandbyRoot, id) == null) return;
+        if (string.Equals(standbyConsentedGame, AnyGame, StringComparison.Ordinal))
+        {
+            standbyConsentedGame = id;
+            StandbyStore.RecordConsent(options.StandbyRoot, id);
+        }
+        if (!string.Equals(standbyConsentedGame, id, StringComparison.Ordinal) && !StandbyStore.HasConsent(options.StandbyRoot, id)) return;
+        StandbyStore opened;
         try
         {
-            standbyStore = StandbyStore.Open(options.StandbyRoot, id);
+            opened = StandbyStore.Open(options.StandbyRoot, id);
         }
         catch (Exception e) when (e is IOException or UnauthorizedAccessException)
         {
             Emit(new StandbyRejected("store-unavailable"));
             return;
         }
-        standbyGameId = id;
-        Interlocked.Exchange(ref standbyHave, standbyStore.HaveSeq);
-        await SendAsync(new StandbySubscribe { GameId = id, HaveSeq = standbyStore.HaveSeq, HaveLineSha256 = standbyStore.HaveLineSha256 }, token).ConfigureAwait(false);
+        long have;
+        string? haveSha;
+        lock (standbyGate)
+        {
+            standbyStore = opened;
+            standbyGameId = id;
+            standbyFrames = Channel.CreateBounded<Message>(new BoundedChannelOptions(128) { SingleReader = true, SingleWriter = true, FullMode = BoundedChannelFullMode.Wait });
+            _ = Task.Run(() => RunStandbyWorkerAsync(opened, standbyFrames.Reader, token), CancellationToken.None);
+            have = opened.HaveSeq;
+            haveSha = opened.HaveLineSha256;
+        }
+        Interlocked.Exchange(ref standbyHave, have);
+        await SendAsync(new StandbySubscribe { GameId = id, HaveSeq = have, HaveLineSha256 = haveSha }, token).ConfigureAwait(false);
     }
 
+    // Receive loop: hands the frame to the worker (bounded: a disk that cannot keep up pauses reading, and the host's pacing then stops sending).
     private async Task HandleStandbyFrameAsync(Message frame, CancellationToken token)
     {
-        var store = standbyStore;
-        if (store == null || standbyBroken) return; // never subscribed on this connection: a host cannot push a copy onto a player who did not ask
+        ChannelWriter<Message>? writer;
+        lock (standbyGate) writer = standbyStore == null || standbyBroken ? null : standbyFrames?.Writer; // never subscribed on this connection: a host cannot push a copy onto a player who did not ask
+        if (writer == null) return;
         var epoch = frame switch { StandbyMeta m => m.Epoch, StandbySnapshot p => p.Epoch, StandbyEntry e => e.Epoch, _ => -1 };
         if (epoch != connectionEpoch) return;
-        // After a restart request the frames already on the wire belong to the old stream: they are skipped up to the new stream's first frame (the meta with the log header).
-        if (standbyRestarting)
-        {
-            if (frame is not StandbyMeta { Header: not null }) return;
-            standbyRestarting = false;
-        }
+        try { await writer.WriteAsync(frame, token).ConfigureAwait(false); }
+        catch (ChannelClosedException) { /* the copy was closed while this frame was in flight */ }
+    }
 
-        StandbyApply result;
+    private async Task RunStandbyWorkerAsync(StandbyStore store, ChannelReader<Message> reader, CancellationToken token)
+    {
         try
         {
-            result = frame switch
-            {
-                StandbyMeta m => store.Apply(m),
-                StandbySnapshot p => store.Apply(p),
-                StandbyEntry e => store.Apply(e),
-                _ => StandbyApply.Rejected,
-            };
+            await foreach (var frame in reader.ReadAllAsync(token).ConfigureAwait(false))
+                await ApplyStandbyFrameAsync(store, frame, token).ConfigureAwait(false);
         }
-        catch (Exception e) when (e is IOException or UnauthorizedAccessException or ObjectDisposedException)
-        {
-            standbyBroken = true; // (a decline closing the copy while a frame is in flight lands here too) the disk cannot take the copy: nothing further is acked, the host's stream turns lagging
-            Emit(new StandbyRejected("store-io"));
-            return;
-        }
+        catch (OperationCanceledException) { }
+        catch (Exception e) when (IsConnectionGone(e)) { }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException or JsonException) { MarkStandbyBroken(); }
+    }
 
-        if (result == StandbyApply.Rejected)
+    private void MarkStandbyBroken()
+    {
+        lock (standbyGate) standbyBroken = true; // the disk cannot take the copy: nothing further is acked, the host's stream turns lagging
+        Emit(new StandbyRejected("store-io"));
+    }
+
+    private async Task ApplyStandbyFrameAsync(StandbyStore store, Message frame, CancellationToken token)
+    {
+        string? emit = null;
+        var restartRequest = false;
+        long? ack = null;
+        string? id;
+        lock (standbyGate)
         {
-            Emit(new StandbyRejected(store.LastRejection ?? "rejected"));
-            if (++standbyRestarts > 3)
+            if (!ReferenceEquals(standbyStore, store) || standbyBroken) return;
+            id = standbyGameId;
+            // After a restart request the frames already on the wire belong to the old stream: they are skipped up to the new stream's first frame (the meta with the log header).
+            if (standbyRestarting)
             {
-                standbyBroken = true;
+                if (frame is not StandbyMeta { Header: not null }) return;
+                standbyRestarting = false;
+            }
+
+            StandbyApply result;
+            try
+            {
+                result = frame switch
+                {
+                    StandbyMeta m => store.Apply(m),
+                    StandbySnapshot p => store.Apply(p),
+                    StandbyEntry e => store.Apply(e),
+                    _ => StandbyApply.Rejected,
+                };
+            }
+            catch (Exception e) when (e is IOException or UnauthorizedAccessException or ObjectDisposedException)
+            {
+                MarkStandbyBroken(); // (the lock is reentrant)
                 return;
             }
-            standbyRestarting = true;
-            standbyLastAck = long.MinValue;
-            await SendAsync(new StandbySubscribe { GameId = standbyGameId!, HaveSeq = -1 }, token).ConfigureAwait(false);
-            return;
+
+            if (result == StandbyApply.Rejected)
+            {
+                emit = store.LastRejection ?? "rejected";
+                standbyAppliedSinceReject = 0;
+                if (++standbyRestarts > 3)
+                {
+                    standbyBroken = true;
+                }
+                else
+                {
+                    standbyRestarting = true;
+                    standbyLastAck = long.MinValue;
+                    restartRequest = true;
+                }
+            }
+            else
+            {
+                Interlocked.Exchange(ref standbyHave, store.HaveSeq);
+                // Acked: every stored log line, and a snapshot that restarted the store (the host ignores acks until the one for that snapshot's seq).
+                var resetDone = frame is StandbySnapshot { Reset: true } && result == StandbyApply.Applied;
+                if (resetDone)
+                {
+                    standbyRestarts = 0; // a restart that worked
+                    standbyAppliedSinceReject = 0;
+                    standbyResubscribes = 0;
+                }
+                if (frame is StandbyEntry && result == StandbyApply.Applied)
+                {
+                    standbyResubscribes = 0;
+                    if (++standbyAppliedSinceReject >= 100) standbyRestarts = 0; // the counter decays: isolated rejections over a long healthy stream must not add up to a permanent stop
+                }
+                if (resetDone || (frame is StandbyEntry && result == StandbyApply.Applied && store.HaveSeq != standbyLastAck))
+                {
+                    standbyLastAck = store.HaveSeq;
+                    ack = store.HaveSeq;
+                }
+            }
         }
 
-        Interlocked.Exchange(ref standbyHave, store.HaveSeq);
-        // Acked: every stored log line, and a snapshot that restarted the store (the host ignores acks until the one for that snapshot's seq).
-        var resetDone = frame is StandbySnapshot { Reset: true } && result == StandbyApply.Applied;
-        if (resetDone) standbyRestarts = 0; // a restart that worked
-        if (resetDone || (frame is StandbyEntry && result == StandbyApply.Applied && store.HaveSeq != standbyLastAck))
+        if (emit != null) Emit(new StandbyRejected(emit));
+        if (restartRequest) await SendAsync(new StandbySubscribe { GameId = id!, HaveSeq = -1 }, token).ConfigureAwait(false);
+        else if (ack != null) await SendAsync(new StandbyAck { Seq = ack.Value }, token).ConfigureAwait(false);
+    }
+
+    // T292: the host refused a subscribe (rate) or ended the stream (a violation, its store failing). The subscribe is repeated after a growing delay, a bounded number of times per connection.
+    // The delay runs off the receive loop; when it ends a Ping makes the host's Pong wake the loop, which then does the resubscribe (so the store is only ever touched from the loop and the worker).
+    private void ScheduleStandbyResubscribe(CancellationToken token)
+    {
+        int attempt;
+        lock (standbyGate)
         {
-            standbyLastAck = store.HaveSeq;
-            await SendAsync(new StandbyAck { Seq = store.HaveSeq }, token).ConfigureAwait(false);
+            if (standbyStore == null || standbyBroken || standbyResubscribePending || standbyResubscribes >= options.MaxStandbyResubscribes) return;
+            standbyResubscribePending = true;
+            attempt = ++standbyResubscribes;
         }
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                await options.StandbyResubscribeDelay(attempt, token).ConfigureAwait(false);
+                standbyResubscribeDue = true;
+                await SendAsync(new Ping(), token).ConfigureAwait(false);
+            }
+            catch (OperationCanceledException) { }
+            catch (Exception e) when (IsConnectionGone(e)) { }
+        }, CancellationToken.None);
+    }
+
+    private async Task ResubscribeStandbyAsync(CancellationToken token)
+    {
+        StandbySubscribe? subscribe = null;
+        lock (standbyGate)
+        {
+            standbyResubscribeDue = false;
+            standbyResubscribePending = false;
+            if (standbyStore is { } store && !standbyBroken && standbyGameId != null)
+            {
+                subscribe = standbyRestarting
+                    ? new StandbySubscribe { GameId = standbyGameId, HaveSeq = -1 }
+                    : new StandbySubscribe { GameId = standbyGameId, HaveSeq = store.HaveSeq, HaveLineSha256 = store.HaveLineSha256 };
+            }
+        }
+        if (subscribe != null) await SendAsync(subscribe, token).ConfigureAwait(false);
     }
 
     // ------------------------------------------------------------ lobby actions
@@ -677,8 +815,10 @@ public sealed class ClientSession : IAsyncDisposable
                 return true;
             case Error error:
                 Emit(new ProtocolError(error.Code));
+                if (string.Equals(error.Code, ErrorCodes.StandbyViolation, StringComparison.Ordinal)) ScheduleStandbyResubscribe(token);
                 return true;
             case Pong:
+                if (standbyResubscribeDue) await ResubscribeStandbyAsync(token).ConfigureAwait(false);
                 return true;
             default:
                 Emit(new ProtocolError(ErrorCodes.InvalidMessage));

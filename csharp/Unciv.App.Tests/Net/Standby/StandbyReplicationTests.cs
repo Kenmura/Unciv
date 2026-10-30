@@ -484,6 +484,27 @@ public sealed class StandbyReplicationTests : IDisposable
     }
 
     [Fact]
+    public async Task AStreamThatEndsOnAViolation_IsReportedAsStopped_UntilTheSuccessorSubscribesAgain()
+    {
+        await using var host = StartHost("g4b");
+        await using var successor = await DesignateAndAcceptAsync(host, Path.Combine(root, "successor4b"));
+        await successor.SubscribeAsync();
+        await PlayTurnsAsync(host, 1);
+        await successor.WaitForSeqAsync(await HostSeqAsync(host));
+        await successor.WaitAsync<StandbyStatus>(it => it.State == StandbyStates.Ready);
+
+        await successor.SendAsync(new StandbyAck { Seq = long.MaxValue / 2 });
+        Assert.Equal("ack", (await successor.WaitAsync<Error>(it => it.Code == ErrorCodes.StandbyViolation)).Detail);
+        await successor.WaitAsync<StandbyStatus>(it => it.State == StandbyStates.Stopped);
+        Assert.Equal(StandbyStates.Stopped, host.Host.Standby.State); // not the probe's "ready": nothing is replicated any more
+        Assert.Equal(StandbyStates.Stopped, host.Host.Standby.Announcement(0, []).Status);
+
+        await successor.SubscribeAsync();
+        await successor.WaitAsync<StandbyStatus>(it => successor.Of<StandbyStatus>().Last().State is StandbyStates.Syncing or StandbyStates.Ready);
+        Assert.NotEqual(StandbyStates.Stopped, host.Host.Standby.State);
+    }
+
+    [Fact]
     public async Task SlowSuccessor_IsMarkedLagging_ThenResyncsFromASnapshotOnceItCatchesUp()
     {
         var clock = new ManualClock(StartClock);
