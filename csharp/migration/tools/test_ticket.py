@@ -279,6 +279,7 @@ class ScreenshotGallery(unittest.TestCase):
 
     def test_ticket_check_warns_but_passes(self):
         self.write_map({"C001": {"none": "n"}})
+        self.run_tool("ticket.py", "graph")
         r = self.run_tool("ticket.py", "check")
         self.assertEqual(r.returncode, 0)
         self.assertIn("WARN C002", r.stdout)
