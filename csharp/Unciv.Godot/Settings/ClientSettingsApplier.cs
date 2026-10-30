@@ -9,6 +9,7 @@ public static class ClientSettingsApplier
     {
         AudioServer.SetBusVolumeDb(0, OptionsModel.VolumeDb(settings.SoundVolume));
         if (window == null) return;
+        window.MinSize = new Vector2I(Unciv.Assets.UiTokens.MinWindowWidth, Unciv.Assets.UiTokens.MinWindowHeight); // T311
         window.Mode = settings.WindowMode switch
         {
             "Fullscreen" => Window.ModeEnum.ExclusiveFullscreen,

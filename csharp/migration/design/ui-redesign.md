@@ -308,7 +308,25 @@ Recommendation: **an Unciv icon pack plus procedural fallbacks**, not hand-made 
 
 ### 2.7 Responsive rules and UI scale
 
-- **Effective scale** = `user scale (0.5–3, existing) × auto`, where `auto = clamp(floor4(min(w/1280, h/720)), 1.0, 2.0)` and `floor4` rounds down to a 0.25 step. 1280x720 → 1.0, 1920x1080 → 1.5, 2560x1440 → 2.0. Never auto-shrink below 1.
+- **Effective scale** = `user scale (0.5-3, existing, applied by the window content scale) x auto`. `auto` (T311, `UiTokens.AutoScale`) is computed from the real window pixels, so the user scale multiplies it cleanly:
+  1. Take the window in device independent pixels: `pixels / osScale`, where `osScale` is the OS display scale (`DisplayServer.ScreenGetScale`: Windows and macOS scaling, Wayland scale; 1 when unreported, factors below 1 ignored).
+  2. `fit = min(w/1280, h/720)`. The tighter side decides, so a 3440x1440 ultrawide behaves like 2560x1440 and 16:10 windows like their width or height allows.
+  3. `curve(fit)`, piecewise linear through the knots below, then `x osScale`, rounded down to a 0.25 step, kept within 1 and 4. Never auto-shrinks below 1; the curve itself tops out at 3.5.
+
+  | fit | 1 | 1.5 | 2 | 3 | 6+ |
+  |---|---|---|---|---|---|
+  | curve | 1.0 | 1.5 | 1.9 | 2.6 | 3.5 |
+
+  Why not linear: up to 1080p the window and the controls grow together (a small window must stay readable). Above it the screen is viewed from the same distance, so the extra pixels buy sharpness and room, and controls grow at 0.8, then 0.7, then 0.3 per unit of fit. A 32 px control is 32 px at 1366x768, 48 at 1920x1080, 56 at 2560x1440 and 3440x1440 (1.75), 80 at 3840x2160 (2.5), 112 at the 8K cap; 15 px body text is 15, 23, 26, 38 and 53 px. The logical window (pixels / auto) is 1366x768, 1280x720, 1463x823, 1536x864 and 2194x1234, always at least the 1280x720 design window. With an OS scale of 2 a 3840x2160 window gets 3.0 (the 1080p look doubled), a 2560x1440 one 2.0.
+
+  | window | OS scale | auto | logical window |
+  |---|---|---|---|
+  | 1366x768 | 1 | 1.0 | 1366x768 |
+  | 1920x1080, 1920x1200 | 1 | 1.5 | 1280x720, 1280x800 |
+  | 2560x1440, 2560x1600, 3440x1440 | 1 | 1.75 | 1463x823, 1463x914, 1966x823 |
+  | 3840x2160 | 1 / 1.5 / 2 | 2.5 / 2.75 / 3.0 | 1536x864 / 1396x785 / 1280x720 |
+
+  Touch builds (C096) are unchanged: `TouchAutoScale` derives the scale from the screen density (dpi/160, 48 dp targets, logical viewport at least 900x415) and uses the curve only when the density is unknown. The client window cannot be resized below 640x360 (`UiTokens.MinWindowWidth/Height`, set as the window's minimum size), the 640x360 corner being the Compact breakpoint's smallest layout. The all-screens layout pass at these sizes is T312.
 - **Breakpoints** use logical width = `window width / effective scale`:
   - `Compact` below 1000 (includes the 640x480 harness and phones): nav is icon-only, unit panel ~260px, side panels become overlays or tabs, padding S2.
   - `Regular` 1000–1600: icon + text where noted.

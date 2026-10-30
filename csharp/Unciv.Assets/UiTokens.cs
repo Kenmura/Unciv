@@ -125,12 +125,50 @@ public static class UiTokens
     public static UiBreakpoint BreakpointFor(float logicalWidth) =>
         logicalWidth < RegularFromWidth ? UiBreakpoint.Compact : logicalWidth <= WideFromWidth ? UiBreakpoint.Regular : UiBreakpoint.Wide;
 
-    /// <summary>The automatic part of the UI scale: min(w/1280, h/720) rounded down to a 0.25 step, never below 1 or above 2.</summary>
-    public static float AutoScale(int width, int height)
+    /// <summary>T311: the smallest window the client allows (both dimensions), so a manual resize can never shrink the layout below the Compact breakpoint's design size.</summary>
+    public const int MinWindowWidth = 640;
+    public const int MinWindowHeight = 360;
+
+    /// <summary>T311: the design window the auto scale is measured against (1280x720 = scale 1).</summary>
+    public const float ReferenceWidth = 1280f;
+    public const float ReferenceHeight = 720f;
+
+    /// <summary>T311: the largest auto scale of the curve itself (a 32 px control is then 112 px, a 15 px body text 52 px) and, once the OS display scale is applied, the largest in total.</summary>
+    public const float MaxCurveScale = 3.5f;
+    public const float MaxAutoScale = 4f;
+
+    /// <summary>
+    /// T311: the knots of the auto scale curve, as (fit, scale) pairs; <c>fit</c> is min(w/1280, h/720) of the window in device independent pixels. Piecewise linear between knots: it follows the window
+    /// 1:1 up to 1080p (1.5) so a small window stays as before, then flattens so a large monitor gets bigger controls but not proportionally bigger ones (a 4K monitor is viewed from the same
+    /// distance as a 1080p one, and its extra pixels should mostly buy sharpness and room). Past the last knot the scale stays at <see cref="MaxCurveScale"/>.
+    /// </summary>
+    private static readonly (float Fit, float Scale)[] ScaleKnots = [(1f, 1f), (1.5f, 1.5f), (2f, 1.9f), (3f, 2.6f), (6f, MaxCurveScale)];
+
+    /// <summary>T311: the smooth part of the auto scale for a window <paramref name="fit"/> times the 1280x720 design window: 1 below it, the knot table above, never above <see cref="MaxCurveScale"/>.</summary>
+    public static float ScaleCurve(float fit)
+    {
+        if (!(fit > ScaleKnots[0].Fit)) return ScaleKnots[0].Scale;
+        for (int i = 1; i < ScaleKnots.Length; i++)
+        {
+            var (f0, s0) = ScaleKnots[i - 1];
+            var (f1, s1) = ScaleKnots[i];
+            if (fit <= f1) return s0 + (s1 - s0) * (fit - f0) / (f1 - f0);
+        }
+        return MaxCurveScale;
+    }
+
+    /// <summary>
+    /// The automatic part of the UI scale (design/ui-redesign.md 2.7): the window is first expressed in device independent pixels (its pixels divided by the OS display scale
+    /// <paramref name="osScale"/>, 1 when unknown), measured against 1280x720 as min(w/1280, h/720) (so an ultrawide or a 16:10 window is limited by its height or width, whichever is the tighter),
+    /// run through <see cref="ScaleCurve"/>, multiplied by <paramref name="osScale"/> again, rounded down to a 0.25 step and kept within 1 and <see cref="MaxAutoScale"/>. The user's scale multiplies this.
+    /// </summary>
+    public static float AutoScale(int width, int height, float osScale = 1f)
     {
         if (width <= 0 || height <= 0) return 1f;
-        float raw = Math.Min(width / 1280f, height / 720f);
-        return Math.Clamp(MathF.Floor(raw * 4f) / 4f, 1f, 2f);
+        float os = osScale >= 1f ? Math.Min(osScale, MaxAutoScale) : 1f; // NaN, 0 and shrinking factors all mean "no OS scaling"
+        float fit = Math.Min(width / os / ReferenceWidth, height / os / ReferenceHeight);
+        float raw = ScaleCurve(fit) * os;
+        return Math.Clamp(MathF.Floor(raw * 4f + 0.001f) / 4f, 1f, MaxAutoScale);
     }
 
     /// <summary>C096: Android's guideline for the smallest touch target, in density-independent pixels (160 dp per inch).</summary>

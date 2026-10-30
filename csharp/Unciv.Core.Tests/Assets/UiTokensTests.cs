@@ -103,13 +103,64 @@ public class UiTokensTests
     [Theory]
     [InlineData(640, 480, 1f)]
     [InlineData(1280, 720, 1f)]
+    [InlineData(1366, 768, 1f)] // the common laptop panel
     [InlineData(1920, 1080, 1.5f)]
-    [InlineData(2560, 1440, 2f)]
-    [InlineData(3840, 2160, 2f)]
+    [InlineData(1920, 1200, 1.5f)] // 16:10, height limited
+    [InlineData(2560, 1440, 1.75f)]
+    [InlineData(2560, 1600, 1.75f)] // 16:10
+    [InlineData(3440, 1440, 1.75f)] // ultrawide: the height decides, not the extra width
+    [InlineData(3840, 1080, 1.5f)] // super ultrawide
+    [InlineData(3840, 2160, 2.5f)]
+    [InlineData(5120, 2880, 2.75f)] // 5K
+    [InlineData(7680, 4320, 3.5f)] // 8K: the curve's cap
+    [InlineData(15360, 8640, 3.5f)]
     [InlineData(1920, 720, 1f)]
     [InlineData(1700, 1000, 1.25f)]
     [InlineData(0, 0, 1f)]
-    public void AutoScaleFloorsToAQuarterStepWithinOneAndTwo(int width, int height, float expected) => Assert.Equal(expected, UiTokens.AutoScale(width, height));
+    public void AutoScaleFollowsTheCurveInQuarterSteps(int width, int height, float expected) => Assert.Equal(expected, UiTokens.AutoScale(width, height));
+
+    [Theory]
+    [InlineData(3840, 2160, 2f, 3f)] // a 4K laptop at 200%: the 1080p look, doubled in pixels
+    [InlineData(2560, 1440, 2f, 2f)] // a 1440p panel at 200%: the 720p look
+    [InlineData(1920, 1080, 1.25f, 1.5f)] // 125% on 1080p: 1.2 x 1.25
+    [InlineData(3840, 2160, 1.5f, 2.75f)] // 150% on 4K: curve(1440p) 1.9 x 1.5
+    [InlineData(3840, 2160, 1f, 2.5f)] // the same 4K monitor at 100%
+    [InlineData(1920, 1080, 0f, 1.5f)] // unknown or nonsense factors mean none
+    [InlineData(1920, 1080, -2f, 1.5f)]
+    [InlineData(1920, 1080, float.NaN, 1.5f)]
+    [InlineData(1920, 1080, 0.5f, 1.5f)] // a factor below 1 is ignored
+    [InlineData(15360, 8640, 4f, 4f)] // capped in total
+    [InlineData(15360, 8640, 100f, 4f)]
+    public void AutoScaleHonoursTheOsDisplayScale(int width, int height, float osScale, float expected) => Assert.Equal(expected, UiTokens.AutoScale(width, height, osScale));
+
+    [Fact]
+    public void ScaleCurveIsMonotonicBoundedAndSublinearBeyond1080p()
+    {
+        float previous = 0f;
+        for (float fit = 0f; fit <= 12f; fit += 0.05f)
+        {
+            float scale = UiTokens.ScaleCurve(fit);
+            Assert.InRange(scale, 1f, UiTokens.MaxCurveScale);
+            Assert.True(scale >= previous, $"fit {fit}");
+            if (fit > 1.5f) Assert.True(scale < fit, $"fit {fit}: scale {scale} is not below the 1:1 line");
+            previous = scale;
+        }
+        Assert.Equal(1f, UiTokens.ScaleCurve(float.NaN));
+        Assert.Equal(UiTokens.MaxCurveScale, UiTokens.ScaleCurve(float.PositiveInfinity));
+    }
+
+    [Fact]
+    public void AutoScaleKeepsComfortableLogicalWindowsAtEveryCommonResolution()
+    {
+        foreach (var (w, h) in new[] { (1366, 768), (1920, 1080), (1920, 1200), (2560, 1440), (2560, 1600), (3440, 1440), (3840, 2160), (5120, 2880), (7680, 4320) })
+        {
+            float scale = UiTokens.AutoScale(w, h);
+            float logicalWidth = w / scale, logicalHeight = h / scale;
+            Assert.True(logicalWidth >= UiTokens.ReferenceWidth && logicalHeight >= UiTokens.ReferenceHeight, $"{w}x{h}: logical {logicalWidth}x{logicalHeight} is below the design window");
+            Assert.True(logicalHeight <= 1250f, $"{w}x{h}: logical height {logicalHeight} wastes the screen on tiny controls"); // at most about 8K-at-cap room
+            Assert.InRange(UiTokens.Scaled(UiTokens.ControlMinHeight, scale), UiTokens.ControlMinHeight, 112); // a button is never smaller than at 1x nor huge
+        }
+    }
 
     [Theory]
     [InlineData(2400, 1080, 400f, 2.5f)] // a 400 ppi phone: density 2.5, logical 960x432

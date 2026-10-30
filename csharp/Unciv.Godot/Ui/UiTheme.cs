@@ -90,7 +90,9 @@ public sealed class UiTheme
         var profile = DisplayProfile.Current;
         // C096: touch builds derive the scale and the 48 dp floor from the density (in the pixels of this viewport, which a window content scale shrinks)
         float dpi = profile.UsesDensity ? profile.Dpi / ContentFactor() : 0f;
-        float auto = dpi > 0f ? UiTokens.TouchAutoScale((int)size.X, (int)size.Y, dpi) : UiTokens.AutoScale((int)size.X, (int)size.Y);
+        // T311: a desktop window is measured in real window pixels (the user's content scale multiplies the result on screen, it must not also shrink the measure) and honours the OS display scale
+        float content = ContentFactor();
+        float auto = dpi > 0f ? UiTokens.TouchAutoScale((int)size.X, (int)size.Y, dpi) : UiTokens.AutoScale((int)MathF.Round(size.X * content, MidpointRounding.AwayFromZero), (int)MathF.Round(size.Y * content, MidpointRounding.AwayFromZero), profile.OsScale);
         int target = dpi > 0f ? UiTokens.DpToPx(UiTokens.TouchTargetDp, dpi) : 0;
         var breakpoint = UiTokens.BreakpointFor(size.X / (userScale * auto));
         bool scaleChanged = auto != autoScale || target != minTarget;
