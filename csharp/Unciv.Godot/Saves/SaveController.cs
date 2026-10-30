@@ -157,6 +157,9 @@ public partial class SaveController : Control
         Say(result.Ok ? $"Autosaved turn {turn.ToString(CultureInfo.InvariantCulture)}." : "Autosave failed: " + result.Error);
     }
 
+    /// <summary>C099: the app is going to the background (Android may kill it there): writes the autosave now, whatever the turn. A session that cannot be saved (a joined game) is left alone.</summary>
+    public Task AutosaveNowAsync() => session == null ? Task.CompletedTask : AutosaveAsync(session.Snapshot.Turn);
+
     /// <summary>How many numbered autosaves (one per autosaved turn) are kept besides the latest "Autosave".</summary>
     public const int MaxNumberedAutosaves = 10;
 

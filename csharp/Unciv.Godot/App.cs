@@ -68,6 +68,8 @@ public partial class App : Node
     // The menu is rebuilt each time (leaving a game frees the screen stack, menu included); the same save controller serves every menu.
     private void ShowMenu(bool first)
     {
+        activeSaves = null;
+        activeSession = null;
         menu = new MainMenu(theme);
         menu.NewGameRequested += OpenNewGame;
         menu.ResumeRequested += () => _ = menuSaves.ResumeLastAsync();
@@ -232,7 +234,13 @@ public partial class App : Node
         }
         hotseat = new HotseatController(screen, cover, loaded => AssetRegistry.ForRuleset(loaded.Ruleset, OptionsModel.RegistryPack(settings.Current.AssetPack)), id => id);
         root.AddChild(hotseat);
-        hotseat.TookOver += next => saves.Attach(next);
+        hotseat.TookOver += next =>
+        {
+            saves.Attach(next);
+            activeSession = next;
+        };
+        activeSaves = saves;
+        activeSession = session;
         screens.Reset(root);
         screen.MainMenuRequested += () => ShowMenu(first: false);
         screen.SaveRequested += saves.OpenDialog;
@@ -244,6 +252,19 @@ public partial class App : Node
         screen.BindSettings(settings);
         saves.Attach(session);
     }
+
+    /// <summary>
+    /// C099: Android freezes a backgrounded app (and its connection), and may kill it. Going to the background writes the autosave; coming back asks the game session for the
+    /// current state (a networked session reconnects by itself and its overlay shows that; the resync catches up what was missed).
+    /// </summary>
+    public override void _Notification(int what)
+    {
+        if (what == NotificationApplicationPaused) _ = activeSaves?.AutosaveNowAsync();
+        else if (what == NotificationApplicationResumed && activeSession != null) _ = activeSession.ResyncAsync();
+    }
+
+    private SaveController? activeSaves;
+    private IGameSession? activeSession;
 
     private static long WallClockMillis() => (long)(Time.GetUnixTimeFromSystem() * 1000.0);
 }

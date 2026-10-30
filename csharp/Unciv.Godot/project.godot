@@ -5,6 +5,7 @@ config_version=5
 
 config/name="Unciv"
 run/main_scene="res://App.tscn"
+run/quit_on_go_back=false
 config/features=PackedStringArray("4.7", "C#")
 
 [display]

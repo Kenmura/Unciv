@@ -1,4 +1,5 @@
 using Godot;
+using Unciv.GodotClient.Settings;
 
 namespace Unciv.GodotClient.Ui;
 
@@ -98,6 +99,52 @@ public partial class ScreenManager : Control
 
     /// <summary>What Escape does. Returns whether it changed anything.</summary>
     public bool Back() => Popups.Cancel() || Pop();
+
+    /// <summary>
+    /// C099: the Android back button (<see cref="NotificationWMGoBackRequest"/>; the project does not quit on it) does what Escape does, and leaves the app only when no popup or screen is
+    /// left to close. On a touch build the screens are also kept inside the safe area (notch, gesture bar) and above the virtual keyboard.
+    /// </summary>
+    public override void _Notification(int what)
+    {
+        if (what == NotificationWMGoBackRequest && AndroidShell.BackOutcome(Back()) == BackOutcome.Quit) GetTree().Quit();
+    }
+
+    private Insets appliedInsets;
+    private int appliedKeyboard;
+
+    public override void _Process(double delta)
+    {
+        if (!DisplayProfile.Current.Touch) return;
+        var window = GetWindow();
+        var windowSize = window.Size;
+        var safe = DisplayServer.GetDisplaySafeArea();
+        int keyboard = DisplayServer.VirtualKeyboardGetHeight();
+        var insets = AndroidShell.ComputeInsets(windowSize.X, windowSize.Y, safe.Position.X, safe.Position.Y, safe.Size.X, safe.Size.Y, keyboard);
+        if (insets == appliedInsets && keyboard == appliedKeyboard) return;
+        appliedInsets = insets;
+        bool keyboardChanged = keyboard != appliedKeyboard;
+        appliedKeyboard = keyboard;
+        float scale = windowSize.X > 0 ? GetViewportRect().Size.X / windowSize.X : 1f;
+        screenLayer.OffsetLeft = insets.Left * scale;
+        screenLayer.OffsetTop = insets.Top * scale;
+        screenLayer.OffsetRight = -insets.Right * scale;
+        screenLayer.OffsetBottom = -insets.Bottom * scale;
+        if (keyboardChanged && keyboard > 0) CallDeferred(MethodName.ScrollFocusedFieldIntoView);
+    }
+
+    // The layer shrank above the keyboard; a focused text field inside a scroll area is brought into view.
+    private void ScrollFocusedFieldIntoView()
+    {
+        if (GetViewport().GuiGetFocusOwner() is not LineEdit field) return;
+        for (var node = field.GetParent(); node != null; node = node.GetParent())
+        {
+            if (node is ScrollContainer scroll)
+            {
+                scroll.EnsureControlVisible(field);
+                return;
+            }
+        }
+    }
 
     public override void _UnhandledInput(InputEvent @event)
     {

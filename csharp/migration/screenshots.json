@@ -1692,6 +1692,9 @@
       }
     ]
   },
+  "C099": {
+    "none": "Android shell behaviour (back button, insets, lifecycle, keyboard, hidden Host and window mode). The pure logic is unit-tested (AndroidShellTests); the feel needs a device or emulator."
+  },
   "C100": {
     "scenario": "touch-orders",
     "about": "Touch replacements for mouse-only interaction on the phone profile: tap shows tile and widget tips, long press moves the selected unit or locks a city tile, Group select stands in for Shift+click.",

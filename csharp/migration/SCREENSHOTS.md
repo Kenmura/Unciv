@@ -1934,3 +1934,4 @@ Done tickets with nothing meaningful to show.
 - **C077 Victory, defeat and vote result screens**: Victory, defeat, resigned, victory status and World Congress result as Modals: shown under C024 (victory/*, defeat/*), C044 (menu/victory-status, menu/resigned) and C053 (vote-result/*), whose captions and goldens were re-recorded.
 - **C078 Hotkeys v2 and key hints**: Hotkeys v2 and key hints: the Keys tab is shown under C044 (options/listening, options/rebound), whose goldens were re-recorded; the key hints are tooltips with no golden of their own.
 - **C092 City management at scale: bulk actions and reusable build queues**: Bulk city actions on the overview cities tab: shown under C023 (overview/cities, overview/cities-bulk).
+- **C099 (ticket not Done or unknown)**: Android shell behaviour (back button, insets, lifecycle, keyboard, hidden Host and window mode). The pure logic is unit-tested (AndroidShellTests); the feel needs a device or emulator.

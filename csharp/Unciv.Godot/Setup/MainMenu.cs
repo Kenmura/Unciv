@@ -1,4 +1,5 @@
 using Godot;
+using Unciv.GodotClient.Settings;
 using Unciv.Assets;
 using Unciv.GodotClient.Assets;
 using Unciv.GodotClient.Ui;
@@ -38,7 +39,7 @@ public partial class MainMenu : Control
         resume.Disabled = true;
         Add(column, "Load game", () => LoadRequested?.Invoke());
         Add(column, "Multiplayer", () => JoinRequested?.Invoke());
-        Add(column, "Host game", () => HostRequested?.Invoke());
+        if (AndroidShell.ShowsHostGame(DisplayProfile.Current.Touch)) Add(column, "Host game", () => HostRequested?.Invoke()); // C099: a phone does not host
         Add(column, "Options", () => OptionsRequested?.Invoke());
         Add(column, "Quit", () => QuitRequested?.Invoke()).ThemeTypeVariation = UiVariants.ButtonGhost;
     }

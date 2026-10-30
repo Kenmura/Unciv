@@ -279,7 +279,7 @@ public partial class SettingsPanel : HBoxContainer
         {
             if (!refreshing) service.Update(s => s with { WindowMode = OptionsModel.WindowModes[(int)index] });
         };
-        AddRow(page, "Window mode", windowMode);
+        if (AndroidShell.ShowsWindowMode(DisplayProfile.Current.Touch)) AddRow(page, "Window mode", windowMode); // C099: meaningless on a phone
         foreach (var level in Enum.GetValues<GraphicsQuality>()) graphicsPicker.AddItem(level.ToString().Tr());
         graphicsPicker.ItemSelected += index =>
         {
