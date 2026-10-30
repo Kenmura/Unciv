@@ -174,6 +174,16 @@ public partial class SettingsPanel : HBoxContainer
     /// <summary>The scrolling page of the selected tab.</summary>
     public ScrollContainer CurrentPage => currentPage ?? throw new InvalidOperationException("no tab");
 
+    /// <summary>T322: the rows of the selected page and the widest they may be (screen pixels at the live scale), for the layout checks.</summary>
+    public (IReadOnlyList<Control> Rows, int MaxPixels) CurrentRows
+    {
+        get
+        {
+            var cap = CurrentPage.GetChild(0);
+            return (cap.GetChild(0).GetChildren().OfType<Control>().Where(it => it.Visible).ToList(), theme.Px(UiTokens.MaxFormWidth));
+        }
+    }
+
     public void SelectTab(int index)
     {
         if (index < 0 || index >= tabs.Count) return;
@@ -258,7 +268,9 @@ public partial class SettingsPanel : HBoxContainer
         var scroller = new ScrollContainer { Name = "Page_" + title, HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled, SizeFlagsHorizontal = SizeFlags.ExpandFill, SizeFlagsVertical = SizeFlags.ExpandFill, Visible = false };
         var column = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
         column.FitConstant(theme, "separation", UiTokens.S2);
-        scroller.AddChild(column);
+        var cap = new WidthCap(theme); // T322: the rows keep a label next to its control on a 4K or ultrawide window
+        cap.AddChild(column);
+        scroller.AddChild(cap);
         AddChild(scroller);
         tabs.Add((tab, scroller));
         return column;

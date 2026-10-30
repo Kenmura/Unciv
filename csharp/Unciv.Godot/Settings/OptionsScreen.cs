@@ -26,7 +26,9 @@ public partial class OptionsScreen : Control
         frame.Fill();
         AddChild(frame);
         Panel = new SettingsPanel(service, theme, localization, packDirectories, tutorialRuleset);
-        frame.SetContent(Panel);
+        var cap = new WidthCap(theme, UiTokens.MaxOptionsWidth); // T322: tabs and page stay together on a 4K or ultrawide window
+        cap.AddChild(Panel);
+        frame.SetContent(cap);
         frame.CloseRequested += () => CloseRequested?.Invoke();
     }
 

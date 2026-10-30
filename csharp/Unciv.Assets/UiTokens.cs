@@ -98,6 +98,12 @@ public static class UiTokens
 
     /// <summary>T312: the widest a full-screen screen's content (and its header and footer rows) grows, in logical pixels; a wider window leaves the extra as side margins (ultrawide).</summary>
     public const int MaxContentWidth = 1500;
+
+    /// <summary>T322: the widest a settings or form page grows, in logical pixels: a label stays within a few hundred pixels of its control even on 4K and ultrawide.</summary>
+    public const int MaxFormWidth = 560;
+
+    /// <summary>T322: the widest the options screen's tabs and page together grow, in logical pixels, centred.</summary>
+    public const int MaxOptionsWidth = 780;
     public const int BarThin = 6;
     public const int BarLabelled = 14;
     public const int SwitchWidth = 40;

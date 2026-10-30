@@ -210,6 +210,20 @@ public sealed class LayoutMatrixScenario : Scenario
         steps.Add(new Act("back", () => M().Pop()));
         steps.Add(new Act("open options", () => M().Push(new OptionsScreen(run.Settings, T(), null, ["Retro", "Neon"]))));
         steps.AddRange(check(at, "options", () => M().Top.NotNull()));
+        // T322: on every page the rows keep within the form width cap (a label next to its control, not across a 4K window)
+        for (int tab = 0; tab < 7; tab++) // 7 tabs; the Language tab is absent without a localization and SelectTab then ignores the index
+        {
+            int index = tab;
+            steps.Add(new Act($"{at.Size} options page {index}: select", () => ((OptionsScreen)M().Top.NotNull()).Panel.SelectTab(index)));
+            steps.Add(new WaitFrames(4));
+            steps.Add(new Act($"{at.Size} options page {index}: rows within the cap", () =>
+            {
+                var panel = ((OptionsScreen)M().Top.NotNull()).Panel;
+                if (panel.SelectedTab != index) return;
+                var (rows, max) = panel.CurrentRows;
+                foreach (string it in LayoutChecks.WidthProblems(rows, max)) at.Run.Problems.Add($"{at.Size} options page {index}: {it}");
+            }));
+        }
         steps.Add(new Act("back", () => M().Pop()));
         steps.Add(new Act("show the shared widgets", () => M().Push(at.Gallery = new WidgetGallery(T()))));
         steps.AddRange(check(at, "widgets", () => M().Top.NotNull()));

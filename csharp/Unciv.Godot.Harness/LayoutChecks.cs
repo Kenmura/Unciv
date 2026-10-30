@@ -82,6 +82,12 @@ internal static class LayoutChecks
         .Where(it => !(exempt?.Invoke(it) ?? false) && it.IsVisibleInTree() && it.Size.Y > 0 && Visible(it) != null && (it.Size.Y + 0.5f < minPx || it.Size.Y > maxPx))
         .Select(it => $"{it.GetType().Name} '{(it as Button)?.Text}' {it.Name} is {it.Size.X}x{it.Size.Y} (allowed height {minPx}..{maxPx})").ToList();
 
+    /// <summary>T322: the rows wider than <paramref name="maxPx"/> (plus the rounding tolerance): a form row that spans the window leaves its label far from its control.</summary>
+    public static List<string> WidthProblems(IEnumerable<Control> rows, int maxPx) => rows
+        .Where(it => it.Size.X > maxPx + Tolerance)
+        .Select(it => $"{it.GetType().Name} '{it.Name}' is {it.Size.X} wide, more than the {maxPx} px form width cap")
+        .ToList();
+
     private static IEnumerable<BaseButton> Buttons(Node root)
     {
         foreach (var child in root.GetChildren())
