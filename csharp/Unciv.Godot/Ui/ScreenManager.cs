@@ -106,7 +106,21 @@ public partial class ScreenManager : Control
     /// </summary>
     public override void _Notification(int what)
     {
-        if (what == NotificationWMGoBackRequest && AndroidShell.BackOutcome(Back()) == BackOutcome.Quit) GetTree().Quit();
+        if (what != NotificationWMGoBackRequest) return;
+        if (AndroidShell.BackOutcome(Back()) == BackOutcome.Handled) return;
+        // Most screens and dialogs (city, tech, save dialog, the in-game menu...) answer Escape themselves, so back is delivered to them as Escape; the app only
+        // leaves from the bottom screen when the owner says nothing else is there to close (the main menu).
+        if (CanQuitOnBack()) GetTree().Quit();
+        else PressEscape();
+    }
+
+    /// <summary>C099: whether the back button may leave the app now (the bottom screen is the main menu). Defaults to true, the owner narrows it.</summary>
+    public Func<bool> CanQuitOnBack { get; set; } = () => true;
+
+    private void PressEscape()
+    {
+        foreach (bool pressed in new[] { true, false })
+            GetViewport().PushInput(new InputEventKey { Keycode = Key.Escape, PhysicalKeycode = Key.Escape, Pressed = pressed }, true);
     }
 
     private Insets appliedInsets;
