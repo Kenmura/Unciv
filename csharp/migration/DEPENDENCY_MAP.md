@@ -65,7 +65,7 @@ flowchart TD
   class T300 prog
   class T301 prog
   class T303 prog
-  class T304 prog
+  class T304 review
   class T305 ready
   class T306 waiting
   class T307 ready
@@ -125,6 +125,6 @@ xychart-beta
 | T300 | In-Progress [Claude] | none | 0 | Replace text-letter placeholder icons (resource chips etc.) with real pictorial icons |
 | T301 | In-Progress [Claude] | none | 0 | Maximizing a windowed game freaks out and may crash |
 | T303 | In-Progress [Claude] | T298 | 0 | Persist last-known tile ownership for fogged tiles across reconnect and load (server-side per-civ memory) |
-| T304 | In-Progress [Claude] | T302 | 0 | Re-review T302 review fixes: parallel-views README row and limits-reach-GameHost test |
+| T304 | Needs-Review [Claude] | T302 | 0 | Re-review T302 review fixes: parallel-views README row and limits-reach-GameHost test |
 | T306 | Available (waiting on T278) | C099, T278 | 0 | Android shell on-device checks for C099: back button, safe-area insets, orientation, lifecycle autosave, keyboard scroll, permissions |
 | T308 | In-Progress [Claude] | T295 | 0 | Make every unit class distinct at the default zoom: per-class silhouettes for foot, mounted and elephant units |
