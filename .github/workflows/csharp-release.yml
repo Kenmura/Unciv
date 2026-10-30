@@ -185,13 +185,71 @@ jobs:
           if-no-files-found: error
           retention-days: 3
 
-  # T280 (Android in the release): add the Android job here (needs: verify, uploads an artifact named release-android), add it to
-  # publish's needs, and add its archive to release_assets.py (expected_assets and the notes table).
+  # T280: the Android APK (arm64-v8a). Debug-signed with the throw-away keystore package.sh generates and deletes (no signing secrets exist; plan in GODOT.md,
+  # "Android APK"). Built and signature-checked only: no emulator here (the smoke runs in csharp.yml) and it was not device-tested, which the notes say.
+  android:
+    name: Android APK
+    needs: verify
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    env:
+      ANDROID_HOME: ${{ github.workspace }}/../android-sdk
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+        with:
+          dotnet-version: 10.0.x
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.nuget/packages
+          key: nuget-${{ runner.os }}-${{ hashFiles('csharp/**/*.csproj', 'csharp/Directory.Packages.props') }}
+          restore-keys: nuget-${{ runner.os }}-
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            ~/.local/opt/godot-4.7.2
+            ~/.local/share/godot/export_templates
+          key: godot-${{ runner.os }}-${{ hashFiles('csharp/Unciv.Godot.Harness/tools/setup-godot.sh', 'csharp/Unciv.Godot/tools/install-export-templates.sh') }}
+      - name: Install the pinned Godot and export templates (SHA-512 checked)
+        working-directory: csharp
+        run: |
+          Unciv.Godot.Harness/tools/setup-godot.sh --print-path
+          Unciv.Godot/tools/install-export-templates.sh
+      - name: Install the Android SDK pieces
+        run: |
+          mkdir -p "$ANDROID_HOME"
+          ANDROID_HOME="$(realpath "$ANDROID_HOME")"; echo "ANDROID_HOME=$ANDROID_HOME" >> "$GITHUB_ENV"
+          sdkmanager="${ANDROID_SDK_ROOT:-/usr/local/lib/android/sdk}/cmdline-tools/latest/bin/sdkmanager"
+          set +o pipefail
+          yes | "$sdkmanager" --sdk_root="$ANDROID_HOME" --licenses > /dev/null
+          set -o pipefail
+          "$sdkmanager" --sdk_root="$ANDROID_HOME" 'cmdline-tools;latest' 'platform-tools' 'build-tools;36.1.0' 'platforms;android-36' > /dev/null
+      - name: Package (Android, arm64-v8a)
+        working-directory: csharp
+        run: Unciv.Godot/tools/retry-on-crash.sh 2 Unciv.Godot/tools/package.sh android
+      - name: Check the APK ABI and signature
+        working-directory: csharp/Unciv.Godot/build/android
+        run: |
+          unzip -l Unciv.apk | grep -q 'lib/arm64-v8a/libgodot_android.so'
+          if unzip -l Unciv.apk | grep -q 'lib/x86_64/'; then echo 'the arm64-only APK holds x86_64 libraries' >&2; exit 1; fi
+          "$ANDROID_HOME/build-tools/36.1.0/apksigner" verify Unciv.apk
+      - name: Collect the APK
+        run: |
+          mkdir -p "$RUNNER_TEMP/assets"
+          cp csharp/Unciv.Godot/build/android/Unciv.apk "$RUNNER_TEMP/assets/Unciv-client-android-arm64.apk"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: release-android
+          path: ${{ runner.temp }}/assets/
+          if-no-files-found: error
+          retention-days: 3
 
   # The only job with write access: a DRAFT release for the tag with the archives, SHA256SUMS and the notes.
   publish:
     name: Create the draft release
-    needs: [verify, cli, server, client]
+    needs: [verify, cli, server, client, android]
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     permissions:

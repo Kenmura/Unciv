@@ -245,7 +245,7 @@ class ReleaseWorkflowShape(unittest.TestCase):
     def test_write_permission_only_on_the_publish_job(self):
         self.assertRegex(self.text, r"(?m)^permissions:\n  contents: read\n(?=\n)")
         jobs = self.jobs()
-        self.assertEqual(sorted(jobs), ["cli", "client", "publish", "server", "verify"])
+        self.assertEqual(sorted(jobs), ["android", "cli", "client", "publish", "server", "verify"])
         for name, body in jobs.items():
             if name == "publish":
                 self.assertRegex(body, r"(?m)^    permissions:\n      contents: write\n(?!      )")
@@ -276,8 +276,8 @@ class ReleaseWorkflowShape(unittest.TestCase):
         self.assertTrue(uses)
         for u in uses:
             self.assertRegex(u, r"^[\w.-]+/[\w./-]+@[0-9a-f]{40}$", u)
-        self.assertRegex(self.jobs()["publish"], r"needs: \[verify, cli, server, client\]")
-        for name in ("cli", "client"):
+        self.assertRegex(self.jobs()["publish"], r"needs: \[verify, cli, server, client, android\]")
+        for name in ("cli", "client", "android"):
             self.assertRegex(self.jobs()[name], r"needs: verify")
 
     def test_checkouts_do_not_persist_credentials(self):
@@ -285,7 +285,7 @@ class ReleaseWorkflowShape(unittest.TestCase):
 
     def test_the_workflow_builds_exactly_the_archives_the_release_expects(self):
         mod = ClientPlatforms().load("release_assets")
-        packaged = re.findall(r"Unciv\.Godot/tools/package\.sh (\w+)", self.text)
+        packaged = re.findall(r"Unciv\.Godot/tools/package\.sh (?!android)(\w+)", self.text)  # desktop clients; the APK is the android job (T280)
         self.assertEqual(packaged, ClientPlatforms().load("release").CLIENT_PLATFORMS)
         self.assertEqual(re.findall(r"check_package\.py (\w+)", self.text), packaged)
         for name in mod.client_archive_names().values():
@@ -296,7 +296,11 @@ class ReleaseWorkflowShape(unittest.TestCase):
         self.assertEqual([r.split() for r in server_rids], [mod.SERVER_RIDS])
         self.assertIn("release_assets.py smoke-server", self.text)
         self.assertIn("python3 -I csharp/migration/tools/release_assets.py verify", self.text)
-        self.assertIn("T280", self.text)  # the marked place for the Android job
+        self.assertIn(mod.ANDROID_APK, self.text)  # T280
+        self.assertIn("package.sh android\n", self.text)
+        self.assertRegex(self.text, r"needs: \[verify, cli, server, client, android\]")
+        self.assertRegex(self.text, r"name: release-android")
+        self.assertNotRegex(self.text, r"(?i)\$\{\{\s*secrets\.|keystore-password|\.jks")
 
     def test_csharp_yml_server_job_builds_and_smokes_only(self):  # T266
         text = WORKFLOW.read_text(encoding="utf-8")
@@ -346,7 +350,7 @@ class ReleaseAssets(unittest.TestCase):
             self.mod.expected_assets(),
             ["Unciv-client-linux.tar.gz", "Unciv-client-windows.zip", "Unciv-client-macos.zip",
              "Unciv-cli-linux-x64.tar.gz", "Unciv-cli-win-x64.zip", "Unciv-cli-osx-arm64.tar.gz",
-             "Unciv-server-linux-x64.tar.gz", "Unciv-server-win-x64.zip"],
+             "Unciv-server-linux-x64.tar.gz", "Unciv-server-win-x64.zip", "Unciv-client-android-arm64.apk"],
         )
 
     def fake_publish(self, tmp, rid):
@@ -459,11 +463,19 @@ class ReleaseAssets(unittest.TestCase):
                 (src / "Unciv-linux" / p).write_bytes(b"\0" * size)
             with tarfile.open(out / name, "w:gz") as tf:
                 tf.add(src / "Unciv-linux", "Unciv-linux")
+            import zipfile
+
             for n in self.mod.expected_assets():
                 if not (out / n).exists():
                     (out / n).write_bytes(n.encode())
+            with zipfile.ZipFile(out / self.mod.ANDROID_APK, "w") as apk:  # T280: must be a zip with the arm64 library
+                apk.writestr("lib/x86_64/libgodot_android.so", b"x")
+            self.mod.write_sums(out)
+            self.assertTrue(any("arm64" in p for p in self.mod.verify(out)))
+            with zipfile.ZipFile(out / self.mod.ANDROID_APK, "w") as apk:
+                apk.writestr("lib/arm64-v8a/libgodot_android.so", b"x")
             lines = self.mod.write_sums(out)
-            self.assertEqual(len(lines), 8)
+            self.assertEqual(len(lines), 9)
             self.assertEqual(lines, sorted(lines, key=lambda l: l.split("  ")[1]))
             self.assertEqual(self.mod.verify(out), [])
             self.assertEqual(self.mod.write_sums(out), lines)  # SHA256SUMS does not hash itself
@@ -472,6 +484,11 @@ class ReleaseAssets(unittest.TestCase):
             self.assertTrue(any("checksum" in p for p in self.mod.verify(out)))
             (out / "extra.txt").write_text("x")
             self.assertTrue(any("unexpected" in p for p in self.mod.verify(out)))
+
+    def test_notes_say_the_apk_is_not_device_tested(self):  # T280
+        text = self.mod.notes("csharp-v1.2.3", "a" * 40, "2026-01-02T03:04:05")
+        self.assertIn(self.mod.ANDROID_APK, text)
+        self.assertIn("NOT device-tested", text)
 
     def test_notes_mark_windows_and_macos_unverified_and_name_the_commit(self):
         text = self.mod.notes("csharp-v1.2.3", "a" * 40, "2026-01-02T03:04:05")

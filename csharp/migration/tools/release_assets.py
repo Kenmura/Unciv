@@ -6,6 +6,7 @@
     release_assets.py smoke-cli CLI_DIR                     run the published Linux CLI with an empty PATH (starts a tiny game), like release.py
     release_assets.py pack-server RID PUBLISH_DIR OUT_DIR   the same for Unciv.Server (T266): Unciv-server-<RID>.tar.gz|.zip, RID linux-x64 or win-x64
     release_assets.py smoke-server SERVER_DIR               run the published Linux server: --help, then start (LISTENING line), SIGTERM, exit 0
+    (T280: the Android APK is Unciv-client-android-arm64.apk; `verify` also checks that it is a zip holding the arm64 Godot library)
     release_assets.py sums DIR                              write DIR/SHA256SUMS (sha256sum format) for every file in DIR
     release_assets.py verify DIR                            exit 1 unless DIR holds exactly the expected archives (+ SHA256SUMS) and each client archive passes check_package.py
     release_assets.py notes TAG COMMIT DATE OUT_FILE        write the release notes (what is verified, what is UNVERIFIED)
@@ -31,6 +32,7 @@ REPO = CSHARP.parent
 TAG_RE = re.compile(r"csharp-v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(-[0-9A-Za-z][0-9A-Za-z.-]*)?")
 CLI_RIDS = ["linux-x64", "win-x64", "osx-arm64"]  # self-contained `dotnet publish -r <rid>` (cross-published on the Linux runner)
 SERVER_RIDS = ["linux-x64", "win-x64"]  # T266: Unciv.Server, self-contained; no macOS server (nobody asked, nothing to run it on)
+ANDROID_APK = "Unciv-client-android-arm64.apk"  # T280: package.sh android (debug-signed arm64-v8a, throw-away keystore), renamed so it sorts with the other clients
 SUMS = "SHA256SUMS"
 
 
@@ -57,7 +59,7 @@ def client_archive_names():
 
 def expected_assets():
     """Every file the release must carry, without SHA256SUMS."""
-    return list(client_archive_names().values()) + [cli_archive_name(r) for r in CLI_RIDS] + [server_archive_name(r) for r in SERVER_RIDS]
+    return list(client_archive_names().values()) + [cli_archive_name(r) for r in CLI_RIDS] + [server_archive_name(r) for r in SERVER_RIDS] + [ANDROID_APK]
 
 
 def check_tag(tag):
@@ -193,6 +195,12 @@ def verify(directory):
         digest, _, name = line.partition("  ")
         if hashlib.sha256((directory / name).read_bytes()).hexdigest() != digest:
             problems.append(f"{name}: checksum does not match {SUMS}")
+    try:
+        with zipfile.ZipFile(directory / ANDROID_APK) as apk:
+            if "lib/arm64-v8a/libgodot_android.so" not in apk.namelist():
+                problems.append(f"{ANDROID_APK}: lacks lib/arm64-v8a/libgodot_android.so")
+    except zipfile.BadZipFile:
+        problems.append(f"{ANDROID_APK}: not a zip/APK")
     checker = _load("check_package")
     for platform, name in client_archive_names().items():
         problems += [f"{name}: {p}" for p in checker.check(platform, directory / name)]
@@ -222,6 +230,7 @@ def notes(tag, commit, date):
 | `{cli_archive_name('osx-arm64')}` | **UNVERIFIED.** Published self-contained, never run on a Mac. Unsigned and not notarised. |
 | `{server_archive_name('linux-x64')}` | Smoke-tested in this workflow: `--help`, then started (printed `LISTENING <port>`) and stopped with SIGTERM (exit 0) without DOTNET_ROOT, from a folder outside the checkout. Run guide: `Unciv.Server/README.md` in the repository. |
 | `{server_archive_name('win-x64')}` | **UNVERIFIED.** Dedicated server published self-contained, never run on Windows (Ctrl+C is the only stop signal there). |
+| `{ANDROID_APK}` | **NOT device-tested** (T278 has not run on a phone). Exported and checked in this workflow only (arm64-v8a library present, `apksigner verify` passes). **Debug-signed with a throw-away keystore generated for this build**: sideload only, not a store build, and an update from another build needs `adb uninstall org.unciv.godot` first (different signature). |
 
 This is a draft created by CI. The owner reviews it and publishes it by hand; nothing was published automatically.
 """
