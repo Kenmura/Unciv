@@ -33,6 +33,9 @@ public static class ErrorCodes
 
     /// <summary>T272: the designated candidate broke the replication stream rules (an ack going backwards or beyond the host's log, a subscription for another game): the subscription is closed, no state flows until it subscribes again.</summary>
     public const string StandbyViolation = "standby-protocol";
+
+    /// <summary>T282: a standby listener (a backup host that has not taken over) refuses everything but <c>Hello</c>: this endpoint is not a host yet.</summary>
+    public const string NotHostYet = "not-host-yet";
 }
 
 /// <summary>Base of every wire message. The JSON frame is the record's fields plus a <c>type</c> discriminator (see <see cref="ProtocolCodec"/>).</summary>
@@ -165,6 +168,9 @@ public sealed record Welcome : Message
 
     /// <summary>T273: set by a host that was promoted from a standby (epoch above 0): the successor's signed statement that it took this game over at <see cref="Epoch"/> with this host key. Clients redirected by a <see cref="HostHandoff"/> require it.</summary>
     public PromotionProof? Promotion { get; init; }
+
+    /// <summary>T282: true when this endpoint is a backup host's standby listener, not a host: it answers <c>Hello</c> so the host's reachability probe can tell it from a closed port, and refuses everything else with <c>not-host-yet</c>. Absent from a real host. A client that sees it ends the attempt.</summary>
+    public bool? Standby { get; init; }
 }
 
 public sealed record JoinOk : Message

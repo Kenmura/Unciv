@@ -123,6 +123,26 @@ public sealed class ClientNetSessionTests
     }
 
     [Fact]
+    public async Task Join_AStandbyListenerIsNotAHost()
+    {
+        await using var rig = new ClientNetRig(id => new ClientSessionOptions
+        {
+            Identity = id,
+            DisplayName = "A",
+            RulesetHash = "h",
+            ExpectedFingerprint = ClientNetRig.Fingerprint,
+        });
+        var host = rig.NewConnection();
+        var join = rig.Session.JoinAsync();
+        await host.ReceiveAsync<Hello>();
+        await host.SendAsync(new Welcome { Protocol = ProtocolVersion.Current, SessionId = "standby", Challenge = "", HostKeyFingerprint = ClientNetRig.Fingerprint, RequiresPassword = false, Standby = true });
+        var result = await join;
+        Assert.False(result.Joined);
+        Assert.Equal(ClientCodes.NotHostYet, result.Code);
+        Assert.Null(await host.Transport.ReceiveAsync()); // no Join was sent
+    }
+
+    [Fact]
     public async Task Join_HostWithoutAnEpochField_IsEpochZero()
     {
         await using var rig = new ClientNetRig(id => new ClientSessionOptions

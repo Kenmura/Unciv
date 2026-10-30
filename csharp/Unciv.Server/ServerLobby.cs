@@ -38,8 +38,10 @@ public sealed class ServerLobby : IAsyncDisposable
         IClock? clock = null,
         IGameStore? store = null,
         string hostName = "Host",
-        string? gameDirectory = null)
+        string? gameDirectory = null,
+        TimeSpan? reprobeCheck = null)
     {
+        this.reprobeCheck = reprobeCheck ?? TimeSpan.FromSeconds(5);
         this.gameDirectory = gameDirectory;
         this.clock = clock ?? SystemClock.Instance;
         this.store = store;
@@ -54,6 +56,24 @@ public sealed class ServerLobby : IAsyncDisposable
         );
         lobbyHost.LateSeated = SeatLateAsync;
         lobbyHost.Standby.Prober = new Transport.TlsEndpointProber(); // T281: a backup host's endpoint is probed with a real TLS handshake
+        _ = RunReprobeLoopAsync();
+    }
+
+    /// <summary>How often the open lobby checks whether the backup host's re-probe is due (the coordinator's own interval decides; <see cref="GameHost.Tick"/> does this once the game runs).</summary>
+    private readonly TimeSpan reprobeCheck;
+
+    private async Task RunReprobeLoopAsync()
+    {
+        try
+        {
+            using var timer = new PeriodicTimer(reprobeCheck);
+            while (true) // ends by the cancellation (WaitForNextTickAsync throws it); the timer is never stopped otherwise
+            {
+                await timer.WaitForNextTickAsync(disposed.Token).ConfigureAwait(false);
+                await lobbyHost.ReprobeStandbyAsync(disposed.Token).ConfigureAwait(false);
+            }
+        }
+        catch (Exception e) when (e is OperationCanceledException or ObjectDisposedException or InvalidOperationException) { /* disposed */ }
     }
 
     /// <summary>A known player reconnects after the start: their connection joins the running game (the lobby reader stays its only reader).</summary>

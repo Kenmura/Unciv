@@ -22,6 +22,9 @@ public sealed class StandbyPromotion(string standbyRoot, ClientIdentity identity
     /// <summary>The promoted host once <see cref="Handler"/> succeeded (null before, or when the hand-off was not for this player).</summary>
     public InProcessHost? Host { get; private set; }
 
+    /// <summary>T282: the standby listener this player keeps open on the announced port (<see cref="StandbyListener"/>); promotion closes it just before the promoted host binds the same port.</summary>
+    public StandbyListener? Listener { get; set; }
+
     /// <summary>The game directory of the promoted host (the standby directory).</summary>
     public string? Directory { get; private set; }
 
@@ -65,6 +68,7 @@ public sealed class StandbyPromotion(string standbyRoot, ClientIdentity identity
         }
         try
         {
+            Listener?.Stop();
             host.Listen(certificate, port);
         }
         catch (Exception e) when (e is SocketException or IOException or InvalidOperationException or System.Security.Cryptography.CryptographicException)

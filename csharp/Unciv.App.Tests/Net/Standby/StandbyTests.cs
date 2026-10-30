@@ -1,7 +1,9 @@
 using System.Net;
 using System.Net.Sockets;
+using System.Security.Cryptography.X509Certificates;
 using Unciv.Client.Net.Hosting;
 using Unciv.Client.Net.Session;
+using Unciv.Client.Net.Transport;
 using Unciv.Core.Tests.Net.ClientNet;
 using Unciv.Net;
 using Unciv.Net.Identity;
@@ -93,6 +95,83 @@ public sealed class StandbyCoordinatorTests
         prober.Answer = (_, _) => Fp;
         Assert.Null(await c.AcceptAsync("candidate", Accept(Fp)));
         Assert.Equal(StandbyStates.Ready, c.State);
+    }
+
+    [Fact]
+    public async Task Reprobe_RunsOnlyWhenDue_TurnsReadyUnreachableOnLoss_AndBackWhenTheListenerReturns()
+    {
+        var (c, prober, clock) = Make();
+        Assert.False(c.ReprobeDue); // nobody designated
+        c.Designate("candidate", out _);
+        Assert.False(c.ReprobeDue); // not accepted yet
+        Assert.False(await c.ReprobeIfDueAsync());
+        Assert.Null(await c.AcceptAsync("candidate", Accept(Fp)));
+        Assert.Single(prober.Dialled);
+
+        clock.AdvanceSeconds(119);
+        Assert.False(c.ReprobeDue);
+        Assert.False(await c.ReprobeIfDueAsync());
+        Assert.Single(prober.Dialled);
+
+        clock.AdvanceSeconds(2);
+        Assert.True(c.ReprobeDue);
+        Assert.False(await c.ReprobeIfDueAsync()); // still ready: probed, nothing changed
+        Assert.Equal(2, prober.Dialled.Count);
+        Assert.False(c.ReprobeDue);
+
+        prober.Answer = (_, _) => null;
+        clock.AdvanceSeconds(121);
+        Assert.True(await c.ReprobeIfDueAsync()); // ready -> unreachable
+        Assert.Equal(StandbyStates.Unreachable, c.State);
+        Assert.Null(c.Announcement(0, []).Successor);
+
+        clock.AdvanceSeconds(121);
+        Assert.False(await c.ReprobeIfDueAsync()); // still unreachable: no change to announce
+        prober.Answer = (_, _) => Fp;
+        clock.AdvanceSeconds(121);
+        Assert.True(await c.ReprobeIfDueAsync()); // unreachable -> ready
+        Assert.Equal(StandbyStates.Ready, c.State);
+        Assert.Equal("candidate", c.Announcement(0, []).Successor!.KeyId);
+    }
+
+    [Fact]
+    public async Task Reprobe_AfterARestart_ProbesOnceAndKeepsTheDesignationOnAFingerprintChange()
+    {
+        var (c, prober, clock) = Make();
+        c.Designate("candidate", out _);
+        Assert.Null(await c.AcceptAsync("candidate", Accept(Fp)));
+        var record = c.ToRecord();
+
+        var (restored, prober2, clock2) = Make();
+        restored.Restore(record);
+        Assert.Equal(StandbyStates.Unreachable, restored.State);
+        Assert.True(restored.ReprobeDue); // never probed by this process
+        Assert.True(await restored.ReprobeIfDueAsync());
+        Assert.Equal(StandbyStates.Ready, restored.State);
+        Assert.Single(prober2.Dialled);
+
+        prober2.Answer = (_, _) => OtherFp; // somebody else answers on the port
+        clock2.AdvanceSeconds(121);
+        Assert.True(await restored.ReprobeIfDueAsync());
+        Assert.Equal(StandbyStates.Unreachable, restored.State);
+        Assert.Equal("candidate", restored.KeyId);
+        _ = (prober, clock);
+    }
+
+    [Fact]
+    public async Task Reprobe_AMinimumIntervalBelowTheRateLimitStillNeverProbesMoreThanOncePerMinute()
+    {
+        var clock = new ManualClock(1_000_000);
+        var prober = new FakeProber { Answer = (_, _) => Fp };
+        var c = new StandbyCoordinator(clock, prober, new StandbyLimits { ReprobeIntervalMillis = 1000 });
+        c.Designate("candidate", out _);
+        Assert.Null(await c.AcceptAsync("candidate", Accept(Fp)));
+        clock.AdvanceSeconds(30);
+        Assert.False(c.ReprobeDue);
+        Assert.False(await c.ReprobeIfDueAsync());
+        Assert.Single(prober.Dialled);
+        clock.AdvanceSeconds(31);
+        Assert.True(c.ReprobeDue);
     }
 
     [Fact]
@@ -263,33 +342,34 @@ public sealed class StandbyCoordinatorTests
     }
 }
 
-/// <summary>The real dialler: one TLS handshake, nothing else.</summary>
+/// <summary>The real dialler (T282): a TLS handshake plus one Hello; only a standby listener's Welcome counts.</summary>
 public sealed class TlsEndpointProberTests
 {
-    [Fact]
-    public async Task ReportsTheFingerprintOfWhatListens_AndNullForAClosedPortOrAPlainSocket()
+    private static async Task<string?> ProbeAsync(int port, int millis = 3000) =>
+        await new TlsEndpointProber().PresentedFingerprintAsync("127.0.0.1", port, TimeSpan.FromMilliseconds(millis), CancellationToken.None);
+
+    private static int FreePort()
     {
-        using var cert = HostCertificate.Generate();
-        await using var listener = new TcpTlsListener(cert, 0);
-        listener.Start();
-        using var stop = new CancellationTokenSource();
-        var accepted = Task.Run(async () =>
-        {
-            try { while (true) await (await listener.AcceptTransportAsync(stop.Token)).DisposeAsync(); }
-            catch (Exception) { }
-        });
-
-        var prober = new TlsEndpointProber();
-        var presented = await prober.PresentedFingerprintAsync("127.0.0.1", listener.Port, TimeSpan.FromSeconds(3), CancellationToken.None);
-        Assert.True(HostKey.Matches(presented, HostCertificate.GetFingerprint(cert)));
-        stop.Cancel();
-        listener.Stop();
-
         var free = new TcpListener(IPAddress.Loopback, 0);
         free.Start();
-        var closedPort = ((IPEndPoint)free.LocalEndpoint).Port;
+        var port = ((IPEndPoint)free.LocalEndpoint).Port;
         free.Stop();
-        Assert.Null(await prober.PresentedFingerprintAsync("127.0.0.1", closedPort, TimeSpan.FromSeconds(3), CancellationToken.None));
+        return port;
+    }
+
+    [Fact]
+    public async Task ReportsTheFingerprintOfAStandbyListener()
+    {
+        using var cert = HostCertificate.Generate();
+        await using var listener = new StandbyListener(cert, 0);
+        listener.Start();
+        Assert.True(HostKey.Matches(await ProbeAsync(listener.Port), HostCertificate.GetFingerprint(cert)));
+    }
+
+    [Fact]
+    public async Task IsNullForAClosedPort_ASilentSocket_AndATlsServiceThatIsNotAStandbyListener()
+    {
+        Assert.Null(await ProbeAsync(FreePort()));
 
         // A listener that accepts the connection and never speaks TLS runs into the timeout.
         var silent = new TcpListener(IPAddress.Loopback, 0);
@@ -297,11 +377,153 @@ public sealed class TlsEndpointProberTests
         try
         {
             var acceptSilent = silent.AcceptTcpClientAsync();
-            Assert.Null(await prober.PresentedFingerprintAsync("127.0.0.1", ((IPEndPoint)silent.LocalEndpoint).Port, TimeSpan.FromMilliseconds(300), CancellationToken.None));
+            Assert.Null(await ProbeAsync(((IPEndPoint)silent.LocalEndpoint).Port, 300));
             (await acceptSilent).Dispose();
         }
         finally { silent.Stop(); }
+
+        // The handshake alone is no longer enough: a TLS service that does not answer Hello as a standby is "nothing usable".
+        using var cert = HostCertificate.Generate();
+        await using var plain = new TcpTlsListener(cert, 0);
+        plain.Start();
+        using var stop = new CancellationTokenSource();
+        var accepted = Task.Run(async () =>
+        {
+            try { while (true) await (await plain.AcceptTransportAsync(stop.Token)).DisposeAsync(); }
+            catch (Exception) { }
+        });
+        Assert.Null(await ProbeAsync(plain.Port, 1000));
+
+        // A real host (Welcome without standby) is not a standby either.
+        await using var host = new TcpTlsListener(cert, 0);
+        host.Start();
+        var served = Task.Run(async () =>
+        {
+            try
+            {
+                await using var transport = await host.AcceptTransportAsync(stop.Token);
+                await transport.ReceiveAsync(stop.Token);
+                await transport.SendAsync(ProtocolCodec.Encode(new Welcome { Protocol = ProtocolVersion.Current, SessionId = "s", Challenge = "c", HostKeyFingerprint = HostCertificate.GetFingerprint(cert), RequiresPassword = false }), stop.Token);
+                await Task.Delay(200, stop.Token);
+            }
+            catch (Exception) { }
+        });
+        Assert.Null(await ProbeAsync(host.Port, 2000));
+        stop.Cancel();
+        plain.Stop();
+        host.Stop();
         await accepted;
+        await served;
+    }
+}
+
+/// <summary>T282: the successor's standby listener answers Hello with Welcome{standby: true} and refuses the rest with not-host-yet.</summary>
+public sealed class StandbyListenerTests
+{
+    private static async Task<(ITransport Transport, X509Certificate2 Cert)> ConnectAsync(StandbyListener listener, X509Certificate2 cert) =>
+        (await TcpTlsClientTransport.ConnectAsync("127.0.0.1", listener.Port, expectedFingerprint: HostCertificate.GetFingerprint(cert)), cert);
+
+    private static Hello Hello() => new() { Protocol = ProtocolVersion.Current, ClientVersion = "t", RulesetHash = "", ModList = [] };
+
+    private static async Task<Message?> ReadAsync(ITransport transport)
+    {
+        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+        var frame = await transport.ReceiveAsync(timeout.Token);
+        return frame == null ? null : ProtocolCodec.Decode(frame);
+    }
+
+    [Fact]
+    public async Task Hello_GetsAStandbyWelcome_AndAnythingElseIsNotHostYet()
+    {
+        using var cert = HostCertificate.Generate();
+        await using var listener = new StandbyListener(cert, 0);
+        listener.Start();
+
+        var (first, _) = await ConnectAsync(listener, cert);
+        await using (first)
+        {
+            await first.SendAsync(ProtocolCodec.Encode(Hello()));
+            var welcome = Assert.IsType<Welcome>(await ReadAsync(first));
+            Assert.True(welcome.Standby);
+            Assert.Equal(ProtocolVersion.Current, welcome.Protocol);
+            Assert.True(HostKey.Matches(welcome.HostKeyFingerprint, HostCertificate.GetFingerprint(cert)));
+            await first.SendAsync(ProtocolCodec.Encode(new Join { PlayerKey = "k", DisplayName = "x" }));
+            Assert.Equal(ErrorCodes.NotHostYet, Assert.IsType<Error>(await ReadAsync(first)).Code);
+            Assert.Null(await ReadAsync(first)); // then the connection is closed
+        }
+
+        var (second, _) = await ConnectAsync(listener, cert);
+        await using (second)
+        {
+            await second.SendAsync(ProtocolCodec.Encode(new StandbySubscribe { GameId = "g", HaveSeq = 0 }));
+            Assert.Equal(ErrorCodes.NotHostYet, Assert.IsType<Error>(await ReadAsync(second)).Code); // no Hello needed to be refused
+        }
+
+        var (third, _) = await ConnectAsync(listener, cert);
+        await using (third)
+        {
+            await third.SendAsync("{not json");
+            Assert.Equal(ErrorCodes.NotHostYet, Assert.IsType<Error>(await ReadAsync(third)).Code);
+        }
+    }
+
+    [Fact]
+    public async Task ASecondHello_IsRefused_AndAnIdleConnectionIsClosedAfterItsLifetime()
+    {
+        using var cert = HostCertificate.Generate();
+        await using var listener = new StandbyListener(cert, 0) { ConnectionLifetime = TimeSpan.FromMilliseconds(300) };
+        listener.Start();
+        var (transport, _) = await ConnectAsync(listener, cert);
+        await using (transport)
+        {
+            await transport.SendAsync(ProtocolCodec.Encode(Hello()));
+            Assert.IsType<Welcome>(await ReadAsync(transport));
+            await transport.SendAsync(ProtocolCodec.Encode(Hello()));
+            Assert.IsType<Error>(await ReadAsync(transport));
+        }
+
+        var (idle, _) = await ConnectAsync(listener, cert);
+        await using (idle) Assert.Null(await ReadAsync(idle));
+    }
+
+    [Fact]
+    public async Task MoreThanTheConnectionLimit_IsClosedAtOnce_AndAStoppedListenerDropsItsClients()
+    {
+        using var cert = HostCertificate.Generate();
+        await using var listener = new StandbyListener(cert, 0, TimeSpan.FromSeconds(2));
+        listener.Start();
+        var held = new List<TcpClient>();
+        try
+        {
+            for (var i = 0; i < StandbyListener.MaxConnections + 4; i++)
+            {
+                var client = new TcpClient();
+                await client.ConnectAsync(IPAddress.Loopback, listener.Port);
+                held.Add(client); // connected, never speaks TLS: holds a slot until the handshake times out
+            }
+            var last = held[^1].GetStream();
+            var buffer = new byte[1];
+            using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(1));
+            Assert.Equal(0, await last.ReadAsync(buffer, timeout.Token)); // closed by the listener without a handshake
+        }
+        finally
+        {
+            foreach (var client in held) client.Dispose();
+        }
+    }
+
+    [Fact]
+    public async Task Stop_ClosesThePortAtOnce_SoTheRealHostCanBindIt()
+    {
+        using var cert = HostCertificate.Generate();
+        var listener = new StandbyListener(cert, 0);
+        listener.Start();
+        var port = listener.Port;
+        listener.Stop();
+        await using var next = new TcpTlsListener(cert, port);
+        next.Start();
+        Assert.Equal(port, next.Port);
+        await listener.DisposeAsync();
     }
 }
 

@@ -1009,6 +1009,11 @@ public sealed class ClientSession : IAsyncDisposable
             await EndAsync(ClientCodes.ProtocolMismatch, refused: true).ConfigureAwait(false);
             return false;
         }
+        if (welcome.Standby == true)
+        {
+            await EndAsync(ClientCodes.NotHostYet, refused: true).ConfigureAwait(false);
+            return false;
+        }
         var refusal = await CheckHostKeyAsync(welcome.HostKeyFingerprint).ConfigureAwait(false);
         if (refusal != null)
         {

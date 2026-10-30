@@ -369,6 +369,7 @@ public sealed partial class GameHost : IAsyncDisposable
     {
         DropIdleSessions();
         SendDueResyncs();
+        PostReprobe(); // T282
         if (standbyStream != null) PostStandbyStep(); // T272: lag and resync decisions that wait on time, not on a store write
         turnTimer.Tick();
         if (session.Game.TurnState is { Phase: SimultaneousPhase.Resolving })

@@ -194,6 +194,34 @@ public sealed class LobbyStandbyTests : IDisposable
     }
 
     [Fact]
+    public async Task ReprobeStandby_InTheLobby_TellsTheCandidateAndAnnouncesTheChange()
+    {
+        var prober = new FakeProber { Answer = (_, _) => Fp };
+        await using var lobby = NewLobby(1, prober);
+        lobby.Standby.Limits = new StandbyLimits { ProbeMinIntervalMillis = 0, ReprobeIntervalMillis = 0 };
+        using var ann = ClientIdentity.Generate();
+        using var bob = ClientIdentity.Generate();
+        var (annWire, _) = await JoinAsync(lobby, ann, "Ann");
+        await using var _1 = annWire;
+        var (bobWire, _) = await JoinAsync(lobby, bob, "Bob");
+        await using var _2 = bobWire;
+        await lobby.ReprobeStandbyAsync(); // not accepted yet: nothing to probe
+        Assert.Empty(prober.Dialled);
+        await bobWire.SendAsync(new StandbyAccept { Endpoints = ["friend.example"], Port = 47821, Fingerprint = Fp });
+        await bobWire.WaitAsync<StandbyStatus>(it => it.State == StandbyStates.Ready);
+
+        await lobby.ReprobeStandbyAsync(); // probed again, still ready: nothing to say
+        Assert.Equal(2, prober.Dialled.Count);
+        Assert.Single(bobWire.Of<StandbyStatus>());
+
+        prober.Answer = (_, _) => null;
+        await lobby.ReprobeStandbyAsync();
+        await bobWire.WaitAsync<StandbyStatus>(it => it.State == StandbyStates.Unreachable);
+        await annWire.WaitAsync<HostSuccessor>(it => it.Status == StandbyStates.Unreachable && it.Successor == null);
+        Assert.Empty(annWire.Of<StandbyStatus>());
+    }
+
+    [Fact]
     public async Task Decline_ClearsTheBackupHost_AndKickEndsTheDesignation()
     {
         var prober = new FakeProber { Answer = (_, _) => Fp };
@@ -367,6 +395,112 @@ public sealed class GameStandbyTests : IDisposable
         await using var resumed = InProcessHost.ResumeFromDirectory(host.Directory, babylon.PlayerKey, new InProcessHostOptions { TickInterval = null });
         Assert.Equal(greece.PlayerKey, resumed.Host.Standby.KeyId);
         Assert.Equal(StandbyStates.Unreachable, resumed.Host.Standby.State); // not ready again until it is probed
+    }
+
+    [Fact]
+    public async Task TheTick_ReprobesTheStandby_TellsTheCandidateAndAnnouncesBothDirections()
+    {
+        var prober = new FakeProber { Answer = (_, _) => Fp };
+        await using var host = StartHost("g3", prober);
+        host.Host.Standby.Limits = new StandbyLimits { ProbeMinIntervalMillis = 0, ReprobeIntervalMillis = 0 };
+        using var cert = HostCertificate.Generate();
+        host.Listen(cert, 0);
+        var loopback = new Wire(await host.ConnectHostPlayerAsync());
+        await using var _1 = loopback;
+        var (friend, _) = await JoinAsync(host, greece);
+        await using var _2 = friend;
+        await host.Host.DesignateBackupAsync("Greece", babylon.PlayerKey);
+        await friend.SendAsync(new StandbyAccept { Endpoints = ["friend.example"], Port = 47821, Fingerprint = Fp });
+        await loopback.WaitAsync<HostSuccessor>(it => it.Status == StandbyStates.Ready);
+
+        async Task TickAsync() => await host.Host.EnqueueAsync(() => { host.Host.Tick(); return Task.CompletedTask; });
+        async Task<int> DialsAfterAsync()
+        {
+            for (var i = 0; i < 100 && prober.Dialled.Count < 2; i++) await Task.Delay(20);
+            return prober.Dialled.Count;
+        }
+
+        prober.Answer = (_, _) => null; // the listener is gone
+        await TickAsync();
+        await loopback.WaitAsync<HostSuccessor>(it => it.Status == StandbyStates.Unreachable && it.Successor == null);
+        Assert.Equal(StandbyStates.Unreachable, (await friend.WaitAsync<StandbyStatus>(it => it.State == StandbyStates.Unreachable)).State);
+        Assert.True(await DialsAfterAsync() >= 2);
+        Assert.Empty(loopback.Of<StandbyStatus>()); // the status goes to the candidate only
+
+        prober.Answer = (_, _) => Fp; // it is back
+        var before = loopback.Of<HostSuccessor>().Count;
+        for (var i = 0; i < 150 && !loopback.Of<HostSuccessor>().Skip(before).Any(it => it.Status == StandbyStates.Ready && it.Successor != null); i++)
+        {
+            await TickAsync();
+            await Task.Delay(20);
+        }
+        Assert.Contains(loopback.Of<HostSuccessor>().Skip(before), it => it.Status == StandbyStates.Ready && it.Successor != null);
+        Assert.Equal(StandbyStates.Ready, host.Host.Standby.State);
+    }
+
+    [Fact]
+    public async Task ARepobeStillRunningWhenTheHostCloses_IsDroppedQuietly()
+    {
+        var gate = new TaskCompletionSource<string?>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var started = new TaskCompletionSource();
+        var prober = new FakeProber { Answer = (_, _) => Fp };
+        await using var host = StartHost("g4", prober);
+        host.Host.Standby.Limits = new StandbyLimits { ProbeMinIntervalMillis = 0, ReprobeIntervalMillis = 0 };
+        using var cert = HostCertificate.Generate();
+        host.Listen(cert, 0);
+        var (friend, _) = await JoinAsync(host, greece);
+        await using var _1 = friend;
+        await host.Host.DesignateBackupAsync("Greece", babylon.PlayerKey);
+        await friend.SendAsync(new StandbyAccept { Endpoints = ["friend.example"], Port = 47821, Fingerprint = Fp });
+        await friend.WaitAsync<StandbyStatus>(it => it.State == StandbyStates.Ready);
+
+        host.Host.Standby.Prober = new BlockingProber(started, gate.Task);
+        await host.Host.EnqueueAsync(() => { host.Host.Tick(); return Task.CompletedTask; });
+        await started.Task.WaitAsync(TimeSpan.FromSeconds(10));
+        await host.StopAsync();
+        gate.SetResult(null); // the dial ends after the host is gone: a change nobody can announce
+        await Task.Delay(100);
+    }
+
+    private sealed class BlockingProber(TaskCompletionSource started, Task<string?> gate) : IEndpointProber
+    {
+        public Task<string?> PresentedFingerprintAsync(string host, int port, TimeSpan timeout, CancellationToken cancellationToken)
+        {
+            started.TrySetResult();
+            return gate;
+        }
+    }
+
+    [Fact]
+    public async Task ServerLobby_ReprobesTheStandbyOnItsOwnTimer()
+    {
+        var prober = new FakeProber { Answer = (_, _) => Fp };
+        await using var lobby = new ServerLobby(new LobbySettings { BackupHost = 1 }, reprobeCheck: TimeSpan.FromMilliseconds(30));
+        lobby.Lobby.Standby.Prober = prober;
+        lobby.Lobby.Standby.Limits = new StandbyLimits { ProbeMinIntervalMillis = 0, ReprobeIntervalMillis = 0 };
+        using var ann = ClientIdentity.Generate();
+        using var bob = ClientIdentity.Generate();
+        var (_, serverA) = InMemoryTransport.CreatePair();
+        _ = serverA;
+        var (clientA, serverEndA) = InMemoryTransport.CreatePair();
+        _ = lobby.AttachConnectionAsync(serverEndA);
+        await using var annWire = new Wire(clientA);
+        var (clientB, serverEndB) = InMemoryTransport.CreatePair();
+        _ = lobby.AttachConnectionAsync(serverEndB);
+        await using var bobWire = new Wire(clientB);
+        foreach (var (wire, identity, name) in new[] { (annWire, ann, "Ann"), (bobWire, bob, "Bob") })
+        {
+            await wire.SendAsync(new Hello { Protocol = ProtocolVersion.Current, ClientVersion = "1", RulesetHash = lobby.Lobby.Settings.ComputeRulesetHash(), ModList = [] });
+            var welcome = await wire.WaitAsync<Welcome>();
+            await wire.SendAsync(new Join { PlayerKey = identity.PlayerKey, DisplayName = name });
+            await wire.SendAsync(new Auth { Proof = identity.Sign(lobby.Lobby.HostFingerprint, welcome.SessionId, welcome.Challenge) });
+            await wire.WaitAsync<JoinOk>();
+        }
+        await bobWire.SendAsync(new StandbyAccept { Endpoints = ["friend.example"], Port = 47821, Fingerprint = Fp });
+        await bobWire.WaitAsync<StandbyStatus>(it => it.State == StandbyStates.Ready);
+
+        prober.Answer = (_, _) => null;
+        await bobWire.WaitAsync<StandbyStatus>(it => it.State == StandbyStates.Unreachable); // found by the timer, nobody asked
     }
 
     [Fact]

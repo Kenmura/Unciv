@@ -60,6 +60,9 @@ public sealed record StandbyLimits
     /// <summary>At most one endpoint probe per this long, whoever asks (the endpoints are attacker-chosen).</summary>
     public long ProbeMinIntervalMillis { get; init; } = 60_000;
 
+    /// <summary>T282: a designated, accepted standby is probed again this often (by the host's tick, never more often than <see cref="ProbeMinIntervalMillis"/>), so a lost listener turns <c>ready</c> into <c>unreachable</c> and a returning one back.</summary>
+    public long ReprobeIntervalMillis { get; init; } = 120_000;
+
     public TimeSpan ProbeTimeout { get; init; } = TimeSpan.FromSeconds(3);
 
     public int MinPort { get; init; } = 1024;
@@ -99,7 +102,7 @@ public sealed record StandbyLimits
     public int MaxLineChars { get; init; } = 4 * 1024 * 1024;
 }
 
-/// <summary>Dials one endpoint for the standby probe: a TLS handshake and nothing else (no payload is sent, so it is no amplifier). Returns the fingerprint the listener presented, or null when nothing usable answered.</summary>
+/// <summary>Dials one endpoint for the standby probe: a TLS handshake and one <c>Hello</c> (T282; a small fixed frame, no amplification: the answer is read with a size cap and never relayed). Returns the fingerprint the listener presented once it answered <c>Welcome{standby: true}</c>, or null when nothing usable answered (closed port, no TLS, or not a standby listener).</summary>
 public interface IEndpointProber
 {
     Task<string?> PresentedFingerprintAsync(string host, int port, TimeSpan timeout, CancellationToken cancellationToken);

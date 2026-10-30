@@ -24,6 +24,9 @@ public static class ClientCodes
 
     /// <summary>T269: the host's epoch is below the one this client has seen (or the host reported <c>stale-epoch</c>): another host took over.</summary>
     public const string StaleEpoch = ErrorCodes.StaleEpoch;
+
+    /// <summary>T282: the endpoint answered as a backup host's standby listener, not as a host.</summary>
+    public const string NotHostYet = ErrorCodes.NotHostYet;
     public const string HostKeyMismatch = "host-key-mismatch";
     public const string HostUntrusted = "host-untrusted";
     public const string ConnectFailed = "connect-failed";

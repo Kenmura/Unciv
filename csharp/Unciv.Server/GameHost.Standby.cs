@@ -131,6 +131,38 @@ public sealed partial class GameHost
         catch (Exception e) when (e is InvalidOperationException or ObjectDisposedException or OperationCanceledException) { /* the host closed meanwhile */ }
     }
 
+    private int reprobeRunning;
+
+    /// <summary>
+    /// T282: the periodic re-probe of the designated standby, started from <see cref="Tick"/> when it is due. The dial runs beside the actor; a changed state (ready to unreachable on loss, or back) is told to
+    /// the candidate and announced to every client from the mailbox. One probe at a time.
+    /// </summary>
+    private void PostReprobe()
+    {
+        if (!Standby.ReprobeDue || Interlocked.CompareExchange(ref reprobeRunning, 1, 0) != 0) return;
+        _ = ReprobeAsync();
+    }
+
+    private async Task ReprobeAsync()
+    {
+        try
+        {
+            if (!await Standby.ReprobeIfDueAsync(cts.Token).ConfigureAwait(false)) return;
+            await EnqueueAsync(async () =>
+            {
+                var key = Standby.KeyId;
+                if (key == null) return;
+                await SendToKeyAsync(key, StatusMessage());
+                await AnnounceSuccessorAsync();
+            }).ConfigureAwait(false);
+        }
+        catch (Exception e) when (e is InvalidOperationException or ObjectDisposedException or OperationCanceledException) { /* the host closed meanwhile */ }
+        finally
+        {
+            Volatile.Write(ref reprobeRunning, 0);
+        }
+    }
+
     private async Task ProcessStandbyDeclineAsync(HostSession from)
     {
         var code = Standby.Decline(from.PlayerKeyId);

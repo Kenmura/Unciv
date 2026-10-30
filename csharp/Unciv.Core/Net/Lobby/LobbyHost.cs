@@ -1218,6 +1218,19 @@ public sealed class LobbyHost : IAsyncDisposable
         await BroadcastLobbyStateAsync().ConfigureAwait(false);
     }
 
+    /// <summary>
+    /// T282: the periodic re-probe while the lobby is open (the network layer calls it on a timer; the game host takes over once the game started). Does nothing unless a probe is due; a changed
+    /// state is told to the candidate and announced to the lobby.
+    /// </summary>
+    public async Task ReprobeStandbyAsync(CancellationToken cancellationToken = default)
+    {
+        if (Status != LobbyStatus.InLobby || !Standby.ReprobeDue) return;
+        if (!await Standby.ReprobeIfDueAsync(cancellationToken).ConfigureAwait(false)) return;
+        if (Standby.KeyId is { } key) await SendToKeyAsync(key, Standby.Status()).ConfigureAwait(false);
+        await BroadcastAsync(Standby.Announcement(0, SuccessorRoster())).ConfigureAwait(false);
+        await BroadcastLobbyStateAsync().ConfigureAwait(false);
+    }
+
     private async Task HandleStandbyDeclineAsync(LobbySession session)
     {
         var code = Standby.Decline(session.IsAuthenticated ? session.PlayerKey : null);

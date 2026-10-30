@@ -167,6 +167,41 @@ public sealed class StandbyCoordinator
         return ProbeCoreAsync(gen, cancellationToken);
     }
 
+    /// <summary>T282: true when the periodic re-probe is due (a designated, accepted standby that was last probed at least <see cref="StandbyLimits.ReprobeIntervalMillis"/> ago, or never since this process started).</summary>
+    public bool ReprobeDue
+    {
+        get
+        {
+            lock (gate)
+            {
+                if (keyId == null || !accepted) return false;
+                return lastProbeMillis == long.MinValue || clock.NowMillis - lastProbeMillis >= Math.Max(limits.ReprobeIntervalMillis, limits.ProbeMinIntervalMillis);
+            }
+        }
+    }
+
+    /// <summary>
+    /// T282: the periodic re-probe. Probes when <see cref="ReprobeDue"/>; returns true when the visible state changed (ready to unreachable on loss, back again), so the host announces it. A probe that was
+    /// refused by the rate limit, or whose designation changed meanwhile, reports no change.
+    /// </summary>
+    public async Task<bool> ReprobeIfDueAsync(CancellationToken cancellationToken = default)
+    {
+        int gen;
+        string before;
+        lock (gate)
+        {
+            if (!ReprobeDue) return false;
+            gen = generation;
+            before = StateLocked();
+        }
+        var code = await ProbeCoreAsync(gen, cancellationToken).ConfigureAwait(false);
+        if (code is ErrorCodes.NotDesignated or ErrorCodes.ProbeRateLimited) return false;
+        lock (gate)
+        {
+            return gen == generation && !string.Equals(before, StateLocked(), StringComparison.Ordinal);
+        }
+    }
+
     private async Task<string?> ProbeCoreAsync(int gen, CancellationToken cancellationToken)
     {
         string endpoint;
