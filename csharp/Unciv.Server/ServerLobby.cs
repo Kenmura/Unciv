@@ -232,14 +232,28 @@ public sealed class ServerLobby : IAsyncDisposable
     public async Task<GameHost> ResumeGameAsync(OpenedGame opened, TurnPolicy? policyOverride = null, Action<string>? warn = null)
     {
         if (activeGameHost != null || store != null) throw new InvalidOperationException("A game is already running");
+        try
+        {
+            return await ResumeCoreAsync(opened, policyOverride, warn).ConfigureAwait(false);
+        }
+        catch (Exception)
+        {
+            if (activeGameHost == null) opened.Dispose(); // nothing owns the store yet; once the host exists, DisposeAsync closes both
+            throw;
+        }
+    }
+
+    private async Task<GameHost> ResumeCoreAsync(OpenedGame opened, TurnPolicy? policyOverride, Action<string>? warn)
+    {
         var meta = opened.Store.ReadMeta();
-        var seated = meta.Slots.Where(x => x.Value.PlayerKey.Length > 0).ToList(); // a kicked seat has no key: its civ stays with the AI
+        var seated = meta.Slots.Where(x => x.Value.PlayerKey.Length > 0).ToList(); // a kicked seat has no key: nobody can reconnect to it
         lobbyHost.RestoreStarted(seated.Select(x => (x.Key, x.Value.PlayerKey, x.Value.DisplayName)));
         lobbyHost.Standby.Restore(meta.Standby); // before the host persists the coordinator: otherwise the stored designation would be overwritten with nothing
         var session = new GameSession(opened.Session.Game, lastSeq: opened.Session.LastSeq) { Clock = () => clock.NowMillis };
         var gameHost = new GameHost(session, opened.Store, clock: clock, turnPolicy: policyOverride ?? meta.TimerPolicy, standby: lobbyHost.Standby);
         gameHost.Warn = warn; // before the pump below, so a round that cannot resume is logged
         store = opened.Store;
+        activeGameHost = gameHost; // owned from here: a failure below is cleaned up by DisposeAsync
         if (session.Game.TurnState is { Phase: SimultaneousPhase.Resolving })
         {
             await gameHost.EnqueueAsync(() =>
@@ -252,9 +266,11 @@ public sealed class ServerLobby : IAsyncDisposable
         await gameHost.EnqueueAsync(() =>
         {
             foreach (var (civ, _) in seated) gameHost.TurnTimer.Disconnect(civ);
+            // A seat kicked before the stop lost its key at once, but its civ is human until the next turn boundary and the pending takeover was only in memory: hand it to the AI again.
+            foreach (var civ in meta.Slots.Where(x => x.Value.PlayerKey.Length == 0).Select(x => x.Key))
+                if (session.Game.GetCivilizationOrNull(civ) is { } kickedCiv && kickedCiv.IsHuman()) gameHost.TurnTimer.Depart(civ);
             return Task.CompletedTask;
         }).ConfigureAwait(false);
-        activeGameHost = gameHost;
         gameHostReady.TrySetResult(gameHost);
         return gameHost;
     }

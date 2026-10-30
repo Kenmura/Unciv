@@ -266,6 +266,7 @@ public sealed partial class DedicatedServerTests
             var host = await lobby.ResumeGameAsync(resolving, warn: warnings.Add);
             Assert.NotEqual(SimultaneousPhase.Resolving, host.Game.TurnState!.Phase);
             Assert.Equal(2, host.Game.Turns);
+            Assert.Empty(warnings);
         }
 
         // Two seats with one key cannot be bound: the saved game cannot be resumed, which is exit code 3 (not a restart loop).
@@ -289,6 +290,12 @@ public sealed partial class DedicatedServerTests
         {
             await lobby.ResumeGameAsync(kicked);
             Assert.Equal(["Rome"], lobby.Lobby.Slots.Select(x => x.Nation).ToArray());
+            await lobby.ActiveGameHost!.EnqueueAsync(() =>
+            {
+                Assert.False(lobby.ActiveGameHost.TurnTimer.IsConnected("Babylon"));
+                Assert.True(lobby.ActiveGameHost.TurnTimer.HasPendingTakeover("Babylon")); // the AI takes the kicked civ at the next boundary
+                return Task.CompletedTask;
+            });
         }
     }
 
