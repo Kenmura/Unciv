@@ -45,6 +45,7 @@ espionage
 vote-result
 hotseat
 tutorial-tasks
+tutorial-dismiss
 host-screen
 lobby
 mp-turn

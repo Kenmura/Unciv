@@ -705,6 +705,24 @@
       }
     ]
   },
+  "T299": {
+    "scenario": "tutorial-dismiss",
+    "about": "Tutorial pop-ups and the floating task card can be removed for good: a 'Never show tutorials' button on the popup and on the card (plus an X that hides the card for the session) turns the persisted Show tutorials setting off; it is also a toggle in Settings > Gameplay. Phone-sized touch targets (400 dpi).",
+    "shots": [
+      {
+        "golden": "tutorial-dismiss/popup.png",
+        "caption": "The Introduction tutorial with 'Never show tutorials' beside OK."
+      },
+      {
+        "golden": "tutorial-dismiss/card.png",
+        "caption": "The floating task card with its 'Never show tutorials' button and X in the header row."
+      },
+      {
+        "golden": "tutorial-dismiss/gone.png",
+        "caption": "After Never show tutorials: no popup and no card."
+      }
+    ]
+  },
   "C044": {
     "scenario": "menu",
     "about": "In-game menu (Escape or the Menu button): save, load, new game, victory status, options, resign and main menu, with confirmations before destructive actions.",

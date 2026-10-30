@@ -93,6 +93,7 @@
 - [T286 (ticket not Done or unknown)](#t286-ticket-not-done-or-unknown)
 - [T288 (ticket not Done or unknown)](#t288-ticket-not-done-or-unknown)
 - [T294 (ticket not Done or unknown)](#t294-ticket-not-done-or-unknown)
+- [T299 (ticket not Done or unknown)](#t299-ticket-not-done-or-unknown)
 - [Missing screenshots](#missing-screenshots)
 <!-- /toc -->
 
@@ -1876,6 +1877,24 @@ Documentation images rendered on an NVIDIA GeForce RTX 5060 Ti (Forward+, Vulkan
 ![Option 4 (bronze hoplite, recommended second baseline) against the current Warrior.](design/images/units/warrior-options/d4-vs-current.jpg)
 
 *Option 4 (bronze hoplite, recommended second baseline) against the current Warrior.* (`design/images/units/warrior-options/d4-vs-current.jpg`, documentation image, not a golden)
+
+## T299 (ticket not Done or unknown)
+
+Tutorial pop-ups and the floating task card can be removed for good: a 'Never show tutorials' button on the popup and on the card (plus an X that hides the card for the session) turns the persisted Show tutorials setting off; it is also a toggle in Settings > Gameplay. Phone-sized touch targets (400 dpi).
+
+Scenario `tutorial-dismiss`.
+
+![The Introduction tutorial with 'Never show tutorials' beside OK.](../Unciv.Godot.Harness/golden/tutorial-dismiss/popup.png)
+
+*The Introduction tutorial with 'Never show tutorials' beside OK.* (`tutorial-dismiss/popup.png`)
+
+![The floating task card with its 'Never show tutorials' button and X in the header row.](../Unciv.Godot.Harness/golden/tutorial-dismiss/card.png)
+
+*The floating task card with its 'Never show tutorials' button and X in the header row.* (`tutorial-dismiss/card.png`)
+
+![After Never show tutorials: no popup and no card.](../Unciv.Godot.Harness/golden/tutorial-dismiss/gone.png)
+
+*After Never show tutorials: no popup and no card.* (`tutorial-dismiss/gone.png`)
 
 ## Missing screenshots
 

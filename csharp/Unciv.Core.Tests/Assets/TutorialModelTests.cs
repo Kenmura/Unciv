@@ -254,4 +254,29 @@ public sealed class TutorialModelTests : IDisposable
             if (Directory.Exists(dir)) Directory.Delete(dir, recursive: true);
         }
     }
+
+    [Fact]
+    public void NeverShowTutorialsEmptiesTheQueueKeepsSeenFlagsAndIsWrittenToTheSettingsFile()
+    {
+        var queue = new TutorialQueue(ruleset);
+        queue.Enqueue(TutorialTrigger.Introduction, ClientSettings.Default);
+        queue.Enqueue(TutorialTrigger.Workers, ClientSettings.Default);
+        Assert.Equal(2, queue.PendingCount);
+        var off = ClientSettings.Default with { ShowTutorials = false };
+        queue.Clear(); // what the client does when the setting goes off
+        Assert.Equal(TutorialEnqueue.Ignored, queue.Enqueue(TutorialTrigger.Introduction, off));
+        Assert.Equal(0, queue.PendingCount);
+        Assert.Empty(off.TutorialsSeen); // dropped tutorials are not marked seen: turning the setting back on shows them again
+        string dir = Directory.CreateTempSubdirectory("unciv-tutorial-").FullName;
+        try
+        {
+            string path = Path.Combine(dir, "settings.json");
+            Assert.True(new ClientSettingsStore(path).Save(off));
+            Assert.Matches("\"showTutorials\"\\s*:\\s*false", File.ReadAllText(path));
+        }
+        finally
+        {
+            if (Directory.Exists(dir)) Directory.Delete(dir, recursive: true);
+        }
+    }
 }

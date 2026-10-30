@@ -548,6 +548,22 @@ public partial class GameScreen : Control
         else Tutorials.Close();
     }
 
+    /// <summary>T299: "Never show tutorials" (popup or task card): turns the persisted setting off; <see cref="ApplySettings"/> then removes everything showing.</summary>
+    private void NeverShowTutorials()
+    {
+        if (boundSettings == null) return;
+        boundSettings.Update(s => s with { ShowTutorials = false });
+        StopTutorials(); // also when the save failed: gone for this session at least
+    }
+
+    /// <summary>T299: closes the tutorial popup, forgets the waiting tutorials (they are not marked seen, so turning the setting back on shows them) and hides the task card.</summary>
+    private void StopTutorials()
+    {
+        tutorialQueue?.Clear();
+        Tutorials.Close();
+        TaskCard.Show(null);
+    }
+
     private void MarkTutorialSeen(TutorialTrigger trigger) => boundSettings?.Update(s => s.WithTutorialSeen(TutorialModel.SeenKey(trigger)));
 
     /// <summary>
@@ -566,6 +582,7 @@ public partial class GameScreen : Control
 
     private void ApplySettings(ClientSettings settings)
     {
+        if (!settings.ShowTutorials) StopTutorials();
         if (session != null && snapshot != null) Run(RefreshTaskCard()); // C054: Show tutorials may have changed
         if (session != null && snapshot != null) RefreshMarkers();
         hotkeys = settings.KeyBindings;
@@ -930,6 +947,8 @@ public partial class GameScreen : Control
         Tutorials = new TutorialPopupView();
         AddChild(Tutorials);
         Tutorials.Dismissed += DismissTutorial;
+        Tutorials.NeverShowRequested += NeverShowTutorials;
+        TaskCard.NeverShowRequested += NeverShowTutorials;
         GameOver.Chosen += kind => Run(OnGameOverChosen(kind));
         VictoryStatus = new VictoryStatusView();
         AddChild(VictoryStatus);
@@ -1082,6 +1101,7 @@ public partial class GameScreen : Control
         TaskCard.Init(theme);
         reportedTasks.Clear();
         tutorialQueue = new TutorialQueue(session.Ruleset);
+        TaskCard.ResetClosed();
         GameOver.Close();
         VictoryStatus.Init(theme);
         VictoryStatus.Close();
@@ -1931,8 +1951,7 @@ public partial class GameScreen : Control
             return;
         }
         foreach (var task in TutorialTaskModel.FromSnapshot(snapshot)) await ReportTask(task);
-        TaskCard.Show(await queries.TutorialTask(showTutorials: true));
-        Layout();
+        await ShowTaskCard();
     }
 
     /// <summary>C054: tells the engine once per game screen that the player did <paramref name="task"/> (a refusal means the ruleset has no such task: harmless).</summary>
@@ -1950,7 +1969,14 @@ public partial class GameScreen : Control
     private async Task ReportTaskThenRefresh(string task)
     {
         await ReportTask(task);
-        TaskCard.Show(await queries.TutorialTask(showTutorials: true));
+        await ShowTaskCard();
+    }
+
+    /// <summary>T299: asks for the current task and shows it, unless tutorials were turned off while the answer was on its way.</summary>
+    private async Task ShowTaskCard()
+    {
+        var result = await queries.TutorialTask(showTutorials: true);
+        TaskCard.Show(TaskCardActive ? result : null);
         Layout();
     }
 

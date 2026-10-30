@@ -16,6 +16,7 @@ public partial class TutorialPopupView : Modal
     private readonly Label body = new() { Name = "TutorialBody", AutowrapMode = TextServer.AutowrapMode.WordSmart };
     private readonly Label counter = new() { Name = "TutorialCounter", ThemeTypeVariation = UiVariants.LabelMuted };
     private readonly Button ok = new() { Name = "TutorialOk" };
+    private readonly Button never = new() { Name = "TutorialNever" };
 
     public TutorialPopupView()
     {
@@ -23,7 +24,8 @@ public partial class TutorialPopupView : Modal
         TitleLabel.Name = "TutorialTitle";
         Body.AddChild(body);
         Body.AddChild(counter);
-        SetActions([(ok, ChoiceRole.Primary)]);
+        SetActions([(never, ChoiceRole.Ghost), (ok, ChoiceRole.Primary)]);
+        never.Pressed += () => NeverShowRequested?.Invoke();
         ok.Pressed += () => Dismissed?.Invoke();
     }
 
@@ -36,6 +38,11 @@ public partial class TutorialPopupView : Modal
     public string CounterText => counter.Text;
 
     public Button OkButton => ok;
+
+    public Button NeverButton => never;
+
+    /// <summary>The player chose "Never show tutorials": the owner turns the persisted setting off and closes the popup.</summary>
+    public event Action? NeverShowRequested;
 
     /// <summary>The OK button was pressed (or Space, or Escape).</summary>
     public event Action? Dismissed;
@@ -50,6 +57,7 @@ public partial class TutorialPopupView : Modal
         var inv = System.Globalization.CultureInfo.InvariantCulture;
         counter.Text = page.StepCount > 1 ? $"{(page.Step + 1).ToString(inv)} / {page.StepCount.ToString(inv)}" : "";
         ok.Text = "OK".Tr();
+        never.Text = "Never show tutorials".Tr();
         Visible = true;
     }
 

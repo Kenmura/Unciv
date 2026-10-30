@@ -15,7 +15,11 @@ public partial class TutorialTaskCard : Control
 {
     private const int MaxWidth = 340;
     private readonly PanelContainer panel = new() { Name = "TaskPanel", MouseFilter = MouseFilterEnum.Stop };
+    private readonly VBoxContainer shell = new() { Name = "TaskShell" };
     private readonly VBoxContainer column = new() { Name = "TaskColumn" };
+    private readonly HBoxContainer header = new() { Name = "TaskHeader" };
+    private readonly Button closeButton = new() { Name = "TaskClose" };
+    private readonly Button neverButton = new() { Name = "TaskNever" };
     private readonly Button collapsedButton = new() { Name = "TaskCollapsed", Text = "?", Visible = false };
     private UiTheme theme = null!; // JUSTIFY: C054 assigned by Init before the card is shown
     private TutorialTaskResult? task;
@@ -25,12 +29,37 @@ public partial class TutorialTaskCard : Control
         Name = "TutorialTaskCard";
         MouseFilter = MouseFilterEnum.Ignore;
         Visible = false;
-        panel.AddChild(column);
+        neverButton.SizeFlagsHorizontal = SizeFlags.ExpandFill;
+        neverButton.ThemeTypeVariation = UiVariants.ButtonGhost;
+        header.AddChild(neverButton);
+        header.AddChild(closeButton);
+        shell.AddChild(header);
+        shell.AddChild(column);
+        panel.AddChild(shell);
         AddChild(panel);
         AddChild(collapsedButton);
         panel.GuiInput += OnPanelInput;
         collapsedButton.Pressed += () => SetCollapsed(false);
+        closeButton.Pressed += () =>
+        {
+            Closed = true;
+            Show(null);
+        };
+        neverButton.Pressed += () => NeverShowRequested?.Invoke();
     }
+
+    /// <summary>The X was pressed: the card stays away for the rest of this game screen (the "Never show tutorials" button is the permanent removal).</summary>
+    public bool Closed { get; private set; }
+
+    /// <summary>A new game starts: the card may appear again.</summary>
+    public void ResetClosed() => Closed = false;
+
+    public Button CloseButton => closeButton;
+
+    public Button NeverButton => neverButton;
+
+    /// <summary>The player chose "Never show tutorials": the owner turns the persisted setting off.</summary>
+    public event Action? NeverShowRequested;
 
     /// <summary>The Event name being shown ("" when the card is hidden).</summary>
     public string EventName => Visible && task != null ? task.Event : "";
@@ -57,7 +86,7 @@ public partial class TutorialTaskCard : Control
     /// <summary>Shows the task (null or an empty Event name hides the card). The fold is kept while the task stays the same.</summary>
     public void Show(TutorialTaskResult? result)
     {
-        if (result == null || result.Event.Length == 0)
+        if (result == null || result.Event.Length == 0 || Closed)
         {
             task = null;
             Visible = false;
@@ -97,6 +126,8 @@ public partial class TutorialTaskCard : Control
             column.RemoveChild(child);
             child.QueueFree();
         }
+        neverButton.Text = "Never show tutorials".Tr();
+        closeButton.Text = "X".Tr();
         panel.Visible = !Collapsed;
         collapsedButton.Visible = Collapsed;
         if (Collapsed || task == null) return;
