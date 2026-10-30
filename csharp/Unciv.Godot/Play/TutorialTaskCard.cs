@@ -31,6 +31,8 @@ public partial class TutorialTaskCard : Control
         Visible = false;
         neverButton.SizeFlagsHorizontal = SizeFlags.ExpandFill;
         neverButton.ThemeTypeVariation = UiVariants.ButtonGhost;
+        neverButton.AutowrapMode = TextServer.AutowrapMode.WordSmart; // a narrow phone card wraps the text instead of growing wider than its budget
+        neverButton.CustomMinimumSize = new Vector2(1f, 0f);
         header.AddChild(neverButton);
         header.AddChild(closeButton);
         shell.AddChild(header);
