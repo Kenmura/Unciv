@@ -29,9 +29,32 @@ public sealed partial class GpuBenchScenario : Scenario
 
     public override bool Uses3D => true;
 
-    public override Vector2I Viewport => ParseRes(System.Environment.GetEnvironmentVariable("UNCIV_BENCH_RES"));
+    public override Vector2I Viewport => ParseRes(Bench("UNCIV_BENCH_RES"));
 
     public override IReadOnlyList<string> Checklist => ["Open the PNGs in UNCIV_BENCH_OUT: do Low, High and Ultra look right and do the colours agree?"];
+
+    private static IReadOnlyDictionary<string, string>? benchFile;
+
+    /// <summary>T290: a <c>UNCIV_BENCH_*</c> variable from the environment, else from <c>bench.env</c> (<c>user://bench.env</c>, else <c>bench.env</c> next to the executable or in the working directory, else <c>/sdcard/bench.env</c>): a stock Android phone cannot set environment variables. Push the file with <c>adb push bench.env /sdcard/bench.env</c> (readable after the app is granted storage access) or into the app's user directory.</summary>
+    internal static string? Bench(string name)
+    {
+        benchFile ??= LoadBenchFile();
+        return BenchEnvFile.Lookup(name, benchFile, System.Environment.GetEnvironmentVariable);
+    }
+
+    private static Dictionary<string, string> LoadBenchFile()
+    {
+        foreach (string path in new[] { ProjectSettings.GlobalizePath("user://bench.env"), System.IO.Path.Combine(System.AppContext.BaseDirectory, "bench.env"), "bench.env", "/sdcard/bench.env" })
+        {
+            try
+            {
+                if (System.IO.File.Exists(path)) return BenchEnvFile.Parse(System.IO.File.ReadAllText(path));
+            }
+            catch (System.IO.IOException) { }
+            catch (UnauthorizedAccessException) { }
+        }
+        return new Dictionary<string, string>(StringComparer.Ordinal);
+    }
 
     private static Vector2I ParseRes(string? text)
     {
@@ -80,13 +103,13 @@ public sealed partial class GpuBenchScenario : Scenario
 
     public override IReadOnlyList<ScenarioStep> Build(Control host, GameSession session)
     {
-        string outDir = System.Environment.GetEnvironmentVariable("UNCIV_BENCH_OUT") ?? throw new InvalidOperationException("UNCIV_BENCH_OUT is not set");
+        string outDir = Bench("UNCIV_BENCH_OUT") ?? throw new InvalidOperationException("UNCIV_BENCH_OUT is not set");
         Directory.CreateDirectory(outDir);
-        string mode = System.Environment.GetEnvironmentVariable("UNCIV_BENCH_MODE") ?? "levels";
-        string sizeName = System.Environment.GetEnvironmentVariable("UNCIV_BENCH_SIZE") ?? "Large";
-        int frames = int.TryParse(System.Environment.GetEnvironmentVariable("UNCIV_BENCH_FRAMES"), out int f) ? f : 300;
-        int seqShots = int.TryParse(System.Environment.GetEnvironmentVariable("UNCIV_BENCH_SEQ"), out int sq) ? sq : 0;
-        var wantedViews = (System.Environment.GetEnvironmentVariable("UNCIV_BENCH_VIEWS") ?? "").Split(',', StringSplitOptions.RemoveEmptyEntries);
+        string mode = Bench("UNCIV_BENCH_MODE") ?? "levels";
+        string sizeName = Bench("UNCIV_BENCH_SIZE") ?? "Large";
+        int frames = int.TryParse(Bench("UNCIV_BENCH_FRAMES"), out int f) ? f : 300;
+        int seqShots = int.TryParse(Bench("UNCIV_BENCH_SEQ"), out int sq) ? sq : 0;
+        var wantedViews = (Bench("UNCIV_BENCH_VIEWS") ?? "").Split(',', StringSplitOptions.RemoveEmptyEntries);
 
         var game = BuildGame(sizeName, out var human, out int cityCount, out int unitCount);
         var localHost = new LocalHost(new GameSession(game), ScenarioGame.HumanA, () => 1000L);
@@ -94,7 +117,7 @@ public sealed partial class GpuBenchScenario : Scenario
         host.AddChild(screen);
         screen.Start(localHost, AssetRegistry.ForRuleset(game.Ruleset));
         screen.Hud.HoldBanner = true;
-        if (System.Environment.GetEnvironmentVariable("UNCIV_BENCH_CLEAN") == "1") HideHud(screen);
+        if (Bench("UNCIV_BENCH_CLEAN") == "1") HideHud(screen);
         var map = screen.Map;
         var probe = new Probe();
         host.AddChild(probe);
@@ -205,7 +228,7 @@ public sealed partial class GpuBenchScenario : Scenario
     private static List<ScenarioStep> WarriorShots(GameScreen screen, MapView map, Func<Vector3> capital, List<Config> configs, Action<string> shot)
     {
         var warrior = screen.Units.Values.Where(it => it.Unit.Name == "Warrior" && it.IsOwn && (it.RestPosition - capital()).Length() > 2.5f).OrderBy(it => (it.RestPosition - capital()).LengthSquared()).First(); // not on a city: the city model would hide it
-        var yaws = (System.Environment.GetEnvironmentVariable("UNCIV_BENCH_YAWS") ?? "0,45,90,180").Split(',').Select(it => float.Parse(it, CultureInfo.InvariantCulture)).ToArray();
+        var yaws = (Bench("UNCIV_BENCH_YAWS") ?? "0,45,90,180").Split(',').Select(it => float.Parse(it, CultureInfo.InvariantCulture)).ToArray();
         string[] turnNames = ["front", "threeq", "side", "back"];
         var views = new List<(string Name, float Zoom, float Tilt, float? Yaw)> { ("mid", 14f, 55f, null), ("near", MapView.MinZoom, 55f, null), ("far", 30f, 55f, null) };
         // the camera never gets nearer than MapView.MinZoom: the close views use it and are cropped from a high-resolution frame
@@ -263,11 +286,11 @@ public sealed partial class GpuBenchScenario : Scenario
         var ultra = GraphicsModel.Preset(GraphicsQuality.Ultra);
         if (!forwardPlus) ultra = ultra with { Ssao = false, Ssr = false }; // errors on the compatibility renderer; labelled below
         // Calibration sweeps: UNCIV_BENCH_ULTRA="exposure,ambient,saturation" overrides those constants of the Ultra preset (and of nothing else)
-        if ((System.Environment.GetEnvironmentVariable("UNCIV_BENCH_ULTRA") ?? "").Split(',') is [var expo, var amb, var sat] && float.TryParse(expo, CultureInfo.InvariantCulture, out float e) && float.TryParse(amb, CultureInfo.InvariantCulture, out float a) && float.TryParse(sat, CultureInfo.InvariantCulture, out float sa))
+        if ((Bench("UNCIV_BENCH_ULTRA") ?? "").Split(',') is [var expo, var amb, var sat] && float.TryParse(expo, CultureInfo.InvariantCulture, out float e) && float.TryParse(amb, CultureInfo.InvariantCulture, out float a) && float.TryParse(sat, CultureInfo.InvariantCulture, out float sa))
         {
             ultra = ultra with { Exposure = e, AmbientEnergy = a, Saturation = sa };
         }
-        var onlyConfig = System.Environment.GetEnvironmentVariable("UNCIV_BENCH_CONFIGS");
+        var onlyConfig = Bench("UNCIV_BENCH_CONFIGS");
         string ultraName = forwardPlus ? "Ultra" : "Ultra-no-ssao-ssr";
         var configs = new List<Config>();
         if (mode == "ablation")
