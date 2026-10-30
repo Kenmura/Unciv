@@ -15,7 +15,7 @@ Work is completed phase by phase (`phases.txt`; `ticket.py ready`/`next` list ea
 
 | Phase | Done | Remaining | Ready | In flight | Remaining tickets |
 |---|---|---|---|---|---|
-| Phase 1: CLI (headless engine) | 231/232 | 1 | 0 | 1 | [T315](backlog/T315.md) |
+| Phase 1: CLI (headless engine) | 231/233 | 2 | 1 | 1 | [T315](backlog/T315.md) [T319](backlog/T319.md) |
 | Phase 2: single player (Godot client) | 57/57 | 0 | 0 | 0 | complete |
 | Phase 3: multiplayer | 29/29 | 0 | 0 | 0 | complete |
 | Phase 4: queued plans (UI redesign, unit models, BNW) | 72/75 | 3 | 0 | 0 | [T316](backlog/T316.md) [T317](backlog/T317.md) [T318](backlog/T318.md) |
@@ -52,6 +52,7 @@ flowchart TD
     T316["T316<br/>Menu screens re-layout when the window is resized or the sca..."]
     T317["T317<br/>Extend the layout matrix: alerts and popups, city Production..."]
     T318["T318<br/>Host, Join and Lobby screens on the ScreenFrame look: titled..."]
+    T319["T319<br/>Client scenario goldens phone-menus and flat-city fail local..."]
   end
   T274 --> T275
   T278 --> T306
@@ -79,6 +80,7 @@ flowchart TD
   class T316 waiting
   class T317 waiting
   class T318 waiting
+  class T319 ready
 ```
 
 ## Remaining tickets over time
@@ -97,7 +99,7 @@ xychart-beta
     title "Remaining tickets"
     x-axis ["Oct 24 00:00", "Oct 24 12:00", "Oct 25 00:00", "Oct 25 12:00", "Oct 26 00:00", "Oct 26 12:00", "Oct 27 00:00", "Oct 27 12:00", "Oct 28 00:00", "Oct 28 12:00", "Oct 29 00:00", "Oct 29 12:00", "Oct 30 00:00", "Oct 30 12:00", "Oct 31 00:00"]
     y-axis "Tickets" 0 --> 55
-    line [5, 46, 2, 54, 39, 19, 11, 9, 9, 9, 9, 31, 14, 6, 11]
+    line [5, 46, 2, 54, 39, 19, 11, 9, 9, 9, 9, 31, 14, 6, 12]
     line [0, 11, 11, 0, 0, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1]
     line [1, 0, 4, 2, 6, 6, 3, 2, 2, 2, 2, 3, 5, 5, 5]
 ```
@@ -116,13 +118,14 @@ xychart-beta
     x-axis ["Oct 24 00:00", "Oct 24 12:00", "Oct 25 00:00", "Oct 25 12:00", "Oct 26 00:00", "Oct 26 12:00", "Oct 27 00:00", "Oct 27 12:00", "Oct 28 00:00", "Oct 28 12:00", "Oct 29 00:00", "Oct 29 12:00", "Oct 30 00:00", "Oct 30 12:00", "Oct 31 00:00"]
     y-axis "Tickets" 0 --> 465
     line [0, 69, 153, 200, 246, 280, 294, 297, 297, 297, 297, 354, 413, 433, 443]
-    line [6, 126, 170, 256, 291, 305, 309, 309, 309, 309, 309, 388, 433, 445, 460]
+    line [6, 126, 170, 256, 291, 305, 309, 309, 309, 309, 309, 388, 433, 445, 461]
 ```
 
 ## Incomplete tickets
 
 | Ticket | State | Depends on | Unblocks | Title |
 |---|---|---|---|---|
+| T319 | **Ready to start** | none | 0 | Client scenario goldens phone-menus and flat-city fail locally at the base commit: find out whether stale or machine-dependent, then fix |
 | T275 | **On deck** (after T274) | T274, C034, C035 | 0 | Host migration 5/5: client UI and docs (backup-host picker, trust notice, standby status, rollback and host-changed notices, superseded-host screen) |
 | T274 | In-Progress [Claude-T274] | T273 | 1 | Host migration 4/5: crash election (loss detection, signed HostLossVote quorum, split-brain refusal, superseded-host mode, forced take-over, kill-the-host scenarios) |
 | T278 | Available (waiting on ) | T260, T276 | 1 | Android on-device verification: TLS join, lifecycle reconnect, frame time and APK size on a mid-range phone |
