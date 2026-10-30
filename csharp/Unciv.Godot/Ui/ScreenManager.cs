@@ -101,7 +101,7 @@ public partial class ScreenManager : Control
     public bool Back() => Popups.Cancel() || Pop();
 
     /// <summary>
-    /// C099: the Android back button (<see cref="NotificationWMGoBackRequest"/>; the project does not quit on it) does what Escape does, and leaves the app only when no popup or screen is
+    /// C099: the Android back button (<c>NOTIFICATION_WM_GO_BACK_REQUEST</c>; the project does not quit on it) does what Escape does, and leaves the app only when no popup or screen is
     /// left to close. On a touch build the screens are also kept inside the safe area (notch, gesture bar) and above the virtual keyboard.
     /// </summary>
     public override void _Notification(int what)
