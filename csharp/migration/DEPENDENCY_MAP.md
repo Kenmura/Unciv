@@ -15,7 +15,7 @@ Work is completed phase by phase (`phases.txt`; `ticket.py ready`/`next` list ea
 
 | Phase | Done | Remaining | Ready | In flight | Remaining tickets |
 |---|---|---|---|---|---|
-| Phase 1: CLI (headless engine) | 231/231 | 0 | 0 | 0 | complete |
+| Phase 1: CLI (headless engine) | 231/232 | 1 | 0 | 0 | [T325](backlog/T325.md) |
 | Phase 2: single player (Godot client) | 57/57 | 0 | 0 | 0 | complete |
 | Phase 3: multiplayer | 29/29 | 0 | 0 | 0 | complete |
 | Phase 4: queued plans (UI redesign, unit models, BNW) | 72/73 | 1 | 0 | 1 | [T323](backlog/T323.md) |
@@ -55,10 +55,12 @@ flowchart TD
     T322["T322<br/>Settings and options rows span the whole window on 3840x2160..."]
     T323["T323<br/>Shared UI widgets still fix Px() sizes at construction (List..."]
     T324["T324<br/>Rigid models second pass: thin Ballista, grey Trebuchet/Panz..."]
+    T325["T325<br/>Automatic release drafts: a scheduled workflow tags green cs..."]
   end
   T274 --> T275
   T278 --> T306
   T309 --> T320
+  T305 --> T325
   classDef waiting fill:#f3faf3,stroke:#9bc49b,color:#555,stroke-dasharray:2 2
   classDef ondeck fill:#ffe8cc,stroke:#e8590c,stroke-width:3px,color:#000
   classDef ready fill:#7ee787,stroke:#1a7f37,stroke-width:3px,color:#000
@@ -86,6 +88,7 @@ flowchart TD
   class T322 prog
   class T323 prog
   class T324 waiting
+  class T325 waiting
 ```
 
 ## Remaining tickets over time
@@ -104,7 +107,7 @@ xychart-beta
     title "Remaining tickets"
     x-axis ["Oct 24 00:00", "Oct 24 12:00", "Oct 25 00:00", "Oct 25 12:00", "Oct 26 00:00", "Oct 26 12:00", "Oct 27 00:00", "Oct 27 12:00", "Oct 28 00:00", "Oct 28 12:00", "Oct 29 00:00", "Oct 29 12:00", "Oct 30 00:00", "Oct 30 12:00", "Oct 31 00:00"]
     y-axis "Tickets" 0 --> 55
-    line [5, 46, 2, 54, 39, 19, 11, 9, 9, 9, 9, 31, 14, 6, 13]
+    line [5, 46, 2, 54, 39, 19, 11, 9, 9, 9, 9, 31, 14, 6, 14]
     line [0, 11, 11, 0, 0, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1]
     line [1, 0, 4, 2, 6, 6, 3, 2, 2, 2, 2, 3, 5, 5, 6]
 ```
@@ -123,7 +126,7 @@ xychart-beta
     x-axis ["Oct 24 00:00", "Oct 24 12:00", "Oct 25 00:00", "Oct 25 12:00", "Oct 26 00:00", "Oct 26 12:00", "Oct 27 00:00", "Oct 27 12:00", "Oct 28 00:00", "Oct 28 12:00", "Oct 29 00:00", "Oct 29 12:00", "Oct 30 00:00", "Oct 30 12:00", "Oct 31 00:00"]
     y-axis "Tickets" 0 --> 470
     line [0, 69, 153, 200, 246, 280, 294, 297, 297, 297, 297, 354, 413, 433, 446]
-    line [6, 126, 170, 256, 291, 305, 309, 309, 309, 309, 309, 388, 433, 445, 466]
+    line [6, 126, 170, 256, 291, 305, 309, 309, 309, 309, 309, 388, 433, 445, 467]
 ```
 
 ## Incomplete tickets
@@ -133,12 +136,12 @@ xychart-beta
 | T275 | **On deck** (after T274) | T274, C034, C035 | 0 | Host migration 5/5: client UI and docs (backup-host picker, trust notice, standby status, rollback and host-changed notices, superseded-host screen) |
 | T274 | In-Progress [Claude-T274] | T273 | 1 | Host migration 4/5: crash election (loss detection, signed HostLossVote quorum, split-brain refusal, superseded-host mode, forced take-over, kill-the-host scenarios) |
 | T278 | Available (waiting on ) | T260, T276 | 1 | Android on-device verification: TLS join, lifecycle reconnect, frame time and APK size on a mid-range phone |
+| T305 | Available (waiting on ) | T280 | 1 | Verify the Android APK job of the release workflow on a hosted runner (first tag push) |
 | T309 | Available (waiting on ) | T295 | 1 | Harden the unit sheet and silhouette test: single-figure pages, tight layout, every unit has a style |
 | T290 | Blocked | T271 | 0 | Real-device frame-time pass: Windows, macOS, Android phone |
 | T300 | In-Progress [Claude] | none | 0 | Replace text-letter placeholder icons (resource chips etc.) with real pictorial icons |
 | T301 | In-Progress [Claude] | none | 0 | Maximizing a windowed game freaks out and may crash |
 | T303 | In-Progress [Claude] | T298 | 0 | Persist last-known tile ownership for fogged tiles across reconnect and load (server-side per-civ memory) |
-| T305 | Available (waiting on ) | T280 | 0 | Verify the Android APK job of the release workflow on a hosted runner (first tag push) |
 | T306 | Available (waiting on T278) | C099, T278 | 0 | Android shell on-device checks for C099: back button, safe-area insets, orientation, lifecycle autosave, keyboard scroll, permissions |
 | T313 | Available (waiting on ) | T311 | 0 | Verify OS display scale detection on Windows, macOS and X11 and follow a window moved between monitors (T311 follow-up) |
 | T314 | Available (waiting on ) | none | 0 | Flaky tests: NetLobbyTests.ServerLobby_TwoRapidSameKeyReconnects... and server/CLI bench tests fail once under full-gate load, pass alone |
@@ -150,3 +153,4 @@ xychart-beta
 | T322 | In-Progress [Claude] | T316 | 0 | Settings and options rows span the whole window on 3840x2160 and ultrawide: cap the settings content width |
 | T323 | In-Progress [Claude] | T316 | 0 | Shared UI widgets still fix Px() sizes at construction (ListRow, ListPanel, IconLabel, StatChip, StatBar, TooltipHost, Modal): follow live resize with UiTheme.Fit |
 | T324 | Available (waiting on ) | T307 | 0 | Rigid models second pass: thin Ballista, grey Trebuchet/Panzer/Giant Death Robot, small Work Boats, Destroyer, Submarine |
+| T325 | Available (waiting on T305) | T279, T280, T305 | 0 | Automatic release drafts: a scheduled workflow tags green csharp-migration when it has new Done work and creates a DRAFT GitHub release with generated notes; the owner publishes by hand |
