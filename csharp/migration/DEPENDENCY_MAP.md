@@ -17,7 +17,7 @@ Work is completed phase by phase (`phases.txt`; `ticket.py ready`/`next` list ea
 |---|---|---|---|---|---|
 | Phase 1: CLI (headless engine) | 231/231 | 0 | 0 | 0 | complete |
 | Phase 2: single player (Godot client) | 57/57 | 0 | 0 | 0 | complete |
-| Phase 3: multiplayer | 30/41 | 11 | 2 | 3 | [T334](backlog/T334.md) [T337](backlog/T337.md) [T338](backlog/T338.md) [T339](backlog/T339.md) [T354](backlog/T354.md) [T355](backlog/T355.md) [T356](backlog/T356.md) [T357](backlog/T357.md) [T358](backlog/T358.md) [T359](backlog/T359.md) [T360](backlog/T360.md) |
+| Phase 3: multiplayer | 30/42 | 12 | 2 | 3 | [T334](backlog/T334.md) [T337](backlog/T337.md) [T338](backlog/T338.md) [T339](backlog/T339.md) [T354](backlog/T354.md) [T355](backlog/T355.md) [T356](backlog/T356.md) [T357](backlog/T357.md) [T358](backlog/T358.md) [T359](backlog/T359.md) [T360](backlog/T360.md) [T361](backlog/T361.md) |
 | Phase 4: queued plans (UI redesign, unit models, BNW) | 72/72 | 0 | 0 | 0 | complete |
 | Phase 5: owner issue backlog (Android, performance, ultra graphics, dedicated server, resiliency) | 55/97 | 42 | 0 | 4 | [T274](backlog/T274.md) [T275](backlog/T275.md) [T278](backlog/T278.md) [T290](backlog/T290.md) [T300](backlog/T300.md) [T301](backlog/T301.md) [T303](backlog/T303.md) [T305](backlog/T305.md) [T306](backlog/T306.md) [T309](backlog/T309.md) [T313](backlog/T313.md) [T314](backlog/T314.md) [T317](backlog/T317.md) [T318](backlog/T318.md) [T319](backlog/T319.md) [T320](backlog/T320.md) [T321](backlog/T321.md) [T324](backlog/T324.md) [T325](backlog/T325.md) [T326](backlog/T326.md) [T327](backlog/T327.md) [T328](backlog/T328.md) [T329](backlog/T329.md) [T330](backlog/T330.md) [T331](backlog/T331.md) [T332](backlog/T332.md) [T333](backlog/T333.md) [T335](backlog/T335.md) [T340](backlog/T340.md) [T341](backlog/T341.md) [T342](backlog/T342.md) [T343](backlog/T343.md) [T344](backlog/T344.md) [T345](backlog/T345.md) [T346](backlog/T346.md) [T347](backlog/T347.md) [T348](backlog/T348.md) [T349](backlog/T349.md) [T350](backlog/T350.md) [T351](backlog/T351.md) [T352](backlog/T352.md) [T353](backlog/T353.md) |
 
@@ -88,6 +88,7 @@ flowchart TD
     T358["T358<br/>Dependency map unreadable at ~500 tickets: one wide diagram ..."]
     T359["T359<br/>Default ruleset becomes BNW (Brave New World) in every clien..."]
     T360["T360<br/>Gate and test tools leave ~90 idle MSBuild worker nodes (~12..."]
+    T361["T361<br/>Godot package.sh / run-scenario.sh / run-smoke.sh dotnet cal..."]
   end
   T274 --> T275
   T278 --> T306
@@ -107,6 +108,7 @@ flowchart TD
   T339 --> T356
   T337 --> T357
   T338 --> T357
+  T360 --> T361
   classDef waiting fill:#f3faf3,stroke:#9bc49b,color:#555,stroke-dasharray:2 2
   classDef ondeck fill:#ffe8cc,stroke:#e8590c,stroke-width:3px,color:#000
   classDef ready fill:#7ee787,stroke:#1a7f37,stroke-width:3px,color:#000
@@ -167,6 +169,7 @@ flowchart TD
   class T358 ready
   class T359 prog
   class T360 prog
+  class T361 ondeck
 ```
 
 ## Remaining tickets over time
@@ -185,7 +188,7 @@ xychart-beta
     title "Remaining tickets"
     x-axis ["Oct 24 00:00", "Oct 24 12:00", "Oct 25 00:00", "Oct 25 12:00", "Oct 26 00:00", "Oct 26 12:00", "Oct 27 00:00", "Oct 27 12:00", "Oct 28 00:00", "Oct 28 12:00", "Oct 29 00:00", "Oct 29 12:00", "Oct 30 00:00", "Oct 30 12:00", "Oct 31 00:00"]
     y-axis "Tickets" 0 --> 55
-    line [5, 46, 2, 54, 39, 19, 11, 9, 9, 9, 9, 31, 14, 6, 45]
+    line [5, 46, 2, 54, 39, 19, 11, 9, 9, 9, 9, 31, 14, 6, 46]
     line [0, 11, 11, 0, 0, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1]
     line [1, 0, 4, 2, 6, 6, 3, 2, 2, 2, 2, 3, 5, 5, 7]
 ```
@@ -204,7 +207,7 @@ xychart-beta
     x-axis ["Oct 24 00:00", "Oct 24 12:00", "Oct 25 00:00", "Oct 25 12:00", "Oct 26 00:00", "Oct 26 12:00", "Oct 27 00:00", "Oct 27 12:00", "Oct 28 00:00", "Oct 28 12:00", "Oct 29 00:00", "Oct 29 12:00", "Oct 30 00:00", "Oct 30 12:00", "Oct 31 00:00"]
     y-axis "Tickets" 0 --> 505
     line [0, 69, 153, 200, 246, 280, 294, 297, 297, 297, 297, 354, 413, 433, 449]
-    line [6, 126, 170, 256, 291, 305, 309, 309, 309, 309, 309, 388, 433, 445, 502]
+    line [6, 126, 170, 256, 291, 305, 309, 309, 309, 309, 309, 388, 433, 445, 503]
 ```
 
 ## Incomplete tickets
@@ -215,6 +218,7 @@ xychart-beta
 | T358 | **Ready to start** | none | 0 | Dependency map unreadable at ~500 tickets: one wide diagram shrinks to unreadable boxes |
 | T275 | **On deck** (after T274) | T274, C034, C035 | 0 | Host migration 5/5: client UI and docs (backup-host picker, trust notice, standby status, rollback and host-changed notices, superseded-host screen) |
 | T340 | **On deck** (after T274) | T274 | 0 | Two-human split-brain: playtest scenario and in-game warning when a partition could give each machine a host |
+| T361 | **On deck** (after T360) | T360 | 0 | Godot package.sh / run-scenario.sh / run-smoke.sh dotnet calls: apply the T360 memory settings |
 | T334 | In-Progress [Claude] | none | 6 | Two client instances on one machine become the same player: give each instance its own identity (profile) so multiplayer can be tested locally |
 | T338 | Available (waiting on T337, T334) | T336, T337, T334 | 5 | Relay client: in-process host and dedicated server register with the relay; joiners connect through it by room code (no open ports) |
 | T274 | In-Progress [Claude-T274] | T273 | 2 | Host migration 4/5: crash election (loss detection, signed HostLossVote quorum, split-brain refusal, superseded-host mode, forced take-over, kill-the-host scenarios) |
@@ -223,6 +227,7 @@ xychart-beta
 | T309 | Available (waiting on ) | T295 | 1 | Harden the unit sheet and silhouette test: single-figure pages, tight layout, every unit has a style |
 | T319 | Available (waiting on ) | none | 1 | Client scenario goldens phone-menus and flat-city fail locally at the base commit: find out whether stale or machine-dependent, then fix |
 | T339 | Available (waiting on T337, T338) | T336, T337, T338 | 1 | Lobby browser screen: list public games from the relay directory, filter, join, password prompt, host a listed game |
+| T360 | In-Progress [Claude] | none | 1 | Gate and test tools leave ~90 idle MSBuild worker nodes (~12 GB): disable node reuse, cap nodes, shut down build servers |
 | T290 | Blocked | T271 | 0 | Real-device frame-time pass: Windows, macOS, Android phone |
 | T300 | In-Progress [Claude] | none | 0 | Replace text-letter placeholder icons (resource chips etc.) with real pictorial icons |
 | T301 | In-Progress [Claude] | none | 0 | Maximizing a windowed game freaks out and may crash |
@@ -263,4 +268,3 @@ xychart-beta
 | T356 | Available (waiting on T337, T338, T339) | T337, T338, T339 | 0 | Deploy the relay on the owner's server: concrete nginx config, manual connectivity matrix, result recorded |
 | T357 | Available (waiting on T337, T338) | T337, T338 | 0 | WebSocket gateway so the web export can join and host through the relay (optional) |
 | T359 | In-Progress [Claude] | none | 0 | Default ruleset becomes BNW (Brave New World) in every client and the CLI |
-| T360 | In-Progress [Claude] | none | 0 | Gate and test tools leave ~90 idle MSBuild worker nodes (~12 GB): disable node reuse, cap nodes, shut down build servers |
