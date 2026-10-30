@@ -395,9 +395,9 @@ public sealed class HostHandoffTests : IDisposable
         return target;
     }
 
-    private HostPromotion PromotionFor(string gameId, long seq, ulong hash, string? departedKey = null, int epoch = 1)
+    private HostPromotion PromotionFor(string gameId, long seq, ulong hash, string? departedKey = null, int epoch = 1, string fingerprint = "00")
     {
-        const string Fingerprint = "00";
+        var Fingerprint = fingerprint;
         return new HostPromotion
         {
             Epoch = epoch,
@@ -445,7 +445,7 @@ public sealed class HostHandoffTests : IDisposable
 
         // An epoch that does not go up is refused, so a promotion cannot be replayed onto a promoted copy.
         await promoted.StopAsync();
-        var again = Assert.Throws<GameStoreException>(() => InProcessHost.ResumeFromDirectory(ok, greece.PlayerKey, new InProcessHostOptions { TickInterval = null, Promotion = PromotionFor(gameId, seq, hash) }));
+        var again = Assert.Throws<GameStoreException>(() => InProcessHost.ResumeFromDirectory(ok, greece.PlayerKey, new InProcessHostOptions { TickInterval = null, Promotion = PromotionFor(gameId, seq, hash, fingerprint: "11") }));
         Assert.StartsWith("standby-epoch", again.Message, StringComparison.Ordinal);
     }
 
@@ -527,8 +527,10 @@ public sealed class HostHandoffTests : IDisposable
             Assert.Throws<GameStoreException>(() => opened.Store.PromoteTo(1, proof with { Epoch = 2 })); // proof for another epoch
             Assert.Throws<GameStoreException>(() => opened.Store.PromoteTo(1, proof with { GameId = "other" })); // proof for another game
             opened.Store.PromoteTo(1, proof);
+            opened.Store.PromoteTo(1, proof with { Signature = greece.SignPromotion(host.GameId, 1, proof.Fingerprint) }); // a retry of the same promotion (fresh signature) finishes it
+            Assert.Throws<GameStoreException>(() => opened.Store.PromoteTo(1, proof with { KeyId = rome.PlayerKey })); // another key cannot take the same epoch
             Assert.Equal(1, opened.Store.ReadMeta().HostEpoch);
-            Assert.Equal(proof, opened.Store.ReadMeta().Promotion);
+            Assert.Equal(proof, opened.Store.ReadMeta().Promotion); // the first proof stays
             Assert.Equal(1L, opened.Store.LogGeneration);
         }
         var headerAfter = UncivJson.Deserialize<CommandLogHeader>(File.ReadLines(Path.Combine(host.Directory, "commands.log")).First())!;

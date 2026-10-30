@@ -145,8 +145,7 @@ public sealed class InProcessHost : IAsyncDisposable
             var result = new InProcessHost(host, opened.Store, hostCiv, options, opened.Report);
             if (promotion != null)
             {
-                // A retry after a failed Listen finds the copy already promoted with this very proof: that is the same promotion, not a second one.
-                if (meta.HostEpoch != promotion.Epoch || meta.Promotion != promotion.Proof) opened.Store.PromoteTo(promotion.Epoch, promotion.Proof);
+                opened.Store.PromoteTo(promotion.Epoch, promotion.Proof); // idempotent for a retry of the same promotion
                 var departed = promotion.DepartedKeyId == null ? null : meta.Slots.FirstOrDefault(x => string.Equals(x.Value.PlayerKey, promotion.DepartedKeyId, StringComparison.Ordinal)).Key;
                 if (departed != null && !string.Equals(departed, hostCiv, StringComparison.Ordinal))
                 {
@@ -180,10 +179,12 @@ public sealed class InProcessHost : IAsyncDisposable
     {
         if (opened.Report.Outcome != RecoveryOutcome.Recovered) throw new GameStoreException("standby-invalid: the standby copy did not recover cleanly");
         if (opened.Store.LastSeq != promotion.FinalSeq) throw new GameStoreException($"standby-incomplete: the standby copy ends at {opened.Store.LastSeq}, the hand-off at {promotion.FinalSeq}");
+        if (!PlayerKeys.VerifyPromotion(promotion.Proof)) throw new GameStoreException("standby-invalid: the promotion proof does not verify");
         var hash = ReplayVerifier.FullHash(opened.Session.Game).ToString("x16", System.Globalization.CultureInfo.InvariantCulture);
         if (!string.Equals(hash, promotion.FinalHash, StringComparison.OrdinalIgnoreCase)) throw new GameStoreException("standby-diverged: the standby copy's state hash differs from the old host's");
         var held = opened.Store.ReadMeta();
-        if (held.HostEpoch == promotion.Epoch && held.Promotion == promotion.Proof) return;
+        if (held.HostEpoch == promotion.Epoch && held.Promotion is { } stored && string.Equals(stored.KeyId, promotion.Proof.KeyId, StringComparison.Ordinal)
+            && string.Equals(stored.Fingerprint, promotion.Proof.Fingerprint, StringComparison.Ordinal)) return;
         if (held.HostEpoch >= promotion.Epoch) throw new GameStoreException("standby-epoch: the standby copy is already at or above the new epoch");
     }
 

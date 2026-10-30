@@ -87,7 +87,7 @@ public sealed partial class GameHost
         }
         catch (Exception e) when (e is IOException or GameStoreException or UnauthorizedAccessException)
         {
-            return (HandoffRefusals.StoreFailed, false); // nothing was told, nothing closed: the host keeps running
+            return (HandoffRefusals.StoreFailed, false); // nothing was told, nothing closed (the in-process wrapper then stops the host the plain way)
         }
         closed = true;
         await CloseSessionsAndStoreAsync(handoff).ConfigureAwait(false);

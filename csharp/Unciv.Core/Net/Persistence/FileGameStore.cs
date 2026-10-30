@@ -124,13 +124,17 @@ public sealed class FileGameStore : IGameStore, IReplicationSource
         {
             ThrowIfClosed();
             var held = ReadMeta();
-            if (epoch <= held.HostEpoch) throw new GameStoreException("A promotion must raise the host epoch");
+            // A retry of the same promotion (a crash or a failed Listen after it started) finishes it: same epoch, game, key and certificate. Anything else must raise the epoch.
+            var again = epoch == held.HostEpoch && held.Promotion is { } stored && proof.Epoch == stored.Epoch && string.Equals(proof.KeyId, stored.KeyId, StringComparison.Ordinal)
+                && string.Equals(proof.GameId, stored.GameId, StringComparison.Ordinal) && string.Equals(proof.Fingerprint, stored.Fingerprint, StringComparison.Ordinal);
+            if (epoch <= held.HostEpoch && !again) throw new GameStoreException("A promotion must raise the host epoch");
             if (proof.Epoch != epoch || !string.Equals(proof.GameId, GameId, StringComparison.Ordinal)) throw new GameStoreException("The promotion proof is for another game or epoch");
-            WriteAtomic(PathOf(MetaName), Encoding.UTF8.GetBytes(UncivJson.Serialize(held with { HostEpoch = epoch, SeenEpoch = Math.Max(held.SeenEpoch, epoch), Promotion = proof })));
+            if (!again) WriteAtomic(PathOf(MetaName), Encoding.UTF8.GetBytes(UncivJson.Serialize(held with { HostEpoch = epoch, SeenEpoch = Math.Max(held.SeenEpoch, epoch), Promotion = proof })));
 
             var all = File.ReadAllBytes(PathOf(LogName));
             var headerEnd = Array.IndexOf(all, (byte)'\n') + 1;
             var header = UncivJson.Deserialize<CommandLogHeader>(Encoding.UTF8.GetString(all, 0, headerEnd).Trim()) ?? throw new GameStoreException("The command log has no readable header");
+            if (header.HostEpoch == epoch) return; // finishing a retried promotion whose header was already written
             var rewritten = Encoding.UTF8.GetBytes(UncivJson.Serialize(header with { HostEpoch = epoch }) + "\n").Concat(all.Skip(headerEnd)).ToArray();
             log.Dispose();
             WriteAtomic(PathOf(LogName), rewritten);
