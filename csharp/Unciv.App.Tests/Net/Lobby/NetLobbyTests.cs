@@ -689,7 +689,8 @@ public sealed class NetLobbyTests : IDisposable
             await using var second = NewClient(lobby, id, "Alice", c2);
             await using var third = NewClient(lobby, id, "Alice", c3);
             var joins = await Task.WhenAll(second.JoinAsync(), third.JoinAsync()).WaitAsync(Bound);
-            Assert.All(joins, j => Assert.True(j.Joined));
+            // The superseded connection may be closed by the newer one before its JoinOk goes out (connection-lost): only the current one must have joined.
+            Assert.Contains(joins, j => j.Joined);
 
             // Exactly one of the two is the current connection of the key: it must be seated and playable (never JoinOk without a snapshot).
             using var cts = new CancellationTokenSource(Bound);
