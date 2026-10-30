@@ -27,7 +27,7 @@ Items 1 to 16 come from the design docs' follow-up lists. Items 17 to 20 are gue
 | 7 | Confirm and undo for destructive actions: disband, declare war, raze. | Unfiled; unverified. |
 | 8 | Tooltips on every on-screen number. | Unfiled; unverified. |
 | 9 | Progress overlay for long AI turns (`design/CLIENT-SLICES.md`: "not scheduled"). | Unfiled. |
-| 10 | Reconnect experience: status for dropped connections, a rejoin button, a visible "waiting for player X" in simultaneous turns. | Unfiled; unverified (T036 added a multiplayer turn bar with connection markers). |
+| 10 | Reconnect experience: status for dropped connections, a rejoin button, a visible "waiting for player X" in simultaneous turns. | Unfiled; unverified (C036 added a multiplayer turn bar with connection markers). |
 
 ## Multiplayer polish
 
