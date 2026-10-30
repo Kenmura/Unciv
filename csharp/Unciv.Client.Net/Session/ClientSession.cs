@@ -444,8 +444,7 @@ public sealed class ClientSession : IAsyncDisposable
         if (writer == null) return;
         var epoch = frame switch { StandbyMeta m => m.Epoch, StandbySnapshot p => p.Epoch, StandbyEntry e => e.Epoch, _ => -1 };
         if (epoch != connectionEpoch) return;
-        try { await writer.WriteAsync(frame, token).ConfigureAwait(false); }
-        catch (ChannelClosedException) { /* the copy was closed while this frame was in flight */ }
+        if (await writer.WaitToWriteAsync(token).ConfigureAwait(false)) writer.TryWrite(frame); // a copy closed while the frame was in flight just drops it
     }
 
     private async Task RunStandbyWorkerAsync(StandbyStore store, ChannelReader<Message> reader, CancellationToken token)
@@ -456,8 +455,8 @@ public sealed class ClientSession : IAsyncDisposable
                 await ApplyStandbyFrameAsync(store, frame, token).ConfigureAwait(false);
         }
         catch (OperationCanceledException) { }
-        catch (Exception e) when (IsConnectionGone(e)) { }
-        catch (Exception e) when (e is IOException or UnauthorizedAccessException or JsonException) { MarkStandbyBroken(); }
+        catch (Exception e) when (!IsConnectionGone(e)) { MarkStandbyBroken(); }
+        catch (Exception) { /* the connection is gone: the next one subscribes anew */ }
     }
 
     private void MarkStandbyBroken()
@@ -490,8 +489,7 @@ public sealed class ClientSession : IAsyncDisposable
                 {
                     StandbyMeta m => store.Apply(m),
                     StandbySnapshot p => store.Apply(p),
-                    StandbyEntry e => store.Apply(e),
-                    _ => StandbyApply.Rejected,
+                    _ => store.Apply((StandbyEntry)frame), // HandleStandbyFrameAsync only queues the three frame types
                 };
             }
             catch (Exception e) when (e is IOException or UnauthorizedAccessException or ObjectDisposedException)
@@ -563,8 +561,7 @@ public sealed class ClientSession : IAsyncDisposable
                 standbyResubscribeDue = true;
                 await SendAsync(new Ping(), token).ConfigureAwait(false);
             }
-            catch (OperationCanceledException) { }
-            catch (Exception e) when (IsConnectionGone(e)) { }
+            catch (Exception e) when (e is OperationCanceledException || IsConnectionGone(e)) { /* the connection ended during the delay */ }
         }, CancellationToken.None);
     }
 
