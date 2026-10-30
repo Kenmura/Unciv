@@ -151,6 +151,6 @@ xychart-beta
 | T280 | Available (waiting on T260, T277) | T279, T260, T277 | 0 | Add the Android APK to the tagged GitHub release workflow |
 | T288 | In-Progress [Claude-T288] | T271 | 0 | Ultra on integrated GPUs: note or fallback |
 | T292 | In-Progress [Claude-T292] | T272 | 0 | Standby replication hardening: stopped-stream state, resubscribe on standby-protocol, successor log rotation, off-thread store writes |
-| T293 | Needs-Review [Claude-soakfix] | none | 0 | Soak failure: Tile roadOwner differs between live game and save reload after turn 250 (BNW 300-turn soak) |
+| T293 | In-Review [Claude-soakfix] | none | 0 | Soak failure: Tile roadOwner differs between live game and save reload after turn 250 (BNW 300-turn soak) |
 | T295 | Blocked | T294 | 0 | Roll the chosen gritty unit style out to the remaining units |
 | T297 | Available (waiting on T263, T296) | T263, T296 | 0 | Host: optional parallel per-recipient view building, default off, byte-identical frames (T263 go) |
