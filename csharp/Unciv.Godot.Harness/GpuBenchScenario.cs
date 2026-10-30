@@ -156,6 +156,11 @@ public sealed partial class GpuBenchScenario : Scenario
 
         void Shot(string name) => ViewportCapture.CaptureViewportPng(host.GetViewport(), Path.Combine(outDir, Safe(renderer + "_" + name) + ".png"));
 
+        if (mode == "warrior")
+        {
+            return WarriorShots(screen, map, Capital, configs, Shot);
+        }
+
         var steps = new List<ScenarioStep> { new WaitFrames(30) };
         var panDirection = 1f;
         foreach (var config in configs)
@@ -194,6 +199,40 @@ public sealed partial class GpuBenchScenario : Scenario
             }
         }
         steps.Add(new Act("done", () => GD.Print("[bench] finished; results in " + outDir)));
+        return steps;
+    }
+
+    /// <summary>
+    /// T294: documentation pictures of the Warrior (never goldens, never timings): the nearest own Warrior of the fixture at the default play view, a nearer view, the far view and four close
+    /// turn-around views (the camera is turned round it, the other units hidden), under High and Ultra. Used with <c>UNCIV_BENCH_MODE=warrior</c>; <c>UNCIV_BENCH_YAWS</c> (degrees, comma list) overrides the four turn angles.
+    /// </summary>
+    private static List<ScenarioStep> WarriorShots(GameScreen screen, MapView map, Func<Vector3> capital, List<Config> configs, Action<string> shot)
+    {
+        var warrior = screen.Units.Values.Where(it => it.Unit.Name == "Warrior" && it.IsOwn && (it.RestPosition - capital()).Length() > 2.5f).OrderBy(it => (it.RestPosition - capital()).LengthSquared()).First(); // not on a city: the city model would hide it
+        var yaws = (System.Environment.GetEnvironmentVariable("UNCIV_BENCH_YAWS") ?? "0,45,90,180").Split(',').Select(it => float.Parse(it, CultureInfo.InvariantCulture)).ToArray();
+        string[] turnNames = ["front", "threeq", "side", "back"];
+        var views = new List<(string Name, float Zoom, float Tilt, float? Yaw)> { ("mid", 14f, 55f, null), ("near", MapView.MinZoom, 55f, null), ("far", 30f, 55f, null) };
+        // the camera never gets nearer than MapView.MinZoom: the close views use it and are cropped from a high-resolution frame
+        for (int i = 0; i < Math.Min(4, yaws.Length); i++) views.Add((turnNames[i], MapView.MinZoom, 32f, yaws[i]));
+        var steps = new List<ScenarioStep> { new WaitFrames(30) };
+        foreach (var config in configs.Where(it => it.Name != "Low"))
+        {
+            foreach (var view in views)
+            {
+                steps.Add(new Act($"{config.Name} {view.Name}: set", () =>
+                {
+                    map.ApplyGraphics(config.Preset);
+                    bool closeUp = view.Name != "mid" && view.Name != "far";
+                    map.SetView(view.Tilt, view.Yaw ?? 0f); // turn the camera round the figure, the animator owns the figure's own yaw
+                    map.SetZoom(view.Zoom);
+                    map.FocusOn(warrior.RestPosition + (view.Yaw != null ? new Vector3(0f, 0.3f, 0f) : Vector3.Zero));
+                    foreach (var other in screen.Units.Values) if (other != warrior) other.Visible = !closeUp; // after the camera moved: a camera change culls and shows units again
+                }));
+                steps.Add(new WaitFrames(45));
+                steps.Add(new Act("shot", () => shot($"{config.Name}_warrior_{view.Name}")));
+            }
+        }
+        steps.Add(new Act("done", () => GD.Print("[bench] warrior pictures finished")));
         return steps;
     }
 

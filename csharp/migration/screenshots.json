@@ -1787,5 +1787,23 @@
         "caption": "Policy screen on a phone scrolled to the Tradition Complete strip: a full 48 dp tall bar under the nodes."
       }
     ]
+  },
+  "T294": {
+    "about": "Gritty Warrior design options (T294): the current Warrior and six candidate designs, with the comparison sheet and per-design close-ups. The options are not wired into the game; no golden exists for them.",
+    "doc_note": "Documentation images rendered on an NVIDIA GeForce RTX 5060 Ti (Forward+, Vulkan, 2026-10-29): in-game crops from the T271 Large Pangaea fixture, close-ups in a studio scene. They are not goldens and no CI comparison reads them; details in `design/images/units/warrior-options/README.md`, write-ups in `design/UNIT-STYLE.md`.",
+    "shots": [
+      {
+        "doc": "units/warrior-options/sheet.jpg",
+        "caption": "CURRENT and options 1 to 6 (columns): front, three-quarter, in-game default view and in-game closest zoom (rows)."
+      },
+      {
+        "doc": "units/warrior-options/d2-vs-current.jpg",
+        "caption": "Option 2 (worn leather and bronze, recommended baseline) against the current Warrior."
+      },
+      {
+        "doc": "units/warrior-options/d4-vs-current.jpg",
+        "caption": "Option 4 (bronze hoplite, recommended second baseline) against the current Warrior."
+      }
+    ]
   }
 }

@@ -92,6 +92,7 @@
 - [T285 (ticket not Done or unknown)](#t285-ticket-not-done-or-unknown)
 - [T286 (ticket not Done or unknown)](#t286-ticket-not-done-or-unknown)
 - [T288 (ticket not Done or unknown)](#t288-ticket-not-done-or-unknown)
+- [T294 (ticket not Done or unknown)](#t294-ticket-not-done-or-unknown)
 - [Missing screenshots](#missing-screenshots)
 <!-- /toc -->
 
@@ -1856,6 +1857,25 @@ Scenario `settings-graphics`.
 ![High chosen on an integrated GPU: a note says High may run slowly on integrated graphics and that Low is the smoothest; the level is not changed.](../Unciv.Godot.Harness/golden/settings-graphics/integrated-high.png)
 
 *High chosen on an integrated GPU: a note says High may run slowly on integrated graphics and that Low is the smoothest; the level is not changed.* (`settings-graphics/integrated-high.png`)
+
+## T294 (ticket not Done or unknown)
+
+Gritty Warrior design options (T294): the current Warrior and six candidate designs, with the comparison sheet and per-design close-ups. The options are not wired into the game; no golden exists for them.
+
+
+Documentation images rendered on an NVIDIA GeForce RTX 5060 Ti (Forward+, Vulkan, 2026-10-29): in-game crops from the T271 Large Pangaea fixture, close-ups in a studio scene. They are not goldens and no CI comparison reads them; details in `design/images/units/warrior-options/README.md`, write-ups in `design/UNIT-STYLE.md`.
+
+![CURRENT and options 1 to 6 (columns): front, three-quarter, in-game default view and in-game closest zoom (rows).](design/images/units/warrior-options/sheet.jpg)
+
+*CURRENT and options 1 to 6 (columns): front, three-quarter, in-game default view and in-game closest zoom (rows).* (`design/images/units/warrior-options/sheet.jpg`, documentation image, not a golden)
+
+![Option 2 (worn leather and bronze, recommended baseline) against the current Warrior.](design/images/units/warrior-options/d2-vs-current.jpg)
+
+*Option 2 (worn leather and bronze, recommended baseline) against the current Warrior.* (`design/images/units/warrior-options/d2-vs-current.jpg`, documentation image, not a golden)
+
+![Option 4 (bronze hoplite, recommended second baseline) against the current Warrior.](design/images/units/warrior-options/d4-vs-current.jpg)
+
+*Option 4 (bronze hoplite, recommended second baseline) against the current Warrior.* (`design/images/units/warrior-options/d4-vs-current.jpg`, documentation image, not a golden)
 
 ## Missing screenshots
 
