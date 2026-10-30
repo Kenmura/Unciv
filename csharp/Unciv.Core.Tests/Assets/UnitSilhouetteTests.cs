@@ -35,6 +35,14 @@ public sealed class UnitSilhouetteTests
     /// <summary>T315: the pike reaches this much further than the spear (the bind pose lays a held spear forward; before T315 the contract caps made it only 1.18 times).</summary>
     private const float PikeOverSpear = 1.3f;
 
+    /// <summary>T307: two rigid units (ships, siege, armour, aircraft, missiles) seen from the default view: the same bar as the foot units. Measured minimum when set: 0.188 (Zero and Great War Bomber).</summary>
+    private const float MinRigidDistance = 0.18f;
+    /// <summary>T307: a siege engine fills at least this many pixels of the 40x56 mask (the old Cannon and Catapult were small bars of 300 to 400 pixels; the new ones 550 to 1100).</summary>
+    private const int MinSiegeCoverage = 500;
+    /// <summary>T307: the civ's colour may cover at most this share of a rigid model's surface (the old Battering Ram was a flat team-coloured roof seen from above).</summary>
+    private const float MaxTeamColourShare = 0.35f;
+    private static readonly string[] Siege = ["Battering Ram", "Catapult", "Ballista", "Trebuchet", "Hwach'a", "Cannon"];
+
     private static readonly string Pack = FindPack();
 
     private static string FindPack()
@@ -320,6 +328,76 @@ public sealed class UnitSilhouetteTests
         var (foot, _) = Units();
         var shrunk = foot.Where(u => BodyFit(u.Name) < MinBodyFit).Select(u => $"{u.Name} {BodyFit(u.Name):0.000}").ToList();
         Assert.True(shrunk.Count == 0, "figures below full size (the contract caps the bind-pose radius at 0.62 and the height at 0.98; shorten the gear):\n" + string.Join("\n", shrunk));
+    }
+
+    /// <summary>T307: every unit with a rigid model (attachments.json "rigid").</summary>
+    private static List<Unit> RigidUnits()
+    {
+        using var data = JsonDocument.Parse(File.ReadAllText(Path.Combine(Pack, "attachments.json")));
+        return [.. data.RootElement.GetProperty("rigid").GetProperty("units").EnumerateObject().Select(it => new Unit(it.Name, it.Value.TryGetProperty("build", out var b) ? b.GetString()! : "", "", ""))];
+    }
+
+    /// <summary>Surface area per material name of a model (a triangle's area does not depend on its node's translation).</summary>
+    private static Dictionary<string, float> MaterialAreas(string unit)
+    {
+        var glb = File.ReadAllBytes(Path.Combine(Pack, "models", "unit", unit + ".glb"));
+        var jsonLength = BinaryPrimitives.ReadInt32LittleEndian(glb.AsSpan(12));
+        using var doc = JsonDocument.Parse(glb.AsMemory(20, jsonLength));
+        var root = doc.RootElement;
+        var binStart = 20 + jsonLength + 8;
+        var areas = new Dictionary<string, float>();
+        foreach (var mesh in root.GetProperty("meshes").EnumerateArray())
+            foreach (var prim in mesh.GetProperty("primitives").EnumerateArray())
+            {
+                var pos = ReadVec3(root.GetProperty("accessors")[prim.GetProperty("attributes").GetProperty("POSITION").GetInt32()], root.GetProperty("bufferViews"), glb, binStart);
+                var idx = ReadIndices(root.GetProperty("accessors")[prim.GetProperty("indices").GetInt32()], root.GetProperty("bufferViews"), glb, binStart);
+                var name = root.GetProperty("materials")[prim.GetProperty("material").GetInt32()].GetProperty("name").GetString()!;
+                var area = 0f;
+                for (var i = 0; i + 2 < idx.Length; i += 3)
+                    area += Vector3.Cross(pos[idx[i + 1]] - pos[idx[i]], pos[idx[i + 2]] - pos[idx[i]]).Length() / 2f;
+                areas[name] = areas.GetValueOrDefault(name) + area;
+            }
+        return areas;
+    }
+
+    [Fact]
+    public void EveryRigidUnitIsToldApartFromEveryOther()
+    {
+        var rigid = RigidUnits();
+        Assert.Equal(45, rigid.Count);
+        var failures = Failures(rigid, (_, _) => MinRigidDistance);
+        Assert.True(failures.Count == 0, "rigid silhouettes too alike:\n" + string.Join("\n", failures));
+    }
+
+    [Fact]
+    public void NoRigidModelIsAFlatBlockOfTheCivColour()
+    {
+        var failures = new List<string>();
+        foreach (var unit in RigidUnits())
+        {
+            var areas = MaterialAreas(unit.Name);
+            var share = areas.GetValueOrDefault("TeamColor") / areas.Values.Sum();
+            if (share > MaxTeamColourShare) failures.Add(string.Create(CultureInfo.InvariantCulture, $"{unit.Name}: the civ colour covers {share:0.00} of the surface"));
+            if (areas.Keys.Count(k => k != "TeamColor") < 2) failures.Add($"{unit.Name}: a single plain material");
+        }
+        Assert.True(failures.Count == 0, string.Join("\n", failures));
+    }
+
+    [Fact]
+    public void EverySiegeEngineIsBigAndHasItsOwnColour()
+    {
+        var failures = new List<string>();
+        var dominant = new Dictionary<string, string>();
+        foreach (var name in Siege)
+        {
+            var pixels = Masks(name).Average(m => m.Count(on => on));
+            if (pixels < MinSiegeCoverage) failures.Add(string.Create(CultureInfo.InvariantCulture, $"{name} covers only {pixels:0} pixels, need {MinSiegeCoverage}"));
+            var areas = MaterialAreas(name);
+            dominant[name] = areas.Where(it => it.Key != "TeamColor").MaxBy(it => it.Value).Key;
+        }
+        foreach (var group in dominant.GroupBy(it => it.Value).Where(g => g.Count() > 1))
+            failures.Add($"{string.Join(" and ", group.Select(it => it.Key))} have the same main colour {group.Key}");
+        Assert.True(failures.Count == 0, string.Join("\n", failures));
     }
 
     [Fact]

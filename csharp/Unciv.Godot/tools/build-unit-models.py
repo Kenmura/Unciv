@@ -571,35 +571,6 @@ def clips_for(data, unit):
     return clips
 
 
-def build_ram():
-    """C095: the Battering Ram, a rigid model without skeleton or clips (it moves through `RigidMotion` as siege): a wooden frame on four wheels, a roof tinted in the civ's colour and the iron-headed log hung under it."""
-    wood = [((0.14, 0.07, 0.0), (0.05, 0.05, 0.62)), ((-0.14, 0.07, 0.0), (0.05, 0.05, 0.62)),  # base beams
-            ((0.17, 0.06, 0.2), (0.03, 0.12, 0.12)), ((-0.17, 0.06, 0.2), (0.03, 0.12, 0.12)), ((0.17, 0.06, -0.2), (0.03, 0.12, 0.12)), ((-0.17, 0.06, -0.2), (0.03, 0.12, 0.12)),  # wheels
-            ((0.14, 0.25, 0.22), (0.04, 0.36, 0.04)), ((-0.14, 0.25, 0.22), (0.04, 0.36, 0.04)), ((0.14, 0.25, -0.22), (0.04, 0.36, 0.04)), ((-0.14, 0.25, -0.22), (0.04, 0.36, 0.04)),  # posts
-            ((0.0, 0.28, 0.05), (0.08, 0.08, 0.70))]  # the log
-    iron = [((0.0, 0.28, 0.43), (0.10, 0.10, 0.07))]
-    roof = [((0.0, 0.45, 0.0), (0.36, 0.04, 0.62))]
-    materials = [("Wood", [0.40, 0.27, 0.15, 1.0]), ("Iron", [0.30, 0.30, 0.32, 1.0]), ("TeamColor", [0.8, 0.8, 0.8, 1.0])]
-    b = Builder()
-    doc = b.doc
-    primitives = []
-    for material, boxes in enumerate([wood, iron, roof]):
-        positions, normals, indices = [], [], []
-        for centre, size in boxes:
-            p, n, i = box(centre, size)
-            indices += [len(positions) + k for k in i]
-            positions += p
-            normals += n
-        acc = {"POSITION": b.accessor(positions, "VEC3", 5126, 34962, bounds=True), "NORMAL": b.accessor(normals, "VEC3", 5126, 34962)}
-        primitives.append({"attributes": acc, "indices": b.accessor(indices, "SCALAR", 5123, 34963), "material": material})
-    doc["materials"] = [{"name": name, "pbrMetallicRoughness": {"baseColorFactor": colour, "metallicFactor": 0.0, "roughnessFactor": 1.0}} for name, colour in materials]
-    doc["meshes"] = [{"name": "Ram", "primitives": primitives}]
-    doc["nodes"].append({"name": "Ram", "mesh": 0})
-    doc["scenes"][0]["nodes"] = [0]
-    del doc["skins"], doc["animations"]
-    return b.finish()
-
-
 # ----------------------------------------------------------------------------------------------------------------------------------------------- main
 
 _STYLE = []
@@ -655,10 +626,6 @@ def main(source, pack):
         print(f"unit/{name}: {write_glb(path, horse, merged)} bytes (mounted)")
         keys[f"unit/{name}"] = f"models/unit/{name}.glb"
     for name, unit in data.get("rigid", {}).get("units", {}).items():  # C095: models without skeleton or clips; T256: the ones with a "build" key come from build-rigid-models.py
-        if "build" not in unit:
-            doc, binary = build_ram()
-            path = os.path.join(models, name + ".glb")
-            print(f"unit/{name}: {write_glb(path, doc, binary)} bytes (rigid)")
         keys[f"unit/{name}"] = f"models/unit/{name}.glb"
     if only:
         return

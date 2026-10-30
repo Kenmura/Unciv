@@ -35,8 +35,24 @@ MATERIALS = {
     "Sand": [0.62, 0.55, 0.38, 1.0],
     "Brass": [0.72, 0.55, 0.20, 1.0],
     "Shadow": [0.05, 0.05, 0.06, 1.0],
+    # T307: bolder fixed colours so each family reads at the default zoom (siege each has its own: red-brown, ash, stone, teal, black iron, hide)
+    "RedWood": [0.66, 0.27, 0.13, 1.0],
+    "Ash": [0.68, 0.58, 0.38, 1.0],
+    "Stone": [0.40, 0.40, 0.42, 1.0],
+    "Teal": [0.10, 0.50, 0.52, 1.0],
+    "Iron": [0.17, 0.18, 0.20, 1.0],
+    "Hide": [0.50, 0.30, 0.14, 1.0],
+    "Thatch": [0.36, 0.26, 0.10, 1.0],
+    "Yellow": [0.92, 0.74, 0.10, 1.0],
+    "Crimson": [0.72, 0.10, 0.10, 1.0],
+    "Cream": [0.90, 0.86, 0.72, 1.0],
+    "Blue": [0.18, 0.30, 0.62, 1.0],
+    "Green": [0.20, 0.50, 0.22, 1.0],
 }
 
+
+# T307: the build checks stay inside the unit model contract (UnitModelContract caps 1.35 and 1.1); a rigid unit is kept a little smaller so it fits its tile
+MAX_HEIGHT, MAX_RADIUS = 1.1, 0.85
 
 # ------------------------------------------------------------------------------------------------------------------------------------------ geometry
 
@@ -187,7 +203,7 @@ def hull(length, beam, y0, y1, keel=0.7, bow_rise=0.04, stern=0.75):
     return loft(rings)
 
 
-def oared(m, length=1.0, beam=0.24, oars=6, mast=0.34, sail=0.3, ram=False, castle=False, bow_castle=False, turtle=False, hull_colour="Wood"):
+def oared(m, length=1.0, beam=0.24, oars=6, mast=0.34, sail=0.3, ram=False, castle=False, bow_castle=False, turtle=False, hull_colour="Wood", masts=1, sail_colour="TeamColor"):
     y1 = 0.12
     m.add(hull_colour, hull(length, beam, 0.0, y1, keel=0.6))
     if turtle:  # a closed iron shell with spikes (Turtle Ship) instead of a mast
@@ -202,10 +218,12 @@ def oared(m, length=1.0, beam=0.24, oars=6, mast=0.34, sail=0.3, ram=False, cast
         flag(m, 0.0, -0.05, y1 + 0.18, 0.44)
     else:
         top = y1 + mast
-        m.add("DarkWood", tube((0, y1 + mast / 2, length * 0.05), mast, 0.014, axis="y", n=8))
-        m.add("DarkWood", block((0, top - 0.03, length * 0.05), (sail * 1.1, 0.014, 0.014)))
-        if sail > 0:
-            m.add("TeamColor", block((0, top - 0.03 - sail * 0.45, length * 0.05), (sail, sail * 0.9, 0.012)))
+        for k in range(masts):  # T307: a galleass carries two masts, the others one
+            z = length * 0.05 if masts == 1 else length * (0.22 - 0.4 * k)
+            m.add("DarkWood", tube((0, y1 + mast / 2, z), mast, 0.014, axis="y", n=8))
+            m.add("DarkWood", block((0, top - 0.03, z), (sail * 1.1, 0.014, 0.014)))
+            if sail > 0:
+                m.add(sail_colour if k == 0 else "Sail", block((0, top - 0.03 - sail * 0.45, z), (sail, sail * 0.9, 0.012)))
     for i in range(oars):
         z = -length * 0.28 + i * (length * 0.5 / max(1, oars - 1))
         for s in (-1, 1):
@@ -225,7 +243,7 @@ def work_boat(m):
     flag(m, 0.0, 0.0, 0.1, 0.43)
 
 
-def sailer(m, length=1.0, beam=0.26, masts=3, y1=0.15, tiers=2, gun_rows=0, hull_colour="Wood", castle=True, big_flag=False):
+def sailer(m, length=1.0, beam=0.26, masts=3, y1=0.15, tiers=2, gun_rows=0, hull_colour="Wood", castle=True, big_flag=False, sail_scale=1.0, sail_colour="Sail", stern_lantern=False):
     m.add(hull_colour, hull(length, beam, 0.0, y1, keel=0.8, bow_rise=0.05))
     m.add("DarkWood", block((0, y1 - 0.012, 0.0), (beam * 0.98, 0.008, length * 0.7)))  # a dark wale
     for row in range(gun_rows):
@@ -243,21 +261,24 @@ def sailer(m, length=1.0, beam=0.26, masts=3, y1=0.15, tiers=2, gun_rows=0, hull
         h = 0.42 if k != 0 or masts == 1 else 0.32
         m.add("DarkWood", tube((0, y1 + h / 2, z), h, 0.014, axis="y", n=8))
         for t in range(tiers):
-            sw = (beam * 1.35 - t * 0.07) * (1.0 if k else 0.8)
+            sw = (beam * 1.35 - t * 0.07) * (1.0 if k else 0.8) * sail_scale
             sh = (h - 0.06) / tiers - 0.01
             y = y1 + 0.04 + sh / 2 + t * (sh + 0.012)
-            m.add("TeamColor" if t == 0 else "Sail", block((0, y, z), (sw, sh, 0.012)))
+            m.add("TeamColor" if t == 0 else sail_colour, block((0, y, z), (sw, sh, 0.012)))
             m.add("DarkWood", block((0, y + sh / 2, z), (sw * 1.1, 0.012, 0.012)))
     if big_flag:
         flag(m, 0.0, -length * 0.26, y1 + 0.42, y1 + 0.58, 0.16, 0.1)
+    if stern_lantern:  # a gilded stern gallery: widest at the back, which tells the frigate from the privateer from above
+        m.add("Brass", block((0, y1 + 0.02, -length * 0.5 + 0.02), (beam * 1.25, 0.05, 0.1)))
 
 
 def ironclad(m):
-    m.add("Dark", hull(0.95, 0.3, 0.0, 0.1, keel=0.7))
-    m.add("Grey", loft([[(-0.15, 0.1, -0.25), (0.15, 0.1, -0.25), (0.15, 0.1, 0.25), (-0.15, 0.1, 0.25)], [(-0.11, 0.2, -0.2), (0.11, 0.2, -0.2), (0.11, 0.2, 0.2), (-0.11, 0.2, 0.2)]]))
+    m.add("Dark", hull(0.9, 0.4, 0.0, 0.1, keel=0.7))
+    m.add("Grey", loft([[(-0.2, 0.1, -0.25), (0.2, 0.1, -0.25), (0.2, 0.1, 0.25), (-0.2, 0.1, 0.25)], [(-0.15, 0.2, -0.2), (0.15, 0.2, -0.2), (0.15, 0.2, 0.2), (-0.15, 0.2, 0.2)]]))
     m.add("Dark", tube((0, 0.29, -0.1), 0.16, 0.045, axis="y"))
     m.add("Grey", tube((0, 0.14, 0.34), 0.06, 0.075, axis="y"))
-    m.add("Dark", tube((0, 0.14, 0.44), 0.16, 0.014))
+    m.add("Dark", tube((0, 0.14, 0.42), 0.16, 0.014))
+    m.add("RedWood", block((0, 0.205, 0.0), (0.12, 0.01, 0.4)))
     flag(m, 0.0, -0.4, 0.1, 0.45)
 
 
@@ -286,13 +307,14 @@ def warship(m, length=1.1, beam=0.2, y1=0.11, turrets=(), bridge=None, funnels=(
 
 
 def carrier(m):
-    m.add("Grey", hull(1.2, 0.3, 0.0, 0.1, keel=0.5, bow_rise=0.02, stern=0.95))
-    m.add("Dark", slab([(-0.19, -0.58), (0.19, -0.58), (0.23, 0.2), (0.15, 0.58), (-0.15, 0.58), (-0.19, 0.2)], 0.1, 0.125))
+    m.add("Grey", hull(1.3, 0.36, 0.0, 0.1, keel=0.5, bow_rise=0.02, stern=0.95))
+    m.add("Dark", slab([(-0.24, -0.6), (0.24, -0.6), (0.3, 0.2), (0.17, 0.62), (-0.17, 0.62), (-0.3, 0.2)], 0.1, 0.125))
+    m.add("Yellow", block((-0.1, 0.1275, 0.05), (0.012, 0.003, 0.8)))
     m.add("TeamColor", block((0, 0.1275, 0.05), (0.025, 0.003, 0.9)))
-    m.add("Grey", block((0.15, 0.2, -0.05), (0.07, 0.15, 0.2)))
-    m.add("Steel", tube((0.15, 0.37, -0.05), 0.2, 0.008, axis="y", n=6))
-    m.add("Dark", block((0.15, 0.4, -0.05), (0.1, 0.02, 0.02)))
-    flag(m, 0.15, -0.14, 0.275, 0.45, 0.1, 0.06)
+    m.add("Grey", block((0.24, 0.2, -0.05), (0.09, 0.15, 0.22)))
+    m.add("Steel", tube((0.24, 0.37, -0.05), 0.2, 0.008, axis="y", n=6))
+    m.add("Dark", block((0.24, 0.4, -0.05), (0.1, 0.02, 0.02)))
+    flag(m, 0.24, -0.14, 0.275, 0.45, 0.1, 0.06)
 
 
 def submarine(m, length=1.0, r=0.1, tower=0.1, nuclear=False):
@@ -302,6 +324,10 @@ def submarine(m, length=1.0, r=0.1, tower=0.1, nuclear=False):
         rings.append([(0, r, z)] if f == 0 else ring((0, r, z), r * f * 0.9, r * f, "z", 12))
     m.add("Dark" if not nuclear else "Grey", loft(rings))
     m.add("Grey", block((0, r * 2 + 0.05, length * tower), (0.07, 0.14, 0.22)))
+    if nuclear:  # missile hatches in a double row: a nuclear boat is bigger and studded
+        for k in range(4):
+            for s in (-1, 1):
+                m.add("Yellow", block((s * r * 0.45, r * 1.93, -length * 0.1 - k * 0.09), (0.05, 0.012, 0.06)))
     m.add("TeamColor", block((0, r * 2 + 0.122, length * tower), (0.072, 0.012, 0.222)))
     m.add("Steel", tube((0, r * 2 + 0.17, length * tower + 0.04), 0.14, 0.008, axis="y", n=6))
     m.add("Steel", tube((0, r * 2 + 0.2, length * tower - 0.04), 0.1, 0.008, axis="y", n=6))
@@ -314,102 +340,137 @@ def great_admiral(m):
 
 
 # ------------------------------------------------------------------------------------------------------------------------------------------ siege
+# T307: every siege engine is big (about 0.9 long) and has its own colour and its own outline seen from above, where the default-zoom camera looks:
+# ram = long hide-roofed shed with the log sticking out, catapult = red-brown frame with a stone-loaded arm, ballista = a wide bow across a pale stock,
+# trebuchet = tall stone-weighted lever on spread legs, hwach'a = teal rocket box on two big wheels with a long pole, cannon = black iron barrel on a brown carriage.
+
+def banner_side(m, x, z, w=0.3, h=0.14, y=0.3):
+    """A TeamColor shield or banner hung on the side of an engine, standing upright (the civ's mark seen from the side, not a big coloured roof)."""
+    m.add("TeamColor", block((x, y, z), (0.014, h, w)))
+
+
+def ram(m):
+    for s in (-1, 1):
+        m.add("DarkWood", block((s * 0.17, 0.09, 0.0), (0.06, 0.05, 0.78)))  # base beams
+        for z in (-0.27, 0.27):
+            wheel(m, s * 0.22, z, 0.1, "Iron", 0.05)
+            for dz in (-0.2, 0.2):
+                m.add("DarkWood", block((s * 0.17, 0.3, z * 0.8 + dz * 0.0), (0.04, 0.4, 0.04)))  # posts
+        m.add("Hide", mov(rot(block((0, 0, 0), (0.3, 0.03, 0.84)), rz=-s * 0.55), s * 0.14, 0.52, 0.0))  # the two slopes of the hide roof
+        m.add("Thatch", mov(rot(block((0, 0, 0), (0.05, 0.035, 0.86)), rz=-s * 0.55), s * 0.015, 0.63, 0.0))
+        banner_side(m, s * 0.25, 0.0, 0.46, 0.17, 0.29)
+    m.add("TeamColor", block((0, 0.665, 0.0), (0.06, 0.02, 0.9)))  # a narrow stripe along the ridge
+    m.add("Wood", tube((0, 0.26, 0.05), 1.0, 0.055, axis="z", n=8))  # the log hangs under the roof and sticks out at both ends
+    m.add("Iron", tube((0, 0.26, 0.58), 0.18, 0.09, 0.03, axis="z", n=8))  # the iron head
+    m.add("DarkWood", tube((0, 0.26, -0.5), 0.05, 0.065, axis="z", n=8))
+
 
 def catapult(m):
-    m.add("Wood", block((0, 0.14, 0), (0.24, 0.04, 0.5)))
-    for x in (-0.14, 0.14):
-        for z in (-0.17, 0.17):
-            wheel(m, x, z, 0.1)
-    for x in (-0.08, 0.08):
-        m.add("DarkWood", block((x, 0.26, 0.05), (0.03, 0.2, 0.04)))
-    m.add("Wood", mov(rot(block((0, 0, 0), (0.04, 0.04, 0.46)), rx=-0.6), 0, 0.36, 0.05))
-    m.add("Steel", block((0, 0.478, 0.224), (0.09, 0.05, 0.09)))
-    m.add("DarkWood", tube((0, 0.2, -0.18), 0.22, 0.02, axis="x", n=8))
-    flag(m, 0.0, -0.22, 0.16, 0.44)
+    m.add("RedWood", block((0, 0.14, 0), (0.44, 0.05, 0.62)))
+    for s in (-1, 1):
+        for z in (-0.22, 0.22):
+            wheel(m, s * 0.27, z, 0.11, "Iron", 0.06)
+        m.add("RedWood", block((s * 0.17, 0.3, 0.02), (0.05, 0.32, 0.08)))  # the A-frames the arm turns in
+        m.add("DarkWood", mov(rot(block((0, 0, 0), (0.05, 0.3, 0.05)), rz=s * 0.45), s * 0.19, 0.3, 0.1))
+        banner_side(m, s * 0.225, -0.2, 0.26, 0.14, 0.2)
+    m.add("DarkWood", tube((0, 0.33, 0.02), 0.4, 0.028, axis="x", n=8))  # the axle of the arm
+    m.add("Ash", mov(rot(block((0, 0, 0), (0.07, 0.05, 0.84)), rx=-0.5), 0, 0.42, 0.18))  # the throwing arm reaches far forward and up
+    m.add("Iron", mov(rot(block((0, 0, 0), (0.2, 0.05, 0.2)), rx=-0.5), 0, 0.58, 0.55))  # the sling cup
+    m.add("Stone", ellipsoid((0, 0.66, 0.54), 0.1, 0.1, 0.1, n=8, m=6))  # the boulder, big enough to be seen
+    m.add("Iron", tube((-0.0, 0.3, -0.34), 0.34, 0.05, axis="x", n=8))  # the windlass drum at the back
 
 
 def ballista(m):
-    m.add("Wood", block((0, 0.14, 0), (0.2, 0.04, 0.46)))
-    for x in (-0.13, 0.13):
-        for z in (-0.15, 0.15):
-            wheel(m, x, z, 0.1)
-    m.add("DarkWood", block((0, 0.24, 0.0), (0.04, 0.2, 0.04)))
-    m.add("Wood", block((0, 0.31, 0.02), (0.05, 0.05, 0.42)))
+    m.add("Green", block((0, 0.13, 0.0), (0.26, 0.05, 0.64)))
+    for x in (-0.18, 0.18):
+        for z in (-0.2, 0.2):
+            wheel(m, x, z, 0.1, "Wood", 0.06)
+    m.add("DarkWood", block((0, 0.24, 0.05), (0.07, 0.18, 0.07)))
+    m.add("Ash", block((0, 0.34, 0.0), (0.1, 0.07, 0.66)))  # the stock
+    for s in (-1, 1):  # the bow: two thick dark arms swept forward and a dark cord, about as wide as the engine is long
+        m.add("Iron", mov(rot(block((0, 0, 0), (0.4, 0.08, 0.09)), ry=s * 0.5), s * 0.2, 0.36, 0.18))
+        m.add("Iron", block((s * 0.38, 0.36, 0.0), (0.08, 0.1, 0.1)))
+        m.add("Dark", block((s * 0.19, 0.36, -0.14), (0.38, 0.02, 0.02)))
+    m.add("Steel", block((0, 0.4, 0.34), (0.035, 0.035, 0.5)))  # the bolt
+    m.add("Steel", tube((0, 0.4, 0.66), 0.14, 0.05, 0.0, n=6))
     for s in (-1, 1):
-        m.add("DarkWood", mov(rot(block((0, 0, 0), (0.24, 0.028, 0.034)), ry=s * 0.4), s * 0.115, 0.33, 0.15))
-        m.add("Sail", mov(rot(block((0, 0, 0), (0.1, 0.006, 0.006)), ry=-s * 0.4), s * 0.215, 0.33, 0.04))
-    m.add("Steel", block((0, 0.345, 0.2), (0.014, 0.014, 0.42)))
-    m.add("Steel", tube((0, 0.345, 0.43), 0.07, 0.02, 0.0, n=6))
-    flag(m, 0.0, -0.2, 0.16, 0.44)
+        banner_side(m, s * 0.135, -0.2, 0.22, 0.14, 0.28)
 
 
 def trebuchet(m):
-    m.add("Wood", block((0, 0.07, 0), (0.34, 0.04, 0.7)))
-    for x in (-0.18, 0.18):
-        for z in (-0.28, 0.28):
-            wheel(m, x, z, 0.05, width=0.03)
+    m.add("Stone", block((0, 0.06, 0), (0.4, 0.05, 0.9)))  # a heavy plinth
     for s in (-1, 1):
-        for dz in (-0.08, 0.08):
-            m.add("DarkWood", mov(rot(block((0, 0, 0), (0.03, 0.34, 0.03)), rz=s * 0.0, rx=-dz * 1.6), s * 0.12, 0.25, dz))
-    m.add("DarkWood", tube((0, 0.38, 0.0), 0.3, 0.014, axis="x", n=8))
-    m.add("Wood", mov(rot(block((0.0, 0.0, 0.12), (0.035, 0.035, 0.64)), rx=-0.5), 0, 0.38, 0))
-    m.add("Steel", mov(rot(block((0, 0, -0.22), (0.12, 0.12, 0.12)), rx=-0.5), 0, 0.38, 0))
-    m.add("Sail", mov(rot(block((0, 0, 0.42), (0.06, 0.05, 0.06)), rx=-0.5), 0, 0.38, 0))
-    flag(m, 0.0, -0.32, 0.09, 0.45)
+        for z in (-0.38, 0.38):
+            wheel(m, s * 0.24, z, 0.06, "Iron", 0.05)
+        for dz in (-1, 1):  # four splayed legs
+            m.add("DarkWood", mov(rot(block((0, 0, 0), (0.05, 0.6, 0.05)), rx=-dz * 0.4, rz=s * 0.15), s * 0.17, 0.36, dz * 0.12))
+    m.add("DarkWood", tube((0, 0.64, 0.0), 0.4, 0.03, axis="x", n=8))  # axle at the top
+    m.add("Ash", mov(rot(block((0, 0, 0), (0.06, 0.06, 1.12)), rx=-0.5), 0, 0.64, 0.0))  # the long lever, short end down at the back
+    m.add("Stone", mov(rot(block((0, 0, 0), (0.28, 0.24, 0.28)), rx=0.0), 0, 0.28, -0.46))  # the counterweight box
+    m.add("Iron", block((0, 0.28, -0.46), (0.3, 0.06, 0.3)))
+    m.add("Dark", block((0, 0.84, 0.46), (0.14, 0.05, 0.14)))
+    m.add("Cream", tube((0, 0.84, 0.46), 0.14, 0.05, axis="y", n=6))  # the sling pouch
+    banner_side(m, 0.205, 0.0, 0.5, 0.2, 0.2)
+    banner_side(m, -0.205, 0.0, 0.5, 0.2, 0.2)
 
 
 def hwacha(m):
-    m.add("Wood", block((0, 0.16, 0), (0.24, 0.05, 0.5)))
-    for x in (-0.15, 0.15):
-        wheel(m, x, 0.0, 0.14, width=0.045)
-    box = block((0, 0, 0), (0.22, 0.15, 0.36))
+    m.add("Teal", block((0, 0.18, 0), (0.3, 0.06, 0.62)))
+    for s in (-1, 1):
+        wheel(m, s * 0.24, 0.0, 0.17, "RedWood", 0.06)
+        m.add("RedWood", block((s * 0.1, 0.2, -0.56), (0.04, 0.04, 0.5)))  # the two poles to push or pull it
+    m.add("DarkWood", block((0, 0.2, -0.8), (0.24, 0.04, 0.04)))
+    box = block((0, 0, 0), (0.34, 0.26, 0.48))
+    m.add("Teal", mov(rot(box, rx=-0.5), 0, 0.42, 0.04))
     tubes = []
-    for ix in range(4):
-        for iy in range(3):
-            tubes += tube(((ix - 1.5) * 0.05, (iy - 1) * 0.045, 0.19), 0.04, 0.014, n=6)
-    m.add("DarkWood", mov(rot(box, rx=-0.45), 0, 0.3, -0.02))
-    m.add("Dark", mov(rot(tubes, rx=-0.45), 0, 0.3, -0.02))
-    flag(m, 0.0, -0.23, 0.18, 0.46)
+    for ix in range(5):
+        for iy in range(4):
+            tubes += tube(((ix - 2) * 0.064, (iy - 1.5) * 0.058, 0.25), 0.05, 0.022, n=6)
+    m.add("Dark", mov(rot(tubes, rx=-0.5), 0, 0.42, 0.04))
+    m.add("Yellow", mov(rot(block((0, 0, 0), (0.36, 0.03, 0.1)), rx=-0.5), 0, 0.31, -0.13))  # a yellow band across the box
+    banner_side(m, 0.325, 0.0, 0.3, 0.14, 0.2)
+    banner_side(m, -0.325, 0.0, 0.3, 0.14, 0.2)
 
 
 def cannon(m, long_barrel=False):
-    length = 0.55 if long_barrel else 0.46
-    m.add("Brass" if not long_barrel else "Dark", mov(rot(tube((0, 0, 0), length, 0.065, 0.045, n=10), rx=-0.18), 0, 0.22, 0.1))
+    m.add("Iron", mov(rot(tube((0, 0, 0), 0.92, 0.115, 0.078, n=12), rx=-0.12), 0, 0.3, 0.14))  # a long, fat black barrel
+    m.add("Brass", mov(rot(tube((0, 0, 0), 0.08, 0.125, n=12), rx=-0.12), 0, 0.31, 0.16))
+    m.add("Brass", mov(rot(tube((0, 0, 0), 0.07, 0.085, n=12), rx=-0.12), 0, 0.33, 0.6))
+    m.add("Iron", ellipsoid((0, 0.28, -0.34), 0.09, 0.09, 0.09, n=8, m=6))  # the cascabel knob
     for s in (-1, 1):
-        m.add("Wood", block((s * 0.07, 0.15, -0.02), (0.035, 0.1, 0.42)))
-        wheel(m, s * 0.12, 0.0, 0.12, width=0.04)
-    m.add("DarkWood", tube((0, 0.12, 0.0), 0.28, 0.018, axis="x", n=8))
-    m.add("Wood", block((0, 0.04, -0.28), (0.05, 0.03, 0.22)))
-    flag(m, 0.0, -0.36, 0.05, 0.45)
+        m.add("RedWood", block((s * 0.15, 0.22, 0.0), (0.06, 0.16, 0.62)))
+        wheel(m, s * 0.24, 0.0, 0.22, "DarkWood", 0.07)
+        banner_side(m, s * 0.185, -0.06, 0.2, 0.12, 0.25)
+    m.add("DarkWood", tube((0, 0.2, 0.0), 0.5, 0.025, axis="x", n=8))
+    m.add("RedWood", block((0, 0.07, -0.45), (0.09, 0.05, 0.3)))  # the trail
 
 
 def artillery(m):
-    m.add("Olive", mov(rot(tube((0, 0, 0), 0.62, 0.04, 0.03, n=10), rx=-0.2), 0, 0.26, 0.12))
-    m.add("Steel", mov(rot(tube((0, 0, 0), 0.07, 0.05, n=10), rx=-0.2), 0, 0.26, 0.4))
-    m.add("Olive", mov(rot(block((0, 0, 0), (0.07, 0.07, 0.24)), rx=-0.2), 0, 0.25, -0.08))
-    m.add("Olive", block((0, 0.28, 0.1), (0.3, 0.2, 0.014)))
+    m.add("Olive", mov(rot(tube((0, 0, 0), 0.8, 0.055, 0.04, n=10), rx=-0.2), 0, 0.3, 0.16))
+    m.add("Steel", mov(rot(tube((0, 0, 0), 0.09, 0.07, n=10), rx=-0.2), 0, 0.3, 0.52))
+    m.add("Olive", mov(rot(block((0, 0, 0), (0.12, 0.12, 0.3)), rx=-0.2), 0, 0.28, -0.12))
+    m.add("Olive", block((0, 0.32, 0.12), (0.46, 0.3, 0.02)))  # a wide gun shield
     for s in (-1, 1):
-        wheel(m, s * 0.14, 0.0, 0.12, "Dark", 0.05)
-        m.add("Olive", mov(rot(block((0, 0, 0), (0.03, 0.03, 0.34)), ry=s * 0.3), s * 0.08, 0.04, -0.28))
-    m.add("Dark", tube((0, 0.12, 0.0), 0.3, 0.016, axis="x", n=8))
-    flag(m, 0.0, -0.44, 0.05, 0.45)
+        wheel(m, s * 0.24, 0.0, 0.14, "Dark", 0.07)
+        m.add("Olive", mov(rot(block((0, 0, 0), (0.04, 0.04, 0.5)), ry=s * 0.35), s * 0.15, 0.06, -0.42))  # split trail legs
+    m.add("Dark", tube((0, 0.14, 0.0), 0.46, 0.02, axis="x", n=8))
+    flag(m, 0.0, -0.6, 0.05, 0.48)
+    banner_side(m, 0.23, 0.12, 0.2, 0.16, 0.32)
 
 
 def rocket_artillery(m):
-    m.add("Olive", block((0, 0.15, 0), (0.28, 0.08, 0.72)))
-    m.add("Olive", block((0, 0.27, 0.26), (0.28, 0.16, 0.18)))
-    m.add("Dark", block((0, 0.31, 0.352), (0.22, 0.07, 0.01)))
+    m.add("Olive", block((0, 0.18, 0), (0.34, 0.1, 0.9)))
+    m.add("Olive", block((0, 0.34, 0.34), (0.34, 0.24, 0.24)))  # the cab
+    m.add("Dark", block((0, 0.38, 0.465), (0.28, 0.1, 0.012)))
     for s in (-1, 1):
-        for z in (-0.25, 0.0, 0.26):
-            wheel(m, s * 0.15, z, 0.08, "Dark", 0.06)
-    m.add("Grey", mov(rot(block((0, 0, 0), (0.24, 0.05, 0.46)), rx=-0.45), 0, 0.3, -0.1))
+        for z in (-0.32, 0.0, 0.34):
+            wheel(m, s * 0.2, z, 0.1, "Dark", 0.08)
+    m.add("Grey", mov(rot(block((0, 0, 0), (0.3, 0.06, 0.62)), rx=-0.45), 0, 0.38, -0.12))
     for ix in range(3):
         for iy in range(2):
-            x, y = (ix - 1) * 0.07, 0.04 + iy * 0.055
-            body = tube((x, y, 0.0), 0.5, 0.022, n=8)
-            nose = tube((x, y, 0.3), 0.1, 0.022, 0.0, n=8)
-            m.add("Steel", mov(rot(body, rx=-0.45), 0, 0.3, -0.1))
-            m.add("TeamColor", mov(rot(nose, rx=-0.45), 0, 0.3, -0.1))
+            x, y = (ix - 1) * 0.095, 0.05 + iy * 0.07
+            m.add("Steel", mov(rot(tube((x, y, 0.0), 0.66, 0.028, n=8), rx=-0.45), 0, 0.38, -0.12))
+            m.add("TeamColor", mov(rot(tube((x, y, 0.4), 0.13, 0.028, 0.0, n=8), rx=-0.45), 0, 0.38, -0.12))
 
 
 # ------------------------------------------------------------------------------------------------------------------------------------------ armour
@@ -441,22 +502,32 @@ def gun_node(m, y, z, length, radius, colour="Dark", sleeve=False):
     m.add(colour, tube((0, 0, length / 2), 0.05, radius * 1.4, n=8), "Part2")
 
 
-def tank(m, hull_colour="Olive", barrel=0.5, flat=False, stripe=False):
-    tracks(m)
-    tank_body(m, hull_colour)
-    turret_node(m, hull_colour, 0.29, 0.16, 0.11, flat=flat)
+def tank(m, hull_colour="Blue", barrel=0.5, flat=False, stripe=False, length=0.82, x=0.21, skirts=0.0, deck=False, brake=False, turret=0.16, track_colour="Dark"):
+    """T307: length, track spacing, side skirts (a slab over the tracks), a rear engine deck and a muzzle brake set the outline seen from above: Tank, Panzer and Modern Armor differ in all of them."""
+    tracks(m, length, x, 0.1, 0.17, track_colour)
+    tank_body(m, hull_colour, rear=-length * 0.46, glacis=length * 0.52, length=length)
+    if skirts:
+        for s in (-1, 1):
+            m.add(hull_colour, block((s * (x + 0.07), 0.2, 0.0), (skirts, 0.09, length * 0.78)))
+    if deck:
+        m.add("Dark", block((0, 0.285, -length * 0.3), (0.3, 0.03, length * 0.24)))
+        for k in range(4):
+            m.add("Steel", block((0, 0.302, -length * 0.38 + k * 0.045), (0.26, 0.008, 0.012)))
+    turret_node(m, hull_colour, 0.29, turret, 0.11, flat=flat)
     gun_node(m, 0.35, 0.05 + barrel / 2, barrel, 0.02)
+    if brake:
+        m.add("Dark", block((0, 0.35, 0.05 + barrel + 0.01), (0.1, 0.07, 0.08)))
     if stripe:
         m.add("TeamColor", block((0, 0.292, -0.16), (0.3, 0.004, 0.1)))
-    flag(m, 0.14, -0.34, 0.27, 0.46, 0.1, 0.06)
+    flag(m, 0.14, -length * 0.42, 0.27, 0.46, 0.1, 0.06)
 
 
 def landship(m):
-    h = 0.4
+    h = 0.5
     for s in (-1, 1):
         m.add("Dark", extrude_x([(-h, 0.04), (-h * 0.5, 0.34), (h * 0.5, 0.34), (h, 0.06), (h * 0.85, 0.0), (-h * 0.85, 0.0)], s * 0.2 - 0.045, s * 0.2 + 0.045))
-        m.add("Olive", block((s * 0.23, 0.2, 0.1), (0.07, 0.08, 0.14)))
-        m.add("Dark", tube((s * 0.23, 0.2, 0.2), 0.12, 0.012))
+        m.add("Olive", block((s * 0.31, 0.2, 0.05), (0.14, 0.1, 0.3)))  # T307: big side sponsons
+        m.add("Dark", tube((s * 0.31, 0.2, 0.26), 0.2, 0.014))
     m.add("Olive", block((0, 0.22, 0), (0.34, 0.2, 0.6)))
     turret_node(m, "Olive", 0.32, 0.1, 0.1)
     gun_node(m, 0.37, 0.18, 0.3, 0.017)
@@ -465,14 +536,9 @@ def landship(m):
 
 
 def modern_armor(m):
-    tracks(m, 0.88, 0.22, 0.1, 0.16, "Dark")
-    for s in (-1, 1):
-        m.add("Sand", block((s * 0.22, 0.18, 0.0), (0.12, 0.08, 0.7)))
-    tank_body(m, "Sand", hull_top=0.27, glacis=0.44, rear=-0.4)
-    turret_node(m, "Sand", 0.27, 0.15, 0.1, flat=True)
-    gun_node(m, 0.32, 0.05 + 0.27, 0.54, 0.02, sleeve=True)
-    m.add("TeamColor", block((0, 0.272, -0.2), (0.26, 0.004, 0.08)))
-    flag(m, 0.12, -0.36, 0.25, 0.46, 0.1, 0.06)
+    tank(m, "Sand", barrel=0.66, flat=True, length=0.92, x=0.24, skirts=0.2, turret=0.17, track_colour="Dark")
+    m.add("Dark", block((0, 0.33, 0.1), (0.1, 0.05, 0.1)))  # a sensor block on the roof
+    m.add("TeamColor", block((0, 0.292, -0.2), (0.26, 0.004, 0.08)))
 
 
 def death_robot(m):
@@ -511,8 +577,14 @@ def fuselage(m, y, length, radius, material="Grey", prop=0.0):
         m.add("Dark", block((0, y, length / 2 + 0.012), (0.02, prop * 2, 0.006)))
 
 
-def wings(m, y, span, root, tip, sweep=0.0, z=0.0, thickness=0.015, material="Grey", roundels=True):
-    outline = [(0.0, z + root / 2), (span / 2, z + root / 2 - sweep), (span / 2, z + root / 2 - sweep - tip), (0.0, z - root / 2)]
+def wings(m, y, span, root, tip, sweep=0.0, z=0.0, thickness=0.015, material="Grey", roundels=True, shape="swept"):
+    """T307: shape 'swept' (tapered, swept back), 'straight' (a plain rectangle) or 'ellipse' (rounded wing tips): the outline from above tells the fighters and bombers apart."""
+    if shape == "straight":
+        outline = [(0.0, z + root / 2), (span / 2, z + root / 2), (span / 2, z - root / 2), (0.0, z - root / 2)]
+    elif shape == "ellipse":
+        outline = [(span / 2 * math.sin(t * math.pi / 6), z + root / 2 * math.cos(t * math.pi / 6)) for t in range(7)]
+    else:
+        outline = [(0.0, z + root / 2), (span / 2, z + root / 2 - sweep), (span / 2, z + root / 2 - sweep - tip), (0.0, z - root / 2)]
     for s in (-1, 1):
         m.add(material, slab([(s * x, zz) for x, zz in outline], y - thickness / 2, y + thickness / 2))
         if roundels:
@@ -534,11 +606,11 @@ def nacelle(m, x, y, z, length=0.3, radius=0.04, prop=0.1):
     m.add("Dark", block((x, y, z + length / 2 + 0.006), (0.018, prop * 2, 0.005)))
 
 
-def propeller(m, wing_levels=(0.0,), length=0.9, span=0.9, engines=(), fuselage_radius=0.06, nose_prop=0.12, bomber=False, round_nose=False):
+def propeller(m, wing_levels=(0.0,), length=0.9, span=0.9, engines=(), fuselage_radius=0.06, nose_prop=0.12, bomber=False, round_nose=False, shape="swept", body="Grey", root=0.26, wing_material="Grey"):
     stand(m)
-    fuselage(m, FLY, length, fuselage_radius, "Grey" if not bomber else "Olive", prop=nose_prop if not engines else 0.0)
+    fuselage(m, FLY, length, fuselage_radius, body if not bomber else "Olive", prop=nose_prop if not engines else 0.0)
     for dy in wing_levels:
-        wings(m, FLY + dy, span, 0.26 if not bomber else 0.3, 0.14, 0.02 if bomber else 0.06, z=0.02)
+        wings(m, FLY + dy, span, root if not bomber else 0.3, 0.14, 0.02 if bomber else 0.06, z=0.02, shape=shape, material=wing_material)
     if len(wing_levels) > 1:  # struts between the wings of a biplane
         for s in (-1, 1):
             for x in (0.25, 0.5 * span * 0.8):
@@ -572,10 +644,11 @@ def stealth(m):
 
 def bomb(m):
     stand(m)
-    m.add("Dark", ellipsoid((0, FLY, 0), 0.1, 0.1, 0.27, n=8, m=6))
-    m.add("TeamColor", tube((0, FLY, 0.06), 0.06, 0.1, n=8))
+    m.add("Dark", ellipsoid((0, FLY, 0), 0.15, 0.15, 0.3, n=8, m=6))
+    m.add("Yellow", tube((0, FLY, 0.1), 0.06, 0.152, n=8))
+    m.add("TeamColor", tube((0, FLY, -0.02), 0.04, 0.152, n=8))
     for rz in (0.0, math.pi / 2):
-        m.add("Dark", mov(rot(block((0, 0, 0), (0.22, 0.012, 0.09)), rz=rz), 0, FLY, -0.25))
+        m.add("Dark", mov(rot(block((0, 0, 0), (0.4, 0.012, 0.12)), rz=rz), 0, FLY, -0.25))
     m.add("Steel", tube((0, FLY, 0.28), 0.03, 0.02, axis="z", n=8))
 
 
@@ -594,15 +667,17 @@ def missile(m, scale=1.0, warhead="Steel"):
 
 def helicopter(m):
     y = 0.2
-    m.add("Olive", ellipsoid((0, y, 0.03), 0.1, 0.095, 0.22, n=8, m=6))
-    m.add("Dark", ellipsoid((0, y + 0.02, 0.15), 0.08, 0.06, 0.1, n=8, m=4))
-    m.add("Olive", tube((0, y + 0.02, -0.3), 0.36, 0.045, 0.014, n=8))
+    m.add("Iron", ellipsoid((0, y, 0.03), 0.15, 0.12, 0.27, n=8, m=6))
+    m.add("Teal", ellipsoid((0, y + 0.02, 0.15), 0.08, 0.06, 0.1, n=8, m=4))
+    m.add("Iron", tube((0, y + 0.02, -0.3), 0.36, 0.045, 0.014, n=8))
     m.add("TeamColor", tube((0, y + 0.02, -0.24), 0.05, 0.034, n=8))
-    m.add("Olive", extrude_x([(-0.44, y + 0.02), (-0.4, y + 0.14), (-0.46, y + 0.14), (-0.48, y + 0.02)], -0.006, 0.006))
+    m.add("Iron", extrude_x([(-0.44, y + 0.02), (-0.4, y + 0.14), (-0.46, y + 0.14), (-0.48, y + 0.02)], -0.006, 0.006))
     m.add("Dark", tube((0.012, y + 0.12, -0.46), 0.012, 0.06, axis="x", n=10))
     m.add("Steel", tube((0, y + 0.15, 0.0), 0.12, 0.012, axis="y", n=6))
-    m.add("Dark", block((0, y + 0.215, 0.0), (0.84, 0.008, 0.04)))
-    m.add("Dark", block((0, y + 0.215, 0.0), (0.04, 0.008, 0.84)))
+    m.add("Steel", block((0, y + 0.215, 0.0), (0.9, 0.012, 0.09)))  # T307: broad rotor blades, visible from above
+    m.add("Steel", block((0, y + 0.215, 0.0), (0.09, 0.012, 0.9)))
+    m.add("Yellow", block((0.4, y + 0.222, 0.0), (0.1, 0.004, 0.09)))
+    m.add("Yellow", block((0.0, y + 0.222, 0.4), (0.09, 0.004, 0.1)))
     for s in (-1, 1):
         m.add("Dark", block((s * 0.09, 0.012, 0.03), (0.014, 0.014, 0.4)))
         for z in (-0.06, 0.12):
@@ -613,7 +688,7 @@ def helicopter(m):
 
 ARCHETYPES = {
     "oared": oared, "work_boat": work_boat, "sailer": sailer, "ironclad": ironclad, "warship": warship, "carrier": carrier, "submarine": submarine, "great_admiral": great_admiral,
-    "catapult": catapult, "ballista": ballista, "trebuchet": trebuchet, "hwacha": hwacha, "cannon": cannon, "artillery": artillery, "rocket_artillery": rocket_artillery,
+    "ram": ram, "catapult": catapult, "ballista": ballista, "trebuchet": trebuchet, "hwacha": hwacha, "cannon": cannon, "artillery": artillery, "rocket_artillery": rocket_artillery,
     "tank": tank, "landship": landship, "modern_armor": modern_armor, "death_robot": death_robot,
     "propeller": propeller, "jet": jet, "stealth": stealth, "bomb": bomb, "missile": missile, "helicopter": helicopter,
 }
@@ -621,11 +696,28 @@ ARCHETYPES = {
 
 # ------------------------------------------------------------------------------------------------------------------------------------------ glTF
 
+def grit(tri, normal, seed):
+    """T307: the gritty look of the T295 humanoids in vertex colours (a tiny cost: 4 bytes a vertex, no texture, the pack stays small): every triangle gets its own brightness (worn, patchy surfaces),
+    the lowest parts are darkened like mud and soot, faces pointing up are a little lighter (the default view looks down on them). Deterministic: a hash of the triangle's rounded corners, never a random generator."""
+    h = seed
+    for p in tri:
+        for v in p:
+            h = (h * 1000003 + int(round(v * 200))) & 0xFFFFFFFF
+    patch = 0.80 + 0.20 * (((h >> 7) & 255) / 255.0)
+    out = []
+    for p in tri:
+        dirt = 0.62 + 0.38 * min(1.0, max(0.0, p[1] / 0.25))
+        light = 1.0 + 0.10 * max(0.0, normal[1])
+        k = min(1.0, patch * dirt * light)
+        out.append([int(round(k * 255))] * 3 + [255])
+    return out
+
+
 def encode(model):
     """The glTF document and binary chunk: one scene root node per top-level node (Godot wraps them in a root named after the file), one mesh primitive per material."""
     b = bum.Builder()
     doc = b.doc
-    doc["asset"]["generator"] = "build-rigid-models.py (T256)"
+    doc["asset"]["generator"] = "build-rigid-models.py (T256, T307)"
     used = sorted({mat for _, mats in model.nodes.values() for mat in mats}, key=lambda it: (it != "TeamColor", it))
     doc["materials"] = [{"name": name, "pbrMetallicRoughness": {"baseColorFactor": MATERIALS[name], "metallicFactor": 0.0, "roughnessFactor": 1.0}} for name in used]
     top = []
@@ -635,17 +727,23 @@ def encode(model):
             tris = mats.get(mat)
             if not tris:
                 continue
-            positions, normals, indices = [], [], []
+            positions, normals, indices, colours = [], [], [], []
+            gritty = mat not in ("TeamColor", "Shadow")  # the civ's colour must stay clean, the shadow disc is flat
             for a, b2, c in tris:
                 n = cross(sub(b2, a), sub(c, a))
                 length = math.sqrt(dot(n, n))
                 n = tuple(round(v / length, 5) for v in n)
+                if gritty:
+                    colours += grit((a, b2, c), n, len(positions))
                 for p in (a, b2, c):
                     indices.append(len(positions))
                     positions.append([round(v, 5) for v in p])
                     normals.append(list(n))
-            primitives.append({"attributes": {"POSITION": b.accessor(positions, "VEC3", 5126, 34962, bounds=True), "NORMAL": b.accessor(normals, "VEC3", 5126, 34962)},
-                               "indices": b.accessor(indices, "SCALAR", 5123, 34963), "material": used.index(mat)})
+            attributes = {"POSITION": b.accessor(positions, "VEC3", 5126, 34962, bounds=True), "NORMAL": b.accessor(normals, "VEC3", 5126, 34962)}
+            if gritty:
+                attributes["COLOR_0"] = b.accessor(colours, "VEC4", 5121, 34962)
+                doc["accessors"][attributes["COLOR_0"]]["normalized"] = True
+            primitives.append({"attributes": attributes, "indices": b.accessor(indices, "SCALAR", 5123, 34963), "material": used.index(mat)})
         doc["meshes"].append({"name": name, "primitives": primitives})
         doc["nodes"].append({"name": name, "mesh": len(doc["meshes"]) - 1, "translation": [round(v, 5) for v in translation]})
         top.append(len(doc["nodes"]) - 1)
@@ -665,7 +763,7 @@ def build(name, spec):
     lo, hi = extent(model)
     height = hi[1] - lo[1]
     radius = max(abs(lo[0]), abs(hi[0]), abs(lo[2]), abs(hi[2]))
-    if abs(lo[1]) > 0.02 or not 0.4 <= height <= 1.0 or radius > 0.65:
+    if abs(lo[1]) > 0.02 or not 0.4 <= height <= MAX_HEIGHT or radius > MAX_RADIUS:
         raise SystemExit(f"{name}: outside the unit model contract (feet {lo[1]:.3f}, height {height:.3f}, radius {radius:.3f})")
     if "TeamColor" not in {mat for _, mats in model.nodes.values() for mat in mats}:
         raise SystemExit(f"{name}: no TeamColor surface")
@@ -680,7 +778,7 @@ def main(pack):
     manifest = json.load(open(manifest_path))
     failed = False
     for name, spec in data["rigid"]["units"].items():
-        if "build" not in spec:  # the Battering Ram (C095) is built by build-unit-models.py
+        if "build" not in spec:  # an entry without an archetype has no generated model (none today; T307 moved the ram here)
             continue
         try:
             doc, binary = encode(build(name, spec))

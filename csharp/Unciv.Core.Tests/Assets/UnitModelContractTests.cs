@@ -46,7 +46,7 @@ public sealed class UnitModelContractTests
         return data.RootElement.GetProperty("rigid").GetProperty("units").EnumerateObject().Select(it => it.Name).ToList();
     }
 
-    /// <summary>T256: the rigid units built by <c>build-rigid-models.py</c> (the entries with a <c>build</c> archetype; the ram is C095's).</summary>
+    /// <summary>T256: the rigid units built by <c>build-rigid-models.py</c> (the entries with a <c>build</c> archetype; since T307 the ram too).</summary>
     private static List<string> GeneratedRigidUnits()
     {
         using var data = JsonDocument.Parse(File.ReadAllText(Path.Combine(ClientFolder, "Packs", "units", "attachments.json")));
@@ -207,8 +207,8 @@ public sealed class UnitModelContractTests
         {
             var ruleset = RulesetCache.Get("Civ V - Gods & Kings")!;
             var rigid = GeneratedRigidUnits();
-            Assert.Equal(44, rigid.Count);
-            foreach (var name in rigid)
+            Assert.Equal(45, rigid.Count);
+            foreach (var name in rigid.Where(it => it != "Battering Ram")) // T307: the ram is generated too, but its unit is no Gods & Kings one (TheBatteringRamIsARigidModel covers it)
             {
                 var type = ruleset.Units[name].UnitType;
                 var kind = RigidMotion.KindOf(type);
