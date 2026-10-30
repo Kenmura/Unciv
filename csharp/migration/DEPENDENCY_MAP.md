@@ -190,8 +190,8 @@ flowchart TD
 Unlinked tickets (no open dependency in either direction), by state:
 
 - ready: T361 T366 T367
-- in progress: T300 T301 T303 T368
-- in review: T364
+- in progress: T300 T301 T303
+- in review: T364 T368
 - blocked: T290
 - waiting: T313 T314 T317 T318 T321 T324 T326 T328 T329 T330 T331 T332 T333 T335 T341 T342 T343 T344 T345 T346 T348 T349 T350 T351 T352 T353 T363
 
@@ -292,4 +292,4 @@ xychart-beta
 | T357 | Available (waiting on T338) | T337, T338 | 0 | WebSocket gateway so the web export can join and host through the relay (optional) |
 | T363 | Available (waiting on ) | none | 0 | QuickStart and harness scenario games still start on Vanilla/Gods & Kings: move them to BNW and regenerate goldens |
 | T364 | Needs-Review [Claude] | none | 0 | NetLobbyTests seat-race tests fail under Brave New World: find out whether the race is in the test transport or in the server |
-| T368 | In-Progress [Claude] | T337 | 0 | Relay deploy files are gitignored: add csharp/Unciv.Relay/deploy/* to git (RelayOperationsTests fail on a clean checkout); nginx test must skip without nginx |
+| T368 | Needs-Review [Claude] | T337 | 0 | Relay deploy files are gitignored: add csharp/Unciv.Relay/deploy/* to git (RelayOperationsTests fail on a clean checkout); nginx test must skip without nginx |

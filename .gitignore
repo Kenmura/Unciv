@@ -209,3 +209,7 @@ __pycache__/
 
 ## C# release builds (tools/release.py): binaries never go into git
 /csharp-releases/
+
+# T368: the relay deployment files are source
+!csharp/Unciv.Relay/deploy/
+!csharp/Unciv.Relay/deploy/**

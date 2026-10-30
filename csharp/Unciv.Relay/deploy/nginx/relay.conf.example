@@ -1,0 +1,61 @@
+# Example nginx configuration for Unciv.Relay behind nginx (design/RELAY.md section 8).
+# relay.example.org is a PLACEHOLDER: replace it with your own relay name. Nothing here is a default of the software.
+#
+# Run the relay on loopback with plain TCP and let nginx own the public port and the certificate:
+#   Unciv.Relay --tls none --proxy-protocol --public-name relay.example.org --tunnel-port 47832
+# (--tls none listens on 127.0.0.1; --proxy-protocol trusts the PROXY header from loopback only, which is where nginx connects from.)
+#
+# Include this file at the TOP LEVEL of nginx.conf (NOT inside http { }):
+#   include /etc/nginx/relay.conf;
+# Needs nginx >= 1.21.4 (ssl_alpn) built with --with-stream and --with-stream_ssl_module (check: nginx -V).
+
+stream {
+    limit_conn_zone $binary_remote_addr zone=relay_per_ip:10m;
+
+    server {
+        listen 47830 ssl;
+        listen [::]:47830 ssl;
+        ssl_certificate     /etc/letsencrypt/live/relay.example.org/fullchain.pem;
+        ssl_certificate_key /etc/letsencrypt/live/relay.example.org/privkey.pem;
+        ssl_protocols TLSv1.2 TLSv1.3;
+        ssl_alpn unciv-relay/1;
+
+        proxy_pass 127.0.0.1:47832;       # the relay's plain loopback tunnel port
+        proxy_protocol on;                # tells the relay the real client address for its limits and bans
+        proxy_timeout 1h;                 # a game connection is long-lived; the relay itself closes idle splices after 120 s
+        proxy_connect_timeout 5s;
+        limit_conn relay_per_ip 40;       # same as the relay's per-network default
+    }
+}
+
+# --- Optional: share port 443 with your website by SNI (design/RELAY.md section 8, the "passthrough" row). ---
+# The relay keeps its own certificate and nginx forwards the still-encrypted bytes, so run it as
+#   Unciv.Relay --cert fullchain.pem --key privkey.pem --proxy-protocol --bind 127.0.0.1 --tunnel-port 47833
+# and replace the server block above with the following (needs --with-stream_ssl_preread_module). Your website's own
+# server must then move off 443 (here 8443, and its listen line needs the "proxy_protocol" parameter only if you pass it on).
+#
+# stream {
+#     map $ssl_preread_server_name $unciv_backend {
+#         relay.example.org  127.0.0.1:47833;   # the relay
+#         default            127.0.0.1:8443;    # everything else: your existing web server
+#     }
+#     server {
+#         listen 443;
+#         listen [::]:443;
+#         ssl_preread on;
+#         proxy_pass $unciv_backend;
+#         proxy_protocol on;                    # the web backend must then accept PROXY too; drop this line and use the relay on a
+#                                               # dedicated port if it cannot (the relay needs it for the real client address)
+#         proxy_timeout 1h;
+#     }
+# }
+
+# --- Optional: the read-only directory over HTTP for curl and monitors. Put this inside your existing https server { } in http { }
+# and declare the zone once at http level:  limit_req_zone $binary_remote_addr zone=relay_http:10m rate=30r/m;
+# The relay's HTTP listener stays on 127.0.0.1:47831 (the default).
+#
+#     location /unciv-relay/ {
+#         proxy_pass http://127.0.0.1:47831/;
+#         proxy_set_header X-Forwarded-For $remote_addr;
+#         limit_req zone=relay_http burst=20 nodelay;
+#     }

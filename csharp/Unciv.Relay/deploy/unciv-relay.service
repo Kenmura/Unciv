@@ -1,0 +1,36 @@
+# systemd unit for Unciv.Relay (design/RELAY.md section 8). Install the self-contained Linux build to /opt/unciv-relay,
+# put your options in /etc/unciv-relay/relay.json (see README.md) and: systemctl enable --now unciv-relay
+[Unit]
+Description=Unciv relay server
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+ExecStart=/opt/unciv-relay/Unciv.Relay --data-dir /var/lib/unciv-relay --config /etc/unciv-relay/relay.json
+# SIGHUP re-reads certificates and the ban, allow and deny files (certbot deploy hook: systemctl reload unciv-relay)
+ExecReload=/bin/kill -HUP $MAINPID
+# SIGTERM: stop accepting, tell hosts to reconnect, drain 10 s, exit 0
+KillSignal=SIGTERM
+TimeoutStopSec=30
+Restart=on-failure
+RestartSec=2
+DynamicUser=yes
+StateDirectory=unciv-relay
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+PrivateDevices=yes
+NoNewPrivileges=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+RestrictAddressFamilies=AF_INET AF_INET6
+RestrictNamespaces=yes
+LockPersonality=yes
+MemoryDenyWriteExecute=no
+# only needed if the unit reads certificates under /etc/letsencrypt:
+# ReadOnlyPaths=/etc/letsencrypt
+LimitNOFILE=65536
+
+[Install]
+WantedBy=multi-user.target

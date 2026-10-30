@@ -1,0 +1,36 @@
+# Unciv.Relay with Docker Compose (design/RELAY.md section 8). relay.example.org is a placeholder: set your own name.
+# Behind nginx (deploy/nginx/relay.conf.example) the container speaks plain TCP and nginx owns the certificate.
+# Everything is published on 127.0.0.1 only; change the "ports" lines to expose the tunnel directly (use --cert/--key or --self-signed then).
+services:
+  relay:
+    build:
+      context: ../..
+      dockerfile: Unciv.Relay/deploy/Dockerfile
+    image: unciv-relay
+    restart: unless-stopped
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    command:
+      - --tls
+      - none
+      - --bind
+      - 0.0.0.0
+      - --proxy-protocol
+      - --trusted-proxy
+      - 172.16.0.0/12 # the docker bridge nginx reaches the container from; adjust to your network
+      - --public-name
+      - relay.example.org
+      - --contact
+      - abuse@relay.example.org
+    ports:
+      - "127.0.0.1:47832:47830" # tunnel (nginx proxy_pass 127.0.0.1:47832)
+      - "127.0.0.1:47831:47831" # read-only directory over HTTP
+    volumes:
+      - relay-data:/data
+    tmpfs:
+      - /tmp
+    stop_grace_period: 20s # the relay drains for 10 s on SIGTERM
+
+volumes:
+  relay-data:
