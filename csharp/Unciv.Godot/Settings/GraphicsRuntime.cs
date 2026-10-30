@@ -17,6 +17,9 @@ public static class GraphicsRuntime
 
     public static string? AdapterOverride { get; set; }
 
+    /// <summary>Replaces the integrated-GPU detection (scenarios and tests); null restores the real one.</summary>
+    public static bool? IntegratedOverride { get; set; }
+
     /// <summary>What <see cref="Restart"/> does instead of restarting (scenarios); it receives the rendering method.</summary>
     public static Action<string>? RestartHandler { get; set; }
 
@@ -27,13 +30,32 @@ public static class GraphicsRuntime
 
     public static string Adapter => AdapterOverride ?? RenderingServer.GetVideoAdapterName();
 
+    /// <summary>
+    /// Whether the GPU is an integrated one (T288): the device type <c>RenderingServer.GetVideoAdapterType</c> (RenderingDevice.DeviceType) when the renderer reports one (Forward+, Mobile), otherwise the adapter name
+    /// (<see cref="GraphicsModel.IsIntegratedAdapterName"/>; the compatibility renderer reports no device type).
+    /// </summary>
+    public static bool Integrated
+    {
+        get
+        {
+            if (IntegratedOverride is { } forced) return forced;
+            if (AdapterOverride == null)
+            {
+                var type = RenderingServer.GetVideoAdapterType();
+                if (type == RenderingDevice.DeviceType.IntegratedGpu) return true;
+                if (type != RenderingDevice.DeviceType.Other) return false;
+            }
+            return GraphicsModel.IsIntegratedAdapterName(Adapter);
+        }
+    }
+
     /// <summary>The level to draw with for these settings on the running renderer.</summary>
     public static GraphicsQuality EffectiveFor(ClientSettings settings) =>
         Pinned ?? GraphicsModel.Effective(settings.Quality, settings.UltraFailed, Renderer, Adapter);
 
     /// <summary>The note the settings screen shows under the picker (untranslated); empty when there is nothing to say.</summary>
     public static string NoteFor(ClientSettings settings) =>
-        Pinned != null ? "" : GraphicsModel.Note(settings.Quality, settings.UltraFailed, Renderer, Adapter);
+        Pinned != null ? "" : GraphicsModel.Note(settings.Quality, settings.UltraFailed, Renderer, Adapter, Integrated);
 
     public static bool NeedsRestart(ClientSettings settings) =>
         Pinned == null && GraphicsModel.NeedsRestart(settings.Quality, settings.UltraFailed, Renderer, Adapter);

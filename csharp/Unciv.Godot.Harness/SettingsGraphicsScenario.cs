@@ -22,6 +22,7 @@ public sealed class SettingsGraphicsScenario : Scenario
         "Is it clear which quality level is chosen, and what Ultra needs?",
         "Is the restart note readable and the Restart to apply button easy to find?",
         "After a failed Ultra attempt, does the note say why High is shown?",
+        "On an integrated GPU, is the High note advice (not an error) and is Low named as the smooth choice?",
     ];
 
     public override IReadOnlyList<ScenarioStep> Build(Control host, GameSession session)
@@ -40,6 +41,7 @@ public sealed class SettingsGraphicsScenario : Scenario
         host.AddChild(panel);
         ClientSettingsService? restarted = null;
         SettingsPanel? second = null;
+        SettingsPanel? third = null;
         bool startRestarts = true;
 
         void Pick(SettingsPanel from, GraphicsQuality level)
@@ -93,8 +95,22 @@ public sealed class SettingsGraphicsScenario : Scenario
                 second.NotNull().GraphicsPicker.Selected == 2 && second.NotNull().GraphicsNote.Visible
                 && second.NotNull().GraphicsNote.Text == "Ultra needs a Vulkan or Direct3D 12 GPU; showing High" && !second.NotNull().GraphicsRestartButton.Visible),
             new Capture("ultra-fallback", "After the failed attempt: Ultra stays chosen, the note says it needs a Vulkan or Direct3D 12 GPU and that High is shown"),
+            new Act("an integrated GPU, High chosen (T288)", () =>
+            {
+                second.NotNull().Visible = false;
+                service.Update(x => x with { GraphicsLevel = "High", UltraFailed = false, RendererPending = "" });
+                GraphicsRuntime.IntegratedOverride = true;
+                third = new SettingsPanel(service, ui) { Position = new Vector2(40, 40), Size = new Vector2(560, 400), Theme = ui.Theme };
+                host.AddChild(third);
+            }),
+            new WaitFrames(2),
+            new AssertQuery("the note advises Low, High is still the level drawn, no restart button", () =>
+                third.NotNull().GraphicsNote.Visible && third.NotNull().GraphicsNote.Text == "High may run slowly on integrated graphics; Low is the smoothest"
+                && !third.NotNull().GraphicsRestartButton.Visible && GraphicsRuntime.EffectiveFor(service.Current) == GraphicsQuality.High),
+            new Capture("integrated-high", "High chosen on an integrated GPU: a note says High may run slowly on integrated graphics and that Low is the smoothest; the level is not changed"),
             new Act("restore the runtime", () =>
             {
+                GraphicsRuntime.IntegratedOverride = null;
                 GraphicsRuntime.RendererOverride = null;
                 GraphicsRuntime.AdapterOverride = null;
                 GraphicsRuntime.RestartHandler = null;

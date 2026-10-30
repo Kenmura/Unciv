@@ -91,6 +91,7 @@
 - [T284 (ticket not Done or unknown)](#t284-ticket-not-done-or-unknown)
 - [T285 (ticket not Done or unknown)](#t285-ticket-not-done-or-unknown)
 - [T286 (ticket not Done or unknown)](#t286-ticket-not-done-or-unknown)
+- [T288 (ticket not Done or unknown)](#t288-ticket-not-done-or-unknown)
 - [Missing screenshots](#missing-screenshots)
 <!-- /toc -->
 
@@ -1845,6 +1846,16 @@ Scenario `phone-city`.
 ![City production on a phone: the queue with 48 dp Top/Up/Down/Remove and buy chips, the buildable list, and the built buildings with Sell buttons; each column scrolls.](../Unciv.Godot.Harness/golden/phone-city/production.png)
 
 *City production on a phone: the queue with 48 dp Top/Up/Down/Remove and buy chips, the buildable list, and the built buildings with Sell buttons; each column scrolls.* (`phone-city/production.png`)
+
+## T288 (ticket not Done or unknown)
+
+Integrated-GPU advice under the Graphics quality picker (advice only, the chosen level is never changed). The scenario forces the integrated detection, so the golden does not depend on the machine.
+
+Scenario `settings-graphics`.
+
+![High chosen on an integrated GPU: a note says High may run slowly on integrated graphics and that Low is the smoothest; the level is not changed.](../Unciv.Godot.Harness/golden/settings-graphics/integrated-high.png)
+
+*High chosen on an integrated GPU: a note says High may run slowly on integrated graphics and that Low is the smoothest; the level is not changed.* (`settings-graphics/integrated-high.png`)
 
 ## Missing screenshots
 

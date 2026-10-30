@@ -22,6 +22,7 @@
   - [Water tuning (T289)](#water-tuning-t289)
   - [Conclusions and follow-ups](#conclusions-and-follow-ups)
   - [Far-zoom draw-call reduction (T287)](#far-zoom-draw-call-reduction-t287)
+  - [Integrated GPUs (T288)](#integrated-gpus-t288)
   - [Windows, macOS and Android (UNVERIFIED)](#windows-macos-and-android-unverified)
 <!-- /toc -->
 
@@ -178,7 +179,7 @@ Compatibility renderer (OpenGL 3), the path Low and High ship on, wall / GPU / C
 Reading:
 - On the discrete GPU every level runs far above 30 fps in every view, including the Large map zoomed all the way out: the slowest cell is 28 ms (35 fps, Forward+ Ultra, overview) and the typical play view (mid) is 4-8 ms. Nothing needs its default adjusted; Low stays the default and nothing is too slow there.
 - The cost is **CPU/draw-call bound**, not GPU bound, on the discrete card. The overview view issues 13.3k draw calls at Low (yield chips and their labels, prop models, unit bars) and the sun shadow pass doubles that to 26.1k, so the CPU render time goes from 12.6 to 16.6-18 ms and Forward+ GPU time stays under 6 ms. The compatibility renderer is about 1.5-2x slower on CPU for the same scene and its GPU timer shows 23-38 ms at overview (driver cost per draw). Follow-up T287 (far-zoom draw-call reduction) is filed.
-- On the Intel iGPU (integrated, shared memory) the picture is GPU bound: at 1080p Low is 10 ms at the default zoom, High 21 ms, Ultra 32 ms (about 31 fps); at overview Ultra is 73 ms (14 fps). Ultra is a discrete-GPU level; the note the settings screen shows when Ultra cannot run does not cover "runs but slowly on an integrated GPU" (follow-up T288). The levels that ship on the compatibility renderer are slower still on the iGPU: High 33 ms at mid (under 30 fps, one noisy run set) and 117 ms at overview, Low 81 ms at overview; on both GPUs the compatibility renderer is slower than Forward+ for the same level, and the default stays Low.
+- On the Intel iGPU (integrated, shared memory) the picture is GPU bound: at 1080p Low is 10 ms at the default zoom, High 21 ms, Ultra 32 ms (about 31 fps); at overview Ultra is 73 ms (14 fps). Ultra is a discrete-GPU level; the note the settings screen shows when Ultra cannot run does not cover "runs but slowly on an integrated GPU" (see "Integrated GPUs (T288)" below: now a note). The levels that ship on the compatibility renderer are slower still on the iGPU: High 33 ms at mid (under 30 fps, one noisy run set) and 117 ms at overview, Low 81 ms at overview; on both GPUs the compatibility renderer is slower than Forward+ for the same level, and the default stays Low.
 
 ### Cost per effect
 
@@ -246,6 +247,20 @@ The overview cost of section 7 was draw calls, not pixels: of the 13.3k calls at
 - From zoom 22 the prop models give way to one merged mesh per terrain chunk and kind (`FarPropLayer`): the parts' transforms and flat colours (fog dimming included) are baked into vertices, so the picture is the same (checked by viewing the overview before and after, and by a harness assertion that the merged meshes carry the vertices and the fog-dimmed colours of the nodes they replace; vertex colours are 8 bit). The merge is built lazily on the first far frame after a map load, not on every refresh, and there is no hysteresis at the threshold (switching is a loop over the tile props). A prop whose model is not plain flat-coloured meshes (a pack model with textures) is not merged and stays a node. The resource toggle still applies.
 
 Measured with `gpu-bench` (views overview and mid, RTX 5060 Ti, Forward+; load average 80-165 during these runs, so CPU time is about 2x the quiet T271 numbers; 3 runs, min-max): overview draw calls at Low 13,272 -> 1,450, at High/Ultra 26,071 -> 3,794. CPU render time at Low overview 22.1-28.0 ms -> 3.0-4.0 ms; High overview 30.8-35.6 -> 4.4-5.4 ms (same machine, interleaved runs). GPU time is unchanged within noise (Low overview 2.65 -> 2.31 ms). Mid zoom (the unchanged path) stays at 2,037 / 6,168 draws, CPU 5.0-5.5 vs 4.3-4.9 ms (noise). Compatibility renderer (2 runs): Low overview 13,287 -> 1,465 draws, CPU 42.5-42.9 -> 6.9 ms, GPU 30-31 -> 1.95 ms. What remains at overview is the terrain chunks (140), cities (about 400 meshes) and unit figures (about 700); the shadow pass at High still draws 6.2k at mid (props and units as casters), a candidate for a later merge of props at all zooms.
+
+### Integrated GPUs (T288)
+
+T287 changed the overview numbers, so the Intel Arrow Lake iGPU (Mesa 26.2.4, Vulkan and OpenGL 4.6) was measured again at 1080p with `gpu-bench` on the Large fixture: 3 runs per renderer, mean [min-max] of the GPU time in ms (wall time is within 1 ms of it: the iGPU is GPU bound). The machine was shared (load average 17-67), which is why `mid` spreads so widely on the compatibility renderer.
+
+| View | Forward+ Low | High | Ultra | Compat Low | High | Ultra-no-ssao-ssr |
+|---|---|---|---|---|---|---|
+| overview | 20.0 [19.0-21.3] | 34.8 [33.9-36.2] | 47.7 [46.1-48.7] | 23.6 [22.4-24.3] | 40.9 [39.8-42.5] | 43.2 [41.5-44.6] |
+| mid | 11.6 [8.3-15.2] | 22.6 [18.2-28.1] | 31.9 [28.6-35.1] | 12.9 [9.0-18.4] | 28.2 [14.9-35.8] | 31.1 [18.3-38.2] |
+| close | 7.2 [5.6-9.9] | 13.6 [12.3-15.4] | 20.1 [19.1-20.9] | 6.6 [2.7-11.4] | 18.0 [12.8-20.8] | 19.0 [17.6-20.8] |
+
+Findings. The old Low overview of 59-81 ms is gone (T287: now 20-24 ms, 42-50 fps), and Low holds 45+ fps in every view on both renderers, so **Low needs no note**. High (about 30 fps at the default zoom, 25-29 fps zoomed out) and Ultra (about 31 fps at the default zoom, 21 fps at overview) are the levels that cost, and the cost is pixels, not draw calls, so it cannot be cut further by batching.
+
+Decision: a note, not a fallback. The client cannot know whether a given iGPU is fast enough (a newer one may run Ultra well), the levels are opt-in, and the user's explicit choice is never overridden. Under the Graphics quality picker, High or Ultra on an integrated GPU shows "High/Ultra may run slowly on integrated graphics; Low is the smoothest" (`GraphicsModel.Note`). The restart and Ultra-failed notes keep priority. Detection (`GraphicsRuntime.Integrated`): `RenderingServer.GetVideoAdapterType()` (the RenderingDevice device type) when the renderer reports one, otherwise the adapter name (`GraphicsModel.IsIntegratedAdapterName`: Intel other than Arc, AMD "Radeon Graphics"); software rasterizers are never integrated (they have their own note). Golden: `settings-graphics/integrated-high.png` (detection forced by the scenario; CI stays Low on llvmpipe). Not verified: AMD APUs, Apple silicon, phones (Adreno/Mali are not matched, no hardware data); whether `GetVideoAdapterType` reports IntegratedGpu on Forward+ for this Intel GPU was not observed in the UI (the name heuristic would also catch it).
 
 ### Windows, macOS and Android (UNVERIFIED)
 

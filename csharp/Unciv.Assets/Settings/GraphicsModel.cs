@@ -69,6 +69,18 @@ public static class GraphicsModel
     public static bool IsSoftwareAdapter(string? adapterName) =>
         !string.IsNullOrEmpty(adapterName) && SoftwareAdapters.Any(it => adapterName.Contains(it, StringComparison.OrdinalIgnoreCase));
 
+    /// <summary>
+    /// Best guess from the adapter name that the GPU is an integrated one (Intel graphics other than Arc, an AMD APU's plain "Radeon Graphics"). Used when the renderer cannot say
+    /// (the compatibility renderer has no rendering device); on Forward+ the client asks <c>RenderingDevice.GetDeviceType</c> instead. Never true for a software rasterizer.
+    /// </summary>
+    public static bool IsIntegratedAdapterName(string? adapterName)
+    {
+        if (string.IsNullOrEmpty(adapterName) || IsSoftwareAdapter(adapterName)) return false;
+        bool intel = adapterName.Contains("Intel", StringComparison.OrdinalIgnoreCase) && !adapterName.Contains("Arc", StringComparison.OrdinalIgnoreCase);
+        bool amdApu = adapterName.Contains("Radeon(TM) Graphics", StringComparison.OrdinalIgnoreCase) || adapterName.Contains("Radeon Graphics", StringComparison.OrdinalIgnoreCase);
+        return intel || amdApu;
+    }
+
     /// <summary>The rendering method to run on for the chosen level: Forward+ for Ultra unless an attempt failed, otherwise the compatibility renderer.</summary>
     public static string WantedRenderer(GraphicsQuality requested, bool ultraFailed) => requested == GraphicsQuality.Ultra && !ultraFailed ? ForwardPlus : Compatibility;
 
@@ -109,15 +121,23 @@ public static class GraphicsModel
         Startup(requested, ultraFailed, "", renderer, adapterName).RestartInto != null;
 
     /// <summary>The settings screen's note under the picker: empty when nothing needs saying.</summary>
-    public static string Note(GraphicsQuality requested, bool ultraFailed, string renderer, string? adapterName)
+    public static string Note(GraphicsQuality requested, bool ultraFailed, string renderer, string? adapterName, bool integrated = false)
     {
-        if (requested != GraphicsQuality.Ultra) return renderer == ForwardPlus ? "Restart to return to the standard renderer" : "";
+        if (requested != GraphicsQuality.Ultra)
+            return renderer == ForwardPlus ? "Restart to return to the standard renderer" : requested == GraphicsQuality.High && integrated ? IntegratedNote(requested) : "";
         if (ultraFailed) return "Ultra needs a Vulkan or Direct3D 12 GPU; showing High";
-        if (CanShowUltra(renderer, adapterName)) return "";
+        if (CanShowUltra(renderer, adapterName)) return integrated ? IntegratedNote(requested) : "";
         return IsSoftwareAdapter(adapterName) && renderer == ForwardPlus
             ? "Ultra needs a Vulkan or Direct3D 12 GPU; showing High"
             : "Ultra needs a restart to switch the renderer";
     }
+
+    /// <summary>
+    /// T288: advice only, never a change of the chosen level. Measured on an Intel Arrow Lake iGPU at 1080p (design/ULTRA-GRAPHICS.md section 7): Low holds 45+ fps in every view,
+    /// High is about 30 fps at the default zoom and Ultra 30 fps at the default zoom and about 20 fps zoomed all the way out.
+    /// </summary>
+    public static string IntegratedNote(GraphicsQuality level) =>
+        level == GraphicsQuality.Low ? "" : $"{level} may run slowly on integrated graphics; Low is the smoothest";
 
     /// <summary>The command line to restart with: the original arguments minus any earlier rendering-method choice, then <c>--rendering-method <paramref name="method"/></c>. Arguments after <c>--</c> are the game's own and are kept as they are.</summary>
     public static IReadOnlyList<string> RestartArgs(IEnumerable<string> original, string method)

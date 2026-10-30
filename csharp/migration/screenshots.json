@@ -1614,6 +1614,16 @@
       }
     ]
   },
+  "T288": {
+    "scenario": "settings-graphics",
+    "about": "Integrated-GPU advice under the Graphics quality picker (advice only, the chosen level is never changed). The scenario forces the integrated detection, so the golden does not depend on the machine.",
+    "shots": [
+      {
+        "golden": "settings-graphics/integrated-high.png",
+        "caption": "High chosen on an integrated GPU: a note says High may run slowly on integrated graphics and that Low is the smoothest; the level is not changed."
+      }
+    ]
+  },
   "C097": {
     "scenario": "settings-graphics",
     "about": "Graphics quality picker (Low, High, Ultra) on the Display tab with the Ultra restart flow and the fallback note.",

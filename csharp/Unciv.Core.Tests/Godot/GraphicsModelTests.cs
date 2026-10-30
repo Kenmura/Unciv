@@ -232,6 +232,33 @@ public sealed class GraphicsModelTests : IDisposable
         Assert.Equal("Restart to return to the standard renderer", GraphicsModel.Note(GraphicsQuality.High, false, Plus, Gpu));
     }
 
+    [Theory]
+    [InlineData("Intel(R) Graphics (ARL)", true)]
+    [InlineData("Mesa Intel(R) Graphics (ARL)", true)]
+    [InlineData("Intel(R) UHD Graphics 630", true)]
+    [InlineData("AMD Radeon(TM) Graphics", true)]
+    [InlineData("Intel(R) Arc(TM) A770 Graphics", false)]
+    [InlineData("NVIDIA GeForce RTX 5060 Ti", false)]
+    [InlineData("AMD Radeon RX 7800 XT", false)]
+    [InlineData("llvmpipe (LLVM 22.1.8, 256 bits)", false)]
+    [InlineData("", false)]
+    [InlineData(null, false)]
+    public void IntegratedAdapterNames(string? name, bool expected) => Assert.Equal(expected, GraphicsModel.IsIntegratedAdapterName(name));
+
+    [Fact]
+    public void IntegratedNoteIsAdviceForHighAndUltraOnly()
+    {
+        Assert.Equal("", GraphicsModel.Note(GraphicsQuality.Low, false, Compat, Gpu, integrated: true));
+        Assert.Equal("High may run slowly on integrated graphics; Low is the smoothest", GraphicsModel.Note(GraphicsQuality.High, false, Compat, Gpu, integrated: true));
+        Assert.Equal("Ultra may run slowly on integrated graphics; Low is the smoothest", GraphicsModel.Note(GraphicsQuality.Ultra, false, Plus, Gpu, integrated: true));
+        Assert.Equal("", GraphicsModel.Note(GraphicsQuality.High, false, Compat, Gpu, integrated: false));
+        // the restart and failure notes keep priority, and the note never changes what is drawn
+        Assert.Equal("Ultra needs a restart to switch the renderer", GraphicsModel.Note(GraphicsQuality.Ultra, false, Compat, Gpu, integrated: true));
+        Assert.Equal("Ultra needs a Vulkan or Direct3D 12 GPU; showing High", GraphicsModel.Note(GraphicsQuality.Ultra, true, Compat, Gpu, integrated: true));
+        Assert.Equal("Restart to return to the standard renderer", GraphicsModel.Note(GraphicsQuality.High, false, Plus, Gpu, integrated: true));
+        Assert.Equal(GraphicsQuality.Ultra, GraphicsModel.Effective(GraphicsQuality.Ultra, false, Plus, "Intel(R) Graphics (ARL)"));
+    }
+
     [Fact]
     public void RestartArgsReplaceEarlierRenderingChoices()
     {
