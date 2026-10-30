@@ -17,7 +17,7 @@ Work is completed phase by phase (`phases.txt`; `ticket.py ready`/`next` list ea
 |---|---|---|---|---|---|
 | Phase 1: CLI (headless engine) | 231/231 | 0 | 0 | 0 | complete |
 | Phase 2: single player (Godot client) | 57/57 | 0 | 0 | 0 | complete |
-| Phase 3: multiplayer | 29/30 | 1 | 0 | 1 | [T334](backlog/T334.md) |
+| Phase 3: multiplayer | 29/34 | 5 | 0 | 2 | [T334](backlog/T334.md) [T336](backlog/T336.md) [T337](backlog/T337.md) [T338](backlog/T338.md) [T339](backlog/T339.md) |
 | Phase 4: queued plans (UI redesign, unit models, BNW) | 72/72 | 0 | 0 | 0 | complete |
 | Phase 5: owner issue backlog (Android, performance, ultra graphics, dedicated server, resiliency) | 55/83 | 28 | 0 | 4 | [T274](backlog/T274.md) [T275](backlog/T275.md) [T278](backlog/T278.md) [T290](backlog/T290.md) [T300](backlog/T300.md) [T301](backlog/T301.md) [T303](backlog/T303.md) [T305](backlog/T305.md) [T306](backlog/T306.md) [T309](backlog/T309.md) [T313](backlog/T313.md) [T314](backlog/T314.md) [T317](backlog/T317.md) [T318](backlog/T318.md) [T319](backlog/T319.md) [T320](backlog/T320.md) [T321](backlog/T321.md) [T324](backlog/T324.md) [T325](backlog/T325.md) [T326](backlog/T326.md) [T327](backlog/T327.md) [T328](backlog/T328.md) [T329](backlog/T329.md) [T330](backlog/T330.md) [T331](backlog/T331.md) [T332](backlog/T332.md) [T333](backlog/T333.md) [T335](backlog/T335.md) |
 
@@ -64,12 +64,23 @@ flowchart TD
     T333["T333<br/>Full-width pages keep rows readable on 3840x2160: ScreenFram..."]
     T334["T334<br/>Two client instances on one machine become the same player: ..."]
     T335["T335<br/>Layout matrix screenshots only the Options Display tab: capt..."]
+    T336["T336<br/>Relay and lobby browser: design (no port forwarding for host..."]
+    T337["T337<br/>Relay server: Unciv.Relay executable (room registry, byte sp..."]
+    T338["T338<br/>Relay client: in-process host and dedicated server register ..."]
+    T339["T339<br/>Lobby browser screen: list public games from the relay direc..."]
   end
   T274 --> T275
   T278 --> T306
   T309 --> T320
   T305 --> T325
   T319 --> T327
+  T336 --> T337
+  T336 --> T338
+  T337 --> T338
+  T334 --> T338
+  T336 --> T339
+  T337 --> T339
+  T338 --> T339
   classDef waiting fill:#f3faf3,stroke:#9bc49b,color:#555,stroke-dasharray:2 2
   classDef ondeck fill:#ffe8cc,stroke:#e8590c,stroke-width:3px,color:#000
   classDef ready fill:#7ee787,stroke:#1a7f37,stroke-width:3px,color:#000
@@ -106,6 +117,10 @@ flowchart TD
   class T333 waiting
   class T334 prog
   class T335 waiting
+  class T336 prog
+  class T337 ondeck
+  class T338 waiting
+  class T339 waiting
 ```
 
 ## Remaining tickets over time
@@ -124,9 +139,9 @@ xychart-beta
     title "Remaining tickets"
     x-axis ["Oct 24 00:00", "Oct 24 12:00", "Oct 25 00:00", "Oct 25 12:00", "Oct 26 00:00", "Oct 26 12:00", "Oct 27 00:00", "Oct 27 12:00", "Oct 28 00:00", "Oct 28 12:00", "Oct 29 00:00", "Oct 29 12:00", "Oct 30 00:00", "Oct 30 12:00", "Oct 31 00:00"]
     y-axis "Tickets" 0 --> 55
-    line [5, 46, 2, 54, 39, 19, 11, 9, 9, 9, 9, 31, 14, 6, 23]
+    line [5, 46, 2, 54, 39, 19, 11, 9, 9, 9, 9, 31, 14, 6, 26]
     line [0, 11, 11, 0, 0, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1]
-    line [1, 0, 4, 2, 6, 6, 3, 2, 2, 2, 2, 3, 5, 5, 5]
+    line [1, 0, 4, 2, 6, 6, 3, 2, 2, 2, 2, 3, 5, 5, 6]
 ```
 
 ## Progress and scope over time
@@ -141,21 +156,25 @@ xychart-beta
 xychart-beta
     title "Done vs total scope"
     x-axis ["Oct 24 00:00", "Oct 24 12:00", "Oct 25 00:00", "Oct 25 12:00", "Oct 26 00:00", "Oct 26 12:00", "Oct 27 00:00", "Oct 27 12:00", "Oct 28 00:00", "Oct 28 12:00", "Oct 29 00:00", "Oct 29 12:00", "Oct 30 00:00", "Oct 30 12:00", "Oct 31 00:00"]
-    y-axis "Tickets" 0 --> 480
+    y-axis "Tickets" 0 --> 485
     line [0, 69, 153, 200, 246, 280, 294, 297, 297, 297, 297, 354, 413, 433, 448]
-    line [6, 126, 170, 256, 291, 305, 309, 309, 309, 309, 309, 388, 433, 445, 477]
+    line [6, 126, 170, 256, 291, 305, 309, 309, 309, 309, 309, 388, 433, 445, 481]
 ```
 
 ## Incomplete tickets
 
 | Ticket | State | Depends on | Unblocks | Title |
 |---|---|---|---|---|
+| T337 | **On deck** (after T336) | T336 | 2 | Relay server: Unciv.Relay executable (room registry, byte splicing, lobby directory API, limits), tests, Docker and nginx example |
 | T275 | **On deck** (after T274) | T274, C034, C035 | 0 | Host migration 5/5: client UI and docs (backup-host picker, trust notice, standby status, rollback and host-changed notices, superseded-host screen) |
+| T336 | In-Progress [Claude] | none | 3 | Relay and lobby browser: design (no port forwarding for hosts, public game list), threat model, nginx deployment, protocol |
+| T334 | In-Progress [Claude] | none | 2 | Two client instances on one machine become the same player: give each instance its own identity (profile) so multiplayer can be tested locally |
 | T274 | In-Progress [Claude-T274] | T273 | 1 | Host migration 4/5: crash election (loss detection, signed HostLossVote quorum, split-brain refusal, superseded-host mode, forced take-over, kill-the-host scenarios) |
 | T278 | Available (waiting on ) | T260, T276 | 1 | Android on-device verification: TLS join, lifecycle reconnect, frame time and APK size on a mid-range phone |
 | T305 | Available (waiting on ) | T280 | 1 | Verify the Android APK job of the release workflow on a hosted runner (first tag push) |
 | T309 | Available (waiting on ) | T295 | 1 | Harden the unit sheet and silhouette test: single-figure pages, tight layout, every unit has a style |
 | T319 | Available (waiting on ) | none | 1 | Client scenario goldens phone-menus and flat-city fail locally at the base commit: find out whether stale or machine-dependent, then fix |
+| T338 | Available (waiting on T336, T337, T334) | T336, T337, T334 | 1 | Relay client: in-process host and dedicated server register with the relay; joiners connect through it by room code (no open ports) |
 | T290 | Blocked | T271 | 0 | Real-device frame-time pass: Windows, macOS, Android phone |
 | T300 | In-Progress [Claude] | none | 0 | Replace text-letter placeholder icons (resource chips etc.) with real pictorial icons |
 | T301 | In-Progress [Claude] | none | 0 | Maximizing a windowed game freaks out and may crash |
@@ -177,5 +196,5 @@ xychart-beta
 | T331 | Available (waiting on ) | T279, T280 | 0 | Local release fallback: release.py --github-draft builds all four clients plus CLI and server archives from a tag and creates the draft release without GitHub Actions; notes flag --local |
 | T332 | Available (waiting on ) | none | 0 | Verify Windows and macOS CLI and the Windows dedicated server on real systems, then drop the UNVERIFIED marks from the release notes |
 | T333 | Available (waiting on ) | T322 | 0 | Full-width pages keep rows readable on 3840x2160: ScreenFrame MaxContentWidth is ~the whole 4K window, New game player rows put Human/AI 1500 px from the nation name; Host, Join, Lobby, Saves, Civilopedia at 4K not inspected for label/control gaps |
-| T334 | In-Progress [Claude] | none | 0 | Two client instances on one machine become the same player: give each instance its own identity (profile) so multiplayer can be tested locally |
 | T335 | Available (waiting on ) | T322 | 0 | Layout matrix screenshots only the Options Display tab: capture every Options tab (Keys, Advanced, Sound...) and open them at five sizes |
+| T339 | Available (waiting on T336, T337, T338) | T336, T337, T338 | 0 | Lobby browser screen: list public games from the relay directory, filter, join, password prompt, host a listed game |
