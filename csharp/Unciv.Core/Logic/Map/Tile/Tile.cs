@@ -1104,18 +1104,6 @@ public partial class Tile : IsPartOfGameInfoSerialization, IGameContextTile, ITi
         }
     }
 
-    /// <summary>
-    /// T293: the city owning this tile changed civilization (conquest, liberation, annexation). Loading a save re-assigns every city tile through
-    /// <see cref="SetOwningCity"/>, which takes the city's civ as road owner; doing the same here keeps a live game equal to a reload of its save.
-    /// Deliberate deviation from Kotlin, which left the previous civ as road owner of the tiles until the next load.
-    /// </summary>
-    internal void SetRoadOwnerToOwningCiv()
-    {
-        if (OwningCity is not { } city) return;
-        roadOwner = city.Civ.CivId;
-        roadOwnerObject = city.Civ;
-    }
-
     /// <summary>Clear road owner, for console <c>civ remove</c></summary>
     public void RemoveRoadOwner()
     {
