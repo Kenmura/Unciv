@@ -5,6 +5,7 @@
 
 - [One-time setup (inside `dotnet-dev`)](#one-time-setup-inside-dotnet-dev)
 - [Running](#running)
+- [Two instances on one computer (T334)](#two-instances-on-one-computer-t334)
 - [Pieces](#pieces)
 - [Scenarios and the owner review sheet (C008)](#scenarios-and-the-owner-review-sheet-c008)
 - [Limits](#limits)
@@ -42,6 +43,25 @@ After an intended visual change run `tools/run-smoke.sh --update-golden` and rev
 How it renders: Xvfb provides a virtual 24-bit screen and Godot's Compatibility renderer (`--rendering-driver opengl3`) runs on
 Mesa llvmpipe, a CPU rasterizer. No GPU is used, so results are machine-independent apart from rasterizer rounding.
 Pure `--headless` is not used because it installs a dummy renderer that produces no pixels.
+
+## Two instances on one computer (T334)
+
+Two copies of the client started normally share one user folder, so they are the same player (one `identity.key`, one settings file, one saves folder). To test multiplayer on one machine start the
+second copy as another **profile**:
+
+```
+Unciv.x86_64 -- --profile=friend              # an exported client (Windows: Unciv.exe -- --profile=friend)
+UNCIV_PROFILE=friend Unciv.x86_64             # the same through the environment (the argument wins if both are given)
+godot --path Unciv.Godot -- --profile=friend  # from a checkout
+```
+
+Everything after Godot's own `--` is the game's. A profile keeps its identity key, host key, known hosts, last address, settings (player name included), saves, autosaves and hosted games under
+`user://profiles/friend/`; with no profile everything stays where it always was, so existing players keep their identity. A name is 1 to 32 letters, digits, `-` or `_` (starting with a letter or
+digit); anything else (`..`, `a/b`) makes the client print the reason and exit with code 2 rather than share another player's files. The profile name is the window title (`Unciv - friend`), a line
+on the main menu and the player's name in lobbies. Local mods (`user://mods`) and the extracted content bundle are shared on purpose. Typical test: instance one (no profile or `--profile=host`)
+hosts, instance two (`--profile=friend`) joins `127.0.0.1:47821`. Only one instance can host on a port: a second host must change the port in the Host screen's Network tab (a taken port is
+refused with a message). Godot's log file (`user://logs/godot.log`) is shared and rotated by Godot; the client has no lock file and no listening port besides the host's. The harness
+scenario `two-instances` hosts and joins as two profiles over real TCP and checks two distinct player keys, separate settings and saves.
 
 ## Pieces
 

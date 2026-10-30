@@ -1,3 +1,4 @@
+using Unciv.GodotClient.Settings;
 using System.Globalization;
 using System.Security.Cryptography.X509Certificates;
 using Godot;
@@ -613,6 +614,7 @@ public partial class HostScreen : Control
             Text = AddressNoteText(Form.Port is >= 1 and <= 65535 ? Form.Port : HostSettingsForm.DefaultPort),
             AutowrapMode = TextServer.AutowrapMode.WordSmart,
         }.FitMin(theme, 420));
+        networkPage.AddChild(new Label { Name = "SecondInstanceHelp", Text = UserProfile.SecondInstanceHelp.Tr(), AutowrapMode = TextServer.AutowrapMode.WordSmart }.FitMin(theme, 420)); // T334
     }
 
     private void FillSaved()

@@ -38,6 +38,13 @@ public partial class App : Node
 
     public override void _Ready()
     {
+        if (UserPaths.ProfileError is { } profileError)
+        {
+            GD.PrintErr(profileError);
+            GetTree().Quit(2);
+            return;
+        }
+        GetWindow().Title = UserProfile.WindowTitle(UserPaths.Profile);
         vanilla = RulesetLocator.LoadVanilla();
         theme = new UiTheme(AssetRegistry.ForRuleset(vanilla));
         settings = new ClientSettingsService(new ClientSettingsStore(UserPaths.Settings));
@@ -71,7 +78,7 @@ public partial class App : Node
     {
         activeSaves = null;
         activeSession = null;
-        menu = new MainMenu(theme);
+        menu = new MainMenu(theme, UserPaths.Profile);
         menu.NewGameRequested += OpenNewGame;
         menu.ResumeRequested += () => _ = menuSaves.ResumeLastAsync();
         menu.LoadRequested += menuSaves.OpenDialog;
@@ -103,7 +110,7 @@ public partial class App : Node
             Identity = () => HostFiles.LoadIdentity(UserPaths.Identity),
             Certificate = () => HostFiles.LoadCertificate(UserPaths.HostKey),
             HostedGamesDirectory = UserPaths.HostedGames,
-            DisplayName = System.Environment.UserName is { Length: > 0 } user ? user : "Host",
+            DisplayName = UserPaths.Profile ?? (System.Environment.UserName is { Length: > 0 } user ? user : "Host"),
             Clock = WallClockMillis,
             SetClipboard = DisplayServer.ClipboardSet,
         };
@@ -131,7 +138,7 @@ public partial class App : Node
         var environment = new JoinScreenEnvironment
         {
             Identity = identity,
-            DisplayName = System.Environment.UserName is { Length: > 0 } user ? user : "Player",
+            DisplayName = UserPaths.Profile ?? (System.Environment.UserName is { Length: > 0 } user ? user : "Player"),
             RulesetHash = () => new LobbySettings { Ruleset = form.BaseRuleset, Mods = [.. form.Mods] }.ComputeRulesetHash(),
             KnownHosts = JoinFiles.LoadKnownHosts(UserPaths.KnownHosts),
             PersistKnownHosts = known => JoinFiles.SaveKnownHosts(UserPaths.KnownHosts, known),

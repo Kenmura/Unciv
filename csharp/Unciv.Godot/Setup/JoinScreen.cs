@@ -1,3 +1,4 @@
+using Unciv.GodotClient.Settings;
 using Godot;
 using Unciv.Client.Net.Mods;
 using Unciv.Client.Net.Session;
@@ -104,6 +105,7 @@ public partial class JoinScreen : Control
         buttons.AddChild(CancelButton);
         buttons.AddChild(BackButton);
         formPanel.AddChild(buttons);
+        formPanel.AddChild(new Label { Name = "SecondInstanceHelp", Text = UserProfile.SecondInstanceHelp.Tr(), AutowrapMode = TextServer.AutowrapMode.WordSmart });
         hostsTitle.Text = "Known hosts".Tr();
         formPanel.AddChild(hostsTitle);
         formPanel.AddChild(hostsBox);

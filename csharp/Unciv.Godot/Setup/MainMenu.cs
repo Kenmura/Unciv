@@ -17,7 +17,8 @@ public partial class MainMenu : Control
     private readonly Button resume;
 
     /// <param name="theme">C101: when given, the column is 260 px at the theme's scale (wider on a touch build; a mouse build with the default scale gets 260 px); without it 260 px.</param>
-    public MainMenu(UiTheme? theme = null)
+    /// <param name="profile">T334: the profile this instance runs as; shown as a line under the logo so two windows can be told apart (null = the default profile, no line).</param>
+    public MainMenu(UiTheme? theme = null, string? profile = null)
     {
         Name = "MainMenu";
         var backdrop = new ColorRect { Name = "Backdrop", Color = ProceduralAssets.ToColor(UiTokens.Bg1), MouseFilter = MouseFilterEnum.Ignore };
@@ -33,6 +34,7 @@ public partial class MainMenu : Control
         column.AddChild(new Label { Name = "Logo", Text = "Unciv".Tr(), HorizontalAlignment = HorizontalAlignment.Center, ThemeTypeVariation = UiVariants.LabelDisplay });
         var rule = new ColorRect { Name = "LogoRule", Color = ProceduralAssets.ToColor(UiTokens.Accent), CustomMinimumSize = new Vector2(0, UiTokens.HairlineWidth) };
         column.AddChild(rule);
+        if (profile != null) column.AddChild(new Label { Name = "ProfileLabel", Text = $"{"Profile".Tr()}: {profile}", HorizontalAlignment = HorizontalAlignment.Center }); // T334: two windows on one computer are told apart
         column.AddChild(new Control { CustomMinimumSize = new Vector2(0, UiTokens.S3) });
         NewGame = Add(column, "New game", () => NewGameRequested?.Invoke());
         NewGame.ThemeTypeVariation = UiVariants.ButtonPrimary;

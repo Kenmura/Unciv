@@ -1213,6 +1213,24 @@
       }
     ]
   },
+  "T334": {
+    "scenario": "two-instances",
+    "about": "T334: the main menu of two client instances on one computer, started with --profile=alpha and --profile=beta, and of one without a profile.",
+    "shots": [
+      {
+        "golden": "two-instances/menu-alpha.png",
+        "caption": "Main menu of the instance started with --profile=alpha: a line 'Profile: alpha' under the logo (the window title is 'Unciv - alpha')."
+      },
+      {
+        "golden": "two-instances/menu-beta.png",
+        "caption": "The same menu for --profile=beta: 'Profile: beta', so two windows are told apart."
+      },
+      {
+        "golden": "two-instances/menu-default.png",
+        "caption": "Main menu with no profile (unchanged behaviour): no profile line."
+      }
+    ]
+  },
   "C006": {
     "scenario": "join",
     "about": "Join screen (address or invite, password, known hosts), fingerprint prompt, host-key-changed hard stop and the reconnect overlay.",

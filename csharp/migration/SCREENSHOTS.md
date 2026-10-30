@@ -96,6 +96,7 @@
 - [T298 (ticket not Done or unknown)](#t298-ticket-not-done-or-unknown)
 - [T299 (ticket not Done or unknown)](#t299-ticket-not-done-or-unknown)
 - [T312 (ticket not Done or unknown)](#t312-ticket-not-done-or-unknown)
+- [T334 (ticket not Done or unknown)](#t334-ticket-not-done-or-unknown)
 - [Missing screenshots](#missing-screenshots)
 <!-- /toc -->
 
@@ -1978,6 +1979,24 @@ Real-GPU (RTX 5060 Ti, Vulkan) renders of the layout-matrix scenario (design/ima
 ![3840x2160: main menu, new game, host, lobby, join, options.](design/images/layout/3840x2160-2.jpg)
 
 *3840x2160: main menu, new game, host, lobby, join, options.* (`design/images/layout/3840x2160-2.jpg`, documentation image, not a golden)
+
+## T334 (ticket not Done or unknown)
+
+T334: the main menu of two client instances on one computer, started with --profile=alpha and --profile=beta, and of one without a profile.
+
+Scenario `two-instances`.
+
+![Main menu of the instance started with --profile=alpha: a line 'Profile: alpha' under the logo (the window title is 'Unciv - alpha').](../Unciv.Godot.Harness/golden/two-instances/menu-alpha.png)
+
+*Main menu of the instance started with --profile=alpha: a line 'Profile: alpha' under the logo (the window title is 'Unciv - alpha').* (`two-instances/menu-alpha.png`)
+
+![The same menu for --profile=beta: 'Profile: beta', so two windows are told apart.](../Unciv.Godot.Harness/golden/two-instances/menu-beta.png)
+
+*The same menu for --profile=beta: 'Profile: beta', so two windows are told apart.* (`two-instances/menu-beta.png`)
+
+![Main menu with no profile (unchanged behaviour): no profile line.](../Unciv.Godot.Harness/golden/two-instances/menu-default.png)
+
+*Main menu with no profile (unchanged behaviour): no profile line.* (`two-instances/menu-default.png`)
 
 ## Missing screenshots
 

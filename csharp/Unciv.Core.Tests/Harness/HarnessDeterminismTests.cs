@@ -26,6 +26,7 @@ public sealed partial class HarnessDeterminismTests
         ["ScenarioRunner.cs"] = "reports the wall time between frames of a WaitUntil (C040); asserted only by next-turn with a generous budget",
         ["TerrainBlendScenario.cs"] = "frame-time budget of the Standard-size map (C040 follow-up), best of three batches",
         ["UnitVisualsScenario.cs"] = "report-only frame time of full against reduced unit formations (C085); asserts only the relative comparison, best of three batches",
+        ["TwoInstancesScenario.cs"] = "T334: polls (Task.Delay, 20 ms, 20 s cap) for the host to seat a friend that joined over real loopback TCP; the outcome (who sits where) does not depend on the timing, and no frame or golden does",
     };
 
     // The client reads the wall clock exactly twice, to seed a brand-new game at launch (a one-off, not frame-driven; scenarios build their own seeded sessions).

@@ -58,6 +58,7 @@
     "Unciv.Assets/Settings/GraphicsModel.cs": {"branch": 97.56, "line": 100.0},
     "Unciv.Assets/Settings/Hotkeys.cs": {"branch": 100.0, "line": 100.0},
     "Unciv.Assets/Settings/OptionsModel.cs": {"branch": 100.0, "line": 100.0},
+    "Unciv.Assets/Settings/UserProfile.cs": {"branch": 95.45, "line": 100.0},
     "Unciv.Assets/Setup/HostSettingsForm.cs": {"branch": 92.86, "line": 100.0},
     "Unciv.Assets/Setup/JoinModel.cs": {"branch": 96.03, "line": 97.44},
     "Unciv.Assets/Setup/LobbyModel.cs": {"branch": 98.31, "line": 100.0},
