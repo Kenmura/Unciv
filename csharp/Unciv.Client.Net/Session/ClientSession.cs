@@ -1024,7 +1024,7 @@ public sealed class ClientSession : IAsyncDisposable
             return false;
         }
         pendingProof = null;
-        if (redirect != null)
+        if (redirect != null && !redirectAnnounced)
         {
             // Redirected by a hand-off: the host here must be the successor the old host named, promoted to exactly the announced epoch, and say so with the successor's own signature.
             var proof = welcome.Promotion;

@@ -16,6 +16,7 @@ public sealed partial class GameHost
         public const string NoStore = "no-store";
         public const string NoSuccessor = "no-successor";
         public const string NotFlushed = "not-flushed";
+        public const string StoreFailed = "store-failed";
     }
 
     /// <summary>
@@ -80,8 +81,15 @@ public sealed partial class GameHost
             FinalHash = ReplayVerifier.FullHash(session.Game).ToString("x16", System.Globalization.CultureInfo.InvariantCulture),
             DepartedKeyId = departedKeyId,
         };
+        try
+        {
+            file.RaiseEpochs(epoch, epoch + 1); // this directory is the old host's now: restarted by mistake it refuses everyone (stale-epoch) instead of forking the game
+        }
+        catch (Exception e) when (e is IOException or GameStoreException or UnauthorizedAccessException)
+        {
+            return (HandoffRefusals.StoreFailed, false); // nothing was told, nothing closed: the host keeps running
+        }
         closed = true;
-        file.RaiseEpochs(epoch, epoch + 1); // this directory is the old host's now: restarted by mistake it refuses everyone (stale-epoch) instead of forking the game
         await CloseSessionsAndStoreAsync(handoff).ConfigureAwait(false);
         return (null, true);
     }

@@ -157,6 +157,20 @@ public sealed class InProcessHostTests : IDisposable
             using var cert = HostCertificate.Generate();
             host.Listen(cert, 0);
             Assert.Null(await host.Host.DesignateBackupAsync("Greece", babylon.PlayerKey));
+
+            // Designated but not accepted (no hand-off can come from it): its proof refuses that connection and fences nothing.
+            var (early, earlyWelcome, earlyLast) = await HandshakeAsync(host, babylon, HelloWith(host.GameId, 1, ProofBy(greece, host.GameId, 1)));
+            await using (early)
+            {
+                Assert.NotNull(earlyWelcome);
+                Assert.Equal(JoinRefusedCodes.StaleEpoch, Assert.IsType<JoinRefused>(earlyLast).Code);
+            }
+            var (fine, fineWelcome, _) = await HandshakeAsync(host, babylon, HelloWith(null, null));
+            await using (fine) Assert.NotNull(fineWelcome);
+
+            var successorFingerprint = HostKey.Fingerprint(new byte[] { 9, 9, 9 });
+            host.Host.Standby.Prober = new Unciv.Core.Tests.Net.Standby.FakeProber { Answer = (_, _) => successorFingerprint };
+            Assert.Null(await host.Host.Standby.AcceptAsync(greece.PlayerKey, new StandbyAccept { Endpoints = ["succ.example"], Port = 47900, Fingerprint = successorFingerprint }));
             var (transport, welcome, last) = await HandshakeAsync(host, babylon, HelloWith(host.GameId, 1, ProofBy(greece, host.GameId, 1)));
             await using (transport)
             {

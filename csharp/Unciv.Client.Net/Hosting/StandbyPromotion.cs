@@ -67,10 +67,10 @@ public sealed class StandbyPromotion(string standbyRoot, ClientIdentity identity
         {
             host.Listen(certificate, port);
         }
-        catch (SocketException e)
+        catch (Exception e) when (e is SocketException or IOException or InvalidOperationException or System.Security.Cryptography.CryptographicException)
         {
-            host.StopAsync().GetAwaiter().GetResult();
-            throw new HostingException($"Port {port} cannot be used ({e.SocketErrorCode}).", e);
+            host.StopAsync().GetAwaiter().GetResult(); // the copy stays promoted: a retry with the same hand-off resumes it (the promotion is idempotent)
+            throw new HostingException($"Port {port} cannot be used ({e.Message}).", e);
         }
         Host = host;
         Directory = directory;

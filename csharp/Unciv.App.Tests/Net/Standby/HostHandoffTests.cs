@@ -433,9 +433,15 @@ public sealed class HostHandoffTests : IDisposable
         }
 
         var ok = StandbyCopyOf(host, "rules-ok");
-        await using var promoted = InProcessHost.ResumeFromDirectory(ok, greece.PlayerKey, new InProcessHostOptions { TickInterval = null, Promotion = PromotionFor(gameId, seq, hash, babylon.PlayerKey) });
+        var same = PromotionFor(gameId, seq, hash, babylon.PlayerKey);
+        await using var promoted = InProcessHost.ResumeFromDirectory(ok, greece.PlayerKey, new InProcessHostOptions { TickInterval = null, Promotion = same });
         Assert.Equal(1, ((FileGameStore)promoted.Host.Store!).ReadMeta().HostEpoch);
         Assert.Equal(hash, (await StateAsync(promoted)).Hash);
+
+        // A retry of the very same promotion (a failed Listen left the copy promoted) resumes it instead of being refused.
+        await promoted.StopAsync();
+        var retried = InProcessHost.ResumeFromDirectory(ok, greece.PlayerKey, new InProcessHostOptions { TickInterval = null, Promotion = same });
+        await using (retried) Assert.Equal(hash, (await StateAsync(retried)).Hash);
 
         // An epoch that does not go up is refused, so a promotion cannot be replayed onto a promoted copy.
         await promoted.StopAsync();

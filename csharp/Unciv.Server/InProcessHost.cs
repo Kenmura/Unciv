@@ -145,7 +145,8 @@ public sealed class InProcessHost : IAsyncDisposable
             var result = new InProcessHost(host, opened.Store, hostCiv, options, opened.Report);
             if (promotion != null)
             {
-                opened.Store.PromoteTo(promotion.Epoch, promotion.Proof);
+                // A retry after a failed Listen finds the copy already promoted with this very proof: that is the same promotion, not a second one.
+                if (meta.HostEpoch != promotion.Epoch || meta.Promotion != promotion.Proof) opened.Store.PromoteTo(promotion.Epoch, promotion.Proof);
                 var departed = promotion.DepartedKeyId == null ? null : meta.Slots.FirstOrDefault(x => string.Equals(x.Value.PlayerKey, promotion.DepartedKeyId, StringComparison.Ordinal)).Key;
                 if (departed != null && !string.Equals(departed, hostCiv, StringComparison.Ordinal))
                 {
@@ -181,7 +182,9 @@ public sealed class InProcessHost : IAsyncDisposable
         if (opened.Store.LastSeq != promotion.FinalSeq) throw new GameStoreException($"standby-incomplete: the standby copy ends at {opened.Store.LastSeq}, the hand-off at {promotion.FinalSeq}");
         var hash = ReplayVerifier.FullHash(opened.Session.Game).ToString("x16", System.Globalization.CultureInfo.InvariantCulture);
         if (!string.Equals(hash, promotion.FinalHash, StringComparison.OrdinalIgnoreCase)) throw new GameStoreException("standby-diverged: the standby copy's state hash differs from the old host's");
-        if (opened.Store.ReadMeta().HostEpoch >= promotion.Epoch) throw new GameStoreException("standby-epoch: the standby copy is already at or above the new epoch");
+        var held = opened.Store.ReadMeta();
+        if (held.HostEpoch == promotion.Epoch && held.Promotion == promotion.Proof) return;
+        if (held.HostEpoch >= promotion.Epoch) throw new GameStoreException("standby-epoch: the standby copy is already at or above the new epoch");
     }
 
     /// <summary>Connects the host player through the in-memory loopback transport and returns the client end (the first frame is the Snapshot).</summary>
@@ -238,8 +241,15 @@ public sealed class InProcessHost : IAsyncDisposable
     {
         if (stopped) return GameHost.HandoffRefusals.Closed;
         listener?.Stop(); // no new connection can slip past the hand-off; the game's own sessions are told by it
-        var refusal = await host.HandOffAsync(flushTimeout ?? TimeSpan.FromSeconds(5), hostPlayerKey ?? store.ReadMeta().Slots.GetValueOrDefault(hostCivId)?.PlayerKey).ConfigureAwait(false);
-        await StopAsync().ConfigureAwait(false);
+        string? refusal;
+        try
+        {
+            refusal = await host.HandOffAsync(flushTimeout ?? TimeSpan.FromSeconds(5), hostPlayerKey ?? store.ReadMeta().Slots.GetValueOrDefault(hostCivId)?.PlayerKey).ConfigureAwait(false);
+        }
+        finally
+        {
+            await StopAsync().ConfigureAwait(false); // whatever happened, the host ends cleanly (a plain HostClosing for anyone not handed off)
+        }
         return refusal;
     }
 
@@ -352,7 +362,7 @@ public sealed class InProcessHost : IAsyncDisposable
     // The proof must be for this game and the claimed epoch, signed by the key this host designated as its successor (and only that key: any seat key can sign something), with a valid signature.
     private bool ProvesPromotion(PromotionProof? proof, int claimedEpoch) =>
         proof != null && proof.Epoch == claimedEpoch && string.Equals(proof.GameId, store.GameId, StringComparison.Ordinal)
-        && host.Standby.IsDesignated(proof.KeyId) && PlayerKeys.VerifyPromotion(proof);
+        && host.Standby.IsAcceptedCandidate(proof.KeyId) && PlayerKeys.VerifyPromotion(proof);
 
     private static async Task<Message?> ReceiveAsync(ITransport transport, CancellationToken token)
     {
