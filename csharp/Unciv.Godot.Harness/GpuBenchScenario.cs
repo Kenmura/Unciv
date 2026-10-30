@@ -94,15 +94,7 @@ public sealed partial class GpuBenchScenario : Scenario
         host.AddChild(screen);
         screen.Start(localHost, AssetRegistry.ForRuleset(game.Ruleset));
         screen.Hud.HoldBanner = true;
-        if (System.Environment.GetEnvironmentVariable("UNCIV_BENCH_CLEAN") == "1")
-        {
-            // T291: documentation pictures of the map itself, without the HUD, minimap, unit panel or yield chips (never used for timings)
-            screen.Hud.Visible = false;
-            screen.World.Visible = false;
-            screen.Minimap.Visible = false;
-            screen.Panel.Visible = false;
-            screen.Overlays.ShowYields = false;
-        }
+        if (System.Environment.GetEnvironmentVariable("UNCIV_BENCH_CLEAN") == "1") HideHud(screen);
         var map = screen.Map;
         var probe = new Probe();
         host.AddChild(probe);
@@ -203,6 +195,16 @@ public sealed partial class GpuBenchScenario : Scenario
         }
         steps.Add(new Act("done", () => GD.Print("[bench] finished; results in " + outDir)));
         return steps;
+    }
+
+    /// <summary>T291: documentation pictures of the map itself, without the HUD, minimap, unit panel or yield chips (never used for timings).</summary>
+    private static void HideHud(GameScreen screen)
+    {
+        screen.Hud.Visible = false;
+        screen.World.Visible = false;
+        screen.Minimap.Visible = false;
+        screen.Panel.Visible = false;
+        screen.Overlays.ShowYields = false;
     }
 
     /// <summary>T289: a short animation sequence, one shot every half second of rendered time (the water animates with TIME); the clock is the sum of frame deltas.</summary>
