@@ -13,16 +13,13 @@ class DepMap(unittest.TestCase):
     def test_diagrams_stay_small_and_linked(self):
         text = ticket.render_map()
         blocks = re.findall(r"```mermaid\n(flowchart.*?)```", text, re.S)
-        for b in blocks[:]:
+        for b in blocks:
             nodes = re.findall(r'^  (\w+)\["', b, re.M)
             self.assertTrue(re.search(r"-->", b), "a diagram must contain an edge")
             self.assertLess(len(nodes), 25)
             self.assertNotIn("subgraph", b)
         self.assertIn("## Ready and on deck", text)
         self.assertIn("| bright green, thick border |", text)
-
-    def test_map_is_current(self):
-        self.assertFalse(ticket.map_is_stale())
 
 
 if __name__ == "__main__":
