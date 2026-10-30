@@ -64,6 +64,7 @@ def in_container(cmd):
     return f"distrobox enter {CONTAINER} -- bash -c {shlex.quote(cmd)}"
 
 
+DOTNET = "env MSBUILDDISABLENODEREUSE=1 MSBUILDNODECOUNT=1 MSBUILDUSESERVER=0 UseSharedCompilation=false DOTNET_gcServer=0 dotnet"  # T360: same memory settings as ptest.dotnet_env()
 CRASH_CODES = (139, 134, 132, -11, -6, -4)  # SIGSEGV / SIGABRT / SIGILL (the Godot headless export crashed with 132 once), as a shell reports them (128+n) or as a raw signal
 CRASH_RETRIES = 2
 
@@ -190,14 +191,14 @@ def main(argv):
     try:
         if cli:
             out = stage / "cli"
-            run("publish Unciv.Cli", in_container(f"cd {shlex.quote(str(CSHARP))} && dotnet publish Unciv.Cli -c Release -r {RID} --self-contained true -o {shlex.quote(str(out))}"))
+            run("publish Unciv.Cli", in_container(f"cd {shlex.quote(str(CSHARP))} && {DOTNET} publish Unciv.Cli -c Release -r {RID} --self-contained true -o {shlex.quote(str(out))}"))
             shutil.copytree(CSHARP.parent / "android" / "assets" / "jsons", out / "data" / "jsons")
             smoke_cli(out)
             built.append("cli")
             for rid in SERVER_RIDS:
                 out = stage / f"server-{rid}"
                 try:
-                    run(f"publish Unciv.Server ({rid})", in_container(f"cd {shlex.quote(str(CSHARP))} && dotnet publish Unciv.Server -c Release -r {rid} --self-contained true -o {shlex.quote(str(out))}"))
+                    run(f"publish Unciv.Server ({rid})", in_container(f"cd {shlex.quote(str(CSHARP))} && {DOTNET} publish Unciv.Server -c Release -r {rid} --self-contained true -o {shlex.quote(str(out))}"))
                     shutil.copytree(CSHARP.parent / "android" / "assets" / "jsons", out / "data" / "jsons")
                     shutil.copy2(CSHARP / "Unciv.Server" / "README.md", out / "README.md")
                     if rid == "linux-x64":

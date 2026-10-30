@@ -61,6 +61,13 @@ def format_args(changed):
 
 
 def main():
+    try:
+        return run_main()
+    finally:
+        ptest.shutdown_build_servers()
+
+
+def run_main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--quick", action="store_true")
     ap.add_argument("--since", metavar="REV")

@@ -66,12 +66,59 @@ def load_timings():
     return t
 
 
+def msbuild_nodes():
+    """MSBuild worker nodes one dotnet command may start (T360). UNCIV_MSBUILD_NODES, default 1: the solution is small enough that
+    parallel project builds cost more memory (~130 MB per node) than they save."""
+    raw = os.environ.get("UNCIV_MSBUILD_NODES", "1")
+    return raw if raw.isdigit() and int(raw) >= 1 else "1"
+
+
+def dotnet_env():
+    """Environment every dotnet command of the tools runs with (T360): no idle MSBuild nodes left behind after the command, no
+    VBCSCompiler server shared across worktrees, workstation GC. Passed through `env` so it also reaches the dotnet-dev container."""
+    return ["MSBUILDDISABLENODEREUSE=1", "MSBUILDNODECOUNT=" + msbuild_nodes(), "MSBUILDUSESERVER=0",
+            "UseSharedCompilation=false", "DOTNET_gcServer=0", "DOTNET_CLI_TELEMETRY_OPTOUT=1"]
+
+
+def dotnet_args(args):
+    """`args` plus the MSBuild switches that cap nodes and forbid reuse, for the verbs that run MSBuild."""
+    if args and args[0] in ("build", "test", "publish", "pack", "restore"):
+        return args[:1] + ["-m:" + msbuild_nodes(), "-nodeReuse:false", "-p:UseSharedCompilation=false"] + args[1:]
+    return list(args)
+
+
 def dotnet_cmd(args):
     """argv (or shell string through distrobox) that runs `dotnet <args>` from csharp/."""
+    full = ["env"] + dotnet_env() + ["dotnet"] + dotnet_args(args)
     if shutil.which("dotnet"):
-        return ["dotnet"] + args, CSHARP
-    inner = "cd %s && dotnet %s" % (shlex.quote(CSHARP), " ".join(shlex.quote(a) for a in args))
+        return full, CSHARP
+    inner = "cd %s && %s" % (shlex.quote(CSHARP), " ".join(shlex.quote(a) for a in full))
     return ["distrobox", "enter", CONTAINER, "--", "bash", "-c", inner], None
+
+
+_children = []  # shard processes this run started; stopped when the run ends abnormally (Ctrl-C, failure in the middle)
+
+
+def stop_children():
+    """Terminate shard processes still running (T360); best effort, a normal run has none left."""
+    for proc in _children:
+        if proc.poll() is None:
+            proc.terminate()
+    for proc in _children:
+        try:
+            proc.wait(timeout=10)
+        except subprocess.TimeoutExpired:
+            proc.kill()
+
+
+def shutdown_build_servers():
+    """`dotnet build-server shutdown`: stop any MSBuild node / VBCSCompiler / Razor server this user left running. Never raises;
+    called at the end of every gate / ptest run, also after a failure (T360)."""
+    try:
+        argv, cwd = dotnet_cmd(["build-server", "shutdown"])
+        subprocess.run(argv, cwd=cwd, capture_output=True, text=True, timeout=120)
+    except (OSError, subprocess.SubprocessError):
+        pass
 
 
 def default_shards():
@@ -250,10 +297,19 @@ def run_shard(index, project, flt, results, coverage):
     argv, cwd = dotnet_cmd(args)
     log = open(os.path.join(d, "output.log"), "w")
     proc = subprocess.Popen(argv, cwd=cwd, stdout=log, stderr=subprocess.STDOUT)
+    _children.append(proc)
     return proc, d, log
 
 
 def main():
+    try:
+        return run_main()
+    finally:
+        stop_children()
+        shutdown_build_servers()
+
+
+def run_main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--shards", type=int)
     ap.add_argument("--no-build", action="store_true")
