@@ -7,7 +7,7 @@
 # Needs the Godot editor (Unciv.Godot.Harness/tools/setup-godot.sh) and the matching export templates (tools/install-export-templates.sh).
 # T260 android: debug-signed arm64 APK build/android/Unciv.apk (android-emulator adds x86_64: build/android/Unciv-emulator.apk). Needs an Android SDK
 # (ANDROID_HOME or ANDROID_SDK_ROOT with cmdline-tools/latest, platform-tools, build-tools/36.1.0), a JDK (keytool) and the net9.0 build (UncivAndroid=true):
-# see GODOT.md. The APK carries no ruleset data yet (T276 decides how content reaches the device).
+# see GODOT.md. The rulesets, packs and fonts travel in the pck as Content/unciv-content.zip (T276).
 # Local mods are not bundled: players drop mod folders into the user data folder's mods directory (user://mods).
 set -euo pipefail
 
@@ -53,11 +53,11 @@ if $android; then
     # Godot reads the SDK and JDK paths only from its editor settings (there is no ANDROID_HOME/JAVA_HOME fallback in a headless export, verified
     # with 4.7.2: "A valid Java SDK path is required in Editor Settings"), so run it with a throw-away config home holding just those two paths.
     # The developer's own editor settings are left alone.
-    cfg_home="$(mktemp -d)"
+    cfg_home="$(mktemp -d)"; keystore=""
+    trap 'rm -rf "$cfg_home"; [[ -z "$keystore" ]] || rm -f "$keystore"' EXIT
     mkdir -p "$cfg_home/godot"
     printf '[gd_resource type="EditorSettings" format=3]\n\n[resource]\nexport/android/java_sdk_path = "%s"\nexport/android/android_sdk_path = "%s"\n' \
         "$JAVA_HOME" "$sdk" > "$cfg_home/godot/editor_settings-4.7.tres"
-    export XDG_CONFIG_HOME="$cfg_home"
 fi
 
 if $android; then mkdir -p "$out"; rm -f "$out/$exe"; else rm -rf "$out"; mkdir -p "$out"; fi
@@ -70,13 +70,13 @@ fi
 if $android; then
     # Debug-signed with a throw-away keystore generated here (never committed; Godot reads it from these variables).
     keystore="$out/debug.keystore"
-    rm -f "$keystore"; trap 'rm -f "$keystore"; rm -rf "$cfg_home"' EXIT
+    rm -f "$keystore"
     keytool -genkeypair -keystore "$keystore" -storepass android -keypass android -alias androiddebugkey -keyalg RSA -keysize 2048 \
         -validity 10000 -dname "CN=Unciv debug,O=Unciv,C=US" >/dev/null
     export GODOT_ANDROID_KEYSTORE_DEBUG_PATH="$keystore" GODOT_ANDROID_KEYSTORE_DEBUG_USER=androiddebugkey GODOT_ANDROID_KEYSTORE_DEBUG_PASSWORD=android
     # T276: no data folder beside an APK, so the content travels as a zip inside the pck (the presets include Content/*).
     python3 -I "$project/tools/stage-content.py"
-    "$godot" --headless --path "$project" --export-debug "$preset" "$out/$exe"
+    XDG_CONFIG_HOME="$cfg_home" "$godot" --headless --path "$project" --export-debug "$preset" "$out/$exe"
     if [[ ! -s "$out/$exe" ]]; then echo "Godot produced no $exe: see the errors above" >&2; exit 1; fi
     rm -f "$keystore" "$out/$exe.idsig"
     echo "Packaged Android build: $out/$exe ($(du -h "$out/$exe" | cut -f1))"

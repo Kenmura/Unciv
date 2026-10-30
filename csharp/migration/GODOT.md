@@ -124,7 +124,6 @@ adb install -r Unciv.Godot/build/android/Unciv.apk && adb shell am start -n org.
 - **Content.** The script runs `tools/stage-content.py` first; the presets include `Content/*` so the rulesets, packs and fonts travel in the pck (T276). Measured sizes (arm64 `Unciv.apk` 131 MiB, emulator variant 231 MiB): `design/ANDROID.md`, section 1.
 - **Reinstall.** The keystore is regenerated on every build, so install a rebuilt APK with `adb uninstall org.unciv.godot` first (`install -r` fails on a signature mismatch).
 - **Editor.** To export from the editor instead: Editor Settings > Export > Android: set the Android SDK path, Java SDK path and a debug keystore, then Project > Export > Android.
-- **Content.** The APK does not yet carry the ruleset jsons, fonts or packs (T276); expect it to stop at the content check on a device until then.
 
 ## How a release is produced (T169)
 
