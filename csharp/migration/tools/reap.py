@@ -27,7 +27,7 @@ import sys
 import time
 
 KILLABLE = {"msbuild-node", "vbcscompiler", "testhost", "datacollector", "vstest", "dotnet-cli", "msbuild-main"}
-WT_RE = re.compile(r"(/\.worktrees/[^/\s\0]+|/Unciv-wt-[^/\s\0]+)")
+WT_RE = re.compile(r"(/[^\s:=]*?/\.worktrees/[^/\s]+|/[^\s:=]*?/Unciv-wt-[^/\s]+)")
 TICKS = os.sysconf("SC_CLK_TCK")
 PAGE = os.sysconf("SC_PAGE_SIZE")
 
@@ -58,8 +58,7 @@ def worktree_of(*texts):
     for t in texts:
         m = WT_RE.search(t or "")
         if m:
-            i = t.find(m.group(1))
-            return t[:i] + m.group(1) if t[:i].startswith("/") else m.group(1)
+            return m.group(1)
     return None
 
 
@@ -112,7 +111,7 @@ def scan():
     return out
 
 
-def decide(before, after, min_age_s, exists=os.path.isdir):
+def decide(before, after, min_age_s, exists=os.path.isdir, max_age_s=360 * 60):
     """pid -> (verdict, reason) for the processes seen in both snapshots. Pure: tests drive it with fabricated snapshots."""
     active = {pid: after[pid]["cpu"] != before[pid]["cpu"] for pid in after if pid in before}
     busy = set()  # worktrees with a young or running process
@@ -128,6 +127,8 @@ def decide(before, after, min_age_s, exists=os.path.isdir):
             verdicts[pid] = ("keep", "driver/other, never killed")
         elif wt and not exists(wt):
             verdicts[pid] = ("KILL", "worktree-gone")
+        elif p["age_s"] > max_age_s and p["kind"] != "vbcscompiler":
+            verdicts[pid] = ("KILL", "runaway: older than max-age even though busy")
         elif p["age_s"] < min_age_s:
             verdicts[pid] = ("keep", "younger than threshold")
         elif active.get(pid, True):
@@ -201,13 +202,14 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--kill", action="store_true", help="kill the processes marked KILL (default: only list)")
     ap.add_argument("--min-age", type=float, default=30.0, metavar="MIN", help="idle threshold in minutes (default 30)")
+    ap.add_argument("--max-age", type=float, default=360.0, metavar="MIN", help="kill test hosts / nodes / builds older than this even if busy (default 360; a full gate takes minutes)")
     ap.add_argument("--sample", type=float, default=3.0, metavar="SEC", help="CPU sampling window in seconds (default 3)")
     ap.add_argument("-q", "--quiet", action="store_true", help="per-worktree table only, no per-process lines")
     a = ap.parse_args()
     before = scan()
     time.sleep(a.sample)
     after = scan()
-    verdicts = decide(before, after, a.min_age * 60)
+    verdicts = decide(before, after, a.min_age * 60, max_age_s=a.max_age * 60)
     kills = report(after, verdicts, not a.quiet)
     if a.kill and kills:
         left = kill(kills)

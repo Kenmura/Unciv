@@ -16,6 +16,7 @@
   - [Review (Multi-Persona Adversarial Review)](#review-multi-persona-adversarial-review)
 - [Running until budget is exhausted](#running-until-budget-is-exhausted)
   - [Stop conditions](#stop-conditions)
+- [Memory](#memory)
 - [Rules](#rules)
 - [Ticket format](#ticket-format)
 <!-- /toc -->
@@ -200,6 +201,20 @@ Stop and report only when one of these is true:
 4. The environment is broken (`dotnet-dev` unavailable, build of the untouched solution fails). Report instead of working around it.
 
 When the backlog runs low, an agent that finds nothing `Available` should first try to **expand it**: scan the Kotlin tree for the next leaf files whose dependencies are all `Done`, append tickets in the standard format, commit, publish, and continue.
+
+## Memory
+
+Every dotnet command the tools run (`gate.py`, `ptest.py`, `release.py`) gets `MSBUILDDISABLENODEREUSE=1`, a node cap (`UNCIV_MSBUILD_NODES`, default 1), `MSBUILDUSESERVER=0`, `UseSharedCompilation=false` (no VBCSCompiler) and `DOTNET_gcServer=0`, and `ptest.py`/`gate.py` end with `dotnet build-server shutdown` (also after a failure or Ctrl-C). Before T360 each build left 7+ idle `MSBuild.dll /nodemode` workers (~130 MB each) for 15 minutes, which reached 15 GB. Run raw `dotnet` commands only with the same settings (`export MSBUILDDISABLENODEREUSE=1 MSBUILDNODECOUNT=1 UseSharedCompilation=false DOTNET_gcServer=0`, then add `-m:1 -nodeReuse:false`) and finish with `dotnet build-server shutdown`.
+
+Orchestrator, from `csharp/migration` (host shell; the container's processes are visible in the host `/proc`):
+
+```
+python3 -I tools/reap.py            # list mode: memory totals, RSS per worktree and process kind, KILL/keep verdict per process
+python3 -I tools/reap.py --kill     # kill only the processes marked KILL, then print the memory freed
+free -m                             # system view
+```
+
+Safety rule (details in the `reap.py` docstring): only MSBuild nodes, VBCSCompiler, test hosts, datacollector, vstest and `dotnet build|test|format` processes are ever killed, never `gate.py`/`ptest.py`. A process dies when its worktree directory is gone, or when it is older than `--min-age` (30 min) and used no CPU in the sampling window and its worktree has no young or running process (a live gate keeps its worktree busy), or when it is older than `--max-age` (6 h, a hung test spinning for days). Run list mode before dispatching a new agent and `--kill` when available memory is low.
 
 ## Rules
 
