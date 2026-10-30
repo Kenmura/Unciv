@@ -84,6 +84,8 @@ public sealed class UnitModelContractTests
         {
             var file = File.ReadAllBytes(Path.Combine(ClientFolder, "Packs", "units", "models", "unit", unit.Name + ".glb"));
             var meshNodes = Glb(file).GetProperty("nodes").EnumerateArray().Where(it => it.TryGetProperty("mesh", out _)).Select(it => it.GetProperty("name").GetString()).ToList();
+            // T295: a styled unit (`style`) may replace or drop a kept KayKit item (the crossbow becomes a bow, a cape becomes fur); its model is checked by the style tests
+            if (unit.Value.TryGetProperty("style", out _)) continue;
             foreach (var keep in unit.Value.GetProperty("keep").EnumerateArray()) Assert.Contains(keep.GetString(), meshNodes);
         }
     }
@@ -102,7 +104,9 @@ public sealed class UnitModelContractTests
             Assert.Contains("leg_fl", nodes);
             Assert.Contains("hips", nodes); // the rider's own skeleton
             Assert.Equal(2, doc.GetProperty("skins").GetArrayLength());
-            Assert.Equal(["Horse", "TeamColor"], doc.GetProperty("materials").EnumerateArray().Select(it => it.GetProperty("name").GetString()).Order(StringComparer.Ordinal));
+            var materials = doc.GetProperty("materials").EnumerateArray().Select(it => it.GetProperty("name").GetString()).ToList();
+            Assert.Contains("Horse", materials); // the mount is one flat material, the rider (T295) has several: only cloth is TeamColor
+            Assert.Single(materials, "TeamColor");
             // every clip animates both the horse and the rider
             foreach (var clip in doc.GetProperty("animations").EnumerateArray())
             {

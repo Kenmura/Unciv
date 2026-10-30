@@ -23,6 +23,9 @@ public sealed class UnitVisualsScenario : Scenario
 
     public override string Name => "unit-visuals";
 
+    /// <summary>T295: every unit of the gallery, in its order (the unit-sheet scenario shows them all at the default zoom).</summary>
+    internal static IReadOnlyList<(string Unit, string? Terrain)> SheetUnits => [.. Slots.Select(it => it.Unit).Distinct().Select(u => (u, RigidRoster.Contains(u) && !AirRoster.Contains(u) && !LandRigidRoster.Contains(u) && u != "Catapult" && u != "Cannon" && u != "Tank" ? "Coast" : (string?)null))];
+
     public override bool Uses3D => true;
 
     public override IReadOnlyList<string> Checklist =>

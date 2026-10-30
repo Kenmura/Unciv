@@ -615,6 +615,13 @@ def add_image(m, rows):
     return len(m.doc["images"]) - 1
 
 
+def byte_weights(w):
+    """Four weights summing to 1 as normalized unsigned bytes summing to exactly 255."""
+    q = [int(round(x * 255)) for x in w]
+    q[q.index(max(q))] += 255 - sum(q)
+    return q
+
+
 def emit(m, prims, materials, uv_scale=5.0, fix_nodes=None):
     """Replaces every mesh of the model by the prims: skinned ones on one node, the others on the node they name; one glTF primitive per material (named in `materials`).
     Box-projected UVs (the plane of each triangle's dominant normal axis, uv_scale tiles per source unit) for the tiling detail textures; vertices are split per axis."""
@@ -680,7 +687,7 @@ def emit(m, prims, materials, uv_scale=5.0, fix_nodes=None):
                      "TEXCOORD_0": add_accessor(m, rows_uv, "VEC2", 5126, 34962), "COLOR_0": add_accessor(m, [[int(round(x * 255)) for x in r] for r in rows_c], "VEC4", 5121, 34962, normalized=True)}
             if pr.node == "skinned":
                 attrs["JOINTS_0"] = add_accessor(m, rows_j, "VEC4", 5121, 34962)
-                attrs["WEIGHTS_0"] = add_accessor(m, rows_w, "VEC4", 5126, 34962)
+                attrs["WEIGHTS_0"] = add_accessor(m, [byte_weights(w) for w in rows_w], "VEC4", 5121, 34962, normalized=True)  # T295: 4 bytes a vertex instead of 16
             primitives.append({"attributes": attrs, "indices": add_accessor(m, idx, "SCALAR", 5123, 34963), "material": mat_index[pr.mat]})
         doc["meshes"].append({"name": "Mesh_" + str(node_key), "primitives": primitives})
         if node_key == "skinned":
@@ -763,10 +770,10 @@ class Ctx:
         doc = m.doc
         self.names = [doc["nodes"][j]["name"] for j in doc["skins"][0]["joints"]]
         self.pos = {doc["nodes"][j]["name"]: newpos[j] for j in doc["skins"][0]["joints"]}
-        head = next(n for n in doc["nodes"] if n.get("name") == "Barbarian_Head")
+        head = next(n for n in doc["nodes"] if n.get("name", "").split("_", 1)[-1] in ("Head", "Head_Hooded") and "mesh" in n)  # T295: any KayKit body
         a = doc["accessors"][doc["meshes"][head["mesh"]]["primitives"][0]["attributes"]["POSITION"]]
         self.head_lo, self.head_hi = a["min"], a["max"]
-        body = next(n for n in doc["nodes"] if n.get("name") == "Barbarian_Body")
+        body = next(n for n in doc["nodes"] if n.get("name", "").endswith("_Body") and "mesh" in n)
         b = doc["accessors"][doc["meshes"][body["mesh"]]["primitives"][0]["attributes"]["POSITION"]]
         self.body_lo, self.body_hi = b["min"], b["max"]
 

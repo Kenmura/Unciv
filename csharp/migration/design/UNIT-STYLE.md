@@ -152,3 +152,20 @@ Polygon counts are triangles of the whole Warrior glb; the current Warrior is **
 - High and Ultra were rendered; Low and the compatibility renderer were not.
 - Walk, attack and death were checked by eye on single poses (`animation-check.jpg`), not as a full playback; the other two clips (attack_ranged, hit) were not looked at.
 - Android and the phone profile.
+
+## 9. Roll-out (T295)
+
+Option 3 "Fur barbarian" is rolled out to every humanoid and mounted unit by `Unciv.Godot/tools/build-unit-style.py`, selected per unit with a `"style"` key in `Unciv.Godot/Packs/units/attachments.json` (axe, sword, spear, bow, crossbow, javelin, scout, musket, rifle, crew, settler, worker and one style per great person). `build-unit-models.py` calls it; the generated geometry is parented under the hand slots like the KayKit weapons it replaces.
+
+Risks fixed first: the team-colour material only covers cloth pieces (tabard, kilt, cape, hat band), never the skin texture, so no blue patches; fur and gear get their own contrasting palette and a clearly different outline so it does not read as a brown blob at the default zoom.
+
+Recognisability: each class has its own silhouette (held item, headgear, size and posture): spear and pike long shaft, bow and crossbow, javelin bundle, musket and rifle long guns, crew weapon, hooded civilians with a sack or tool, tall or wide hats for the great people. Civilians carry no weapon and are shorter and stooped. Rule enforced by `UnitSilhouetteTests` (rasterised bind-pose silhouettes from four yaws, Jaccard distance; different styles at least 0.10, riders 0.06, civilian against soldier 0.16).
+
+Contact sheet at the default zoom on the real GPU (RTX 5060 Ti, `Unciv.Godot.Harness/tools/unit-sheet.sh <out-dir>`): `images/units/unit-sheet/unit-sheet-1.png` to `-4.png` (documentation, not goldens).
+
+![page 1](images/units/unit-sheet/unit-sheet-1.png)
+![page 2](images/units/unit-sheet/unit-sheet-2.png)
+![page 3](images/units/unit-sheet/unit-sheet-3.png)
+![page 4](images/units/unit-sheet/unit-sheet-4.png)
+
+Not done: the 44 rigid models (ships, siege, armour, aircraft) keep their T256 look (see the follow-up ticket). The units pack grew from 41 MB to 78 MB (64 px textures, vertex colours).

@@ -14,6 +14,7 @@ chunk are rewritten. The unit list is the data file `attachments.json` of the pa
 * `manifest.json` (key -> file) is rewritten from the unit list.
 """
 import copy
+import importlib.util
 import json
 import math
 import os
@@ -215,7 +216,7 @@ HORSE_PARTS = [
     ("leg_bl", (0.07, 0.13, -0.20), (0.06, 0.26, 0.06)),
     ("leg_br", (-0.07, 0.13, -0.20), (0.06, 0.26, 0.06)),
 ]
-HORSE_COLOUR = [0.45, 0.30, 0.18, 1.0]
+HORSE_COLOUR = [0.3, 0.2, 0.13, 1.0]  # T295: a dark, muted bay (the gritty style)
 
 # C095: the elephant has its own rig (same joint names as the horse, plus a trunk and two ears): a broad body on pillar legs, a short neck, a head with tusks and a hanging trunk
 ELEPHANT_JOINTS = [
@@ -248,7 +249,7 @@ ELEPHANT_PARTS = [
     ("leg_bl", (0.09, 0.14, -0.17), (0.09, 0.28, 0.09)),
     ("leg_br", (-0.09, 0.14, -0.17), (0.09, 0.28, 0.09)),
 ]
-ELEPHANT_COLOUR = [0.5, 0.48, 0.45, 1.0]
+ELEPHANT_COLOUR = [0.36, 0.34, 0.33, 1.0]
 
 # C095: the chariot is the horse rig scaled to 0.8 and moved forward, drawing a two-wheeled cart (floor, rails, axle, yoke pole, spoked wheels on the joints wheel_l and wheel_r) that the rider stands on
 CHARIOT_SCALE, CHARIOT_SHIFT = 0.8, 0.1
@@ -481,6 +482,8 @@ def merge_rider(horse, horse_bin, rider, rider_bin, saddle_height, tracks, body_
         pbr = material.get("pbrMetallicRoughness", {})
         if "baseColorTexture" in pbr:
             pbr["baseColorTexture"] = dict(pbr["baseColorTexture"], index=pbr["baseColorTexture"]["index"] + tex_off)
+        if "normalTexture" in material:  # T295: the styled riders carry normal maps
+            material["normalTexture"] = dict(material["normalTexture"], index=material["normalTexture"]["index"] + tex_off)
     for skin in rider["skins"]:
         horse["skins"].append({**skin, "joints": [j + node_off for j in skin["joints"]], "inverseBindMatrices": skin["inverseBindMatrices"] + acc_off, **({"skeleton": skin["skeleton"] + node_off} if "skeleton" in skin else {})})
     for node in rider["nodes"]:
@@ -570,6 +573,19 @@ def build_ram():
 
 # ----------------------------------------------------------------------------------------------------------------------------------------------- main
 
+_STYLE = []
+
+
+def style_module():
+    if _STYLE:
+        return _STYLE[0]
+    spec = importlib.util.spec_from_file_location("build_unit_style", os.path.join(os.path.dirname(os.path.abspath(__file__)), "build-unit-style.py"))
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    _STYLE.append(mod)
+    return mod
+
+
 def main(source, pack):
     data = json.load(open(os.path.join(pack, "attachments.json")))
     models = os.path.join(pack, "models", "unit")
@@ -577,7 +593,10 @@ def main(source, pack):
     keys = {}
     for name, unit in data["units"].items():
         doc, binary = read_glb(os.path.join(source, data["bodies"][unit["body"]]))
-        doc, binary = reduce_body(doc, binary, set(unit["keep"]), clips_for(data, unit), data["height"])
+        if "style" in unit:  # T295: the gritty unit style (build-unit-style.py)
+            doc, binary = style_module().build(source, unit["body"], unit["keep"], clips_for(data, unit), unit["style"])
+        else:
+            doc, binary = reduce_body(doc, binary, set(unit["keep"]), clips_for(data, unit), data["height"])
         path = os.path.join(models, name + ".glb")
         print(f"unit/{name}: {write_glb(path, doc, binary)} bytes")
         keys[f"unit/{name}"] = f"models/unit/{name}.glb"
@@ -585,7 +604,10 @@ def main(source, pack):
     for name, unit in mounted["units"].items():
         rider, rider_bin = read_glb(os.path.join(source, data["bodies"][unit["body"]]))
         clips = clips_for(data, unit)
-        rider, rider_bin = reduce_body(rider, rider_bin, set(unit["keep"]), clips, mounted["riderHeight"], seat=mounted["seat"])
+        if "style" in unit:  # T295
+            rider, rider_bin = style_module().build(source, unit["body"], unit["keep"], clips, unit["style"], seat=mounted["seat"], rider_height=mounted["riderHeight"])
+        else:
+            rider, rider_bin = reduce_body(rider, rider_bin, set(unit["keep"]), clips, mounted["riderHeight"], seat=mounted["seat"])
         mount = unit.get("mount", {})
         scale = mount.get("scale", 1.0)
         kind = mount.get("kind", "horse")
