@@ -294,6 +294,15 @@ class ReleaseWorkflowShape(unittest.TestCase):
         self.assertIn("python3 -I csharp/migration/tools/release_assets.py verify", self.text)
         self.assertIn("T280", self.text)  # the marked place for the Android job
 
+    def test_csharp_yml_server_job_builds_and_smokes_only(self):  # T266
+        text = WORKFLOW.read_text(encoding="utf-8")
+        job = re.search(r"(?ms)^  server-publish:\n(.*?)(?=^  \S|\Z)", text).group(1)
+        self.assertIn("needs: engine", job)
+        self.assertEqual(re.findall(r"for rid in ([\w\- ]+); do", job)[0].split(), ClientPlatforms().load("release_assets").SERVER_RIDS)
+        self.assertIn("dotnet publish Unciv.Server", job)
+        self.assertIn("release_assets.py smoke-server", job)
+        self.assertNotIn("upload-artifact", job)
+
     def test_csharp_yml_is_untouched_by_the_release(self):
         text = WORKFLOW.read_text(encoding="utf-8")
         self.assertNotIn("csharp-v", text)
@@ -397,6 +406,15 @@ class ReleaseAssets(unittest.TestCase):
             self.assertTrue(problems and "LISTENING" in problems[0], problems)
             fake.write_text("#!/bin/sh\nexit 3\n")
             self.assertTrue("--help failed" in self.mod.smoke_server(t)[0])
+
+    def test_smoke_server_accepts_a_coalesced_listening_line_and_a_clean_stop(self):
+        with tempfile.TemporaryDirectory() as t:
+            fake = Path(t) / "Unciv.Server"
+            fake.write_text("#!/bin/sh\n[ \"$1\" = --help ] && { echo '--game-id'; exit 0; }\ntrap 'exit 0' TERM\nprintf 'info line\\nLISTENING 5\\n'\nwhile :; do sleep 0.1; done\n")
+            fake.chmod(0o755)
+            self.assertEqual(self.mod.smoke_server(t), [])
+            fake.write_text(fake.read_text().replace("trap 'exit 0' TERM", "trap 'exit 4' TERM"))
+            self.assertTrue("expected 0" in self.mod.smoke_server(t)[0])
 
     def complete_dir(self, tmp):
         import zipfile

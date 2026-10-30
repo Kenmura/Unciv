@@ -73,7 +73,7 @@ jobs:
             (cd csharp && dotnet publish Unciv.Cli -c Release -r "$rid" --self-contained true -o "$RUNNER_TEMP/publish-$rid")
             python3 -I csharp/migration/tools/release_assets.py pack-cli "$rid" "$RUNNER_TEMP/publish-$rid" "$RUNNER_TEMP/assets"
           done
-      - name: Smoke the Linux CLI (no dotnet on PATH)
+      - name: Smoke the Linux CLI (PATH=/usr/bin:/bin, no DOTNET_ROOT)
         run: |
           mkdir "$RUNNER_TEMP/smoke" && tar -xzf "$RUNNER_TEMP/assets/Unciv-cli-linux-x64.tar.gz" -C "$RUNNER_TEMP/smoke"
           python3 -I csharp/migration/tools/release_assets.py smoke-cli "$RUNNER_TEMP/smoke/Unciv-cli-linux-x64"
@@ -109,7 +109,7 @@ jobs:
             (cd csharp && dotnet publish Unciv.Server -c Release -r "$rid" --self-contained true -o "$RUNNER_TEMP/publish-$rid")
             python3 -I csharp/migration/tools/release_assets.py pack-server "$rid" "$RUNNER_TEMP/publish-$rid" "$RUNNER_TEMP/assets"
           done
-      - name: Smoke the Linux server (no dotnet on PATH)
+      - name: Smoke the Linux server (PATH=/usr/bin:/bin, no DOTNET_ROOT)
         run: |
           mkdir "$RUNNER_TEMP/smoke" && tar -xzf "$RUNNER_TEMP/assets/Unciv-server-linux-x64.tar.gz" -C "$RUNNER_TEMP/smoke"
           python3 -I csharp/migration/tools/release_assets.py smoke-server "$RUNNER_TEMP/smoke/Unciv-server-linux-x64"

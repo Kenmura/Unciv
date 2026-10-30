@@ -129,7 +129,7 @@ SERVER_SMOKE_SECONDS = 60
 
 
 def smoke_server(server_dir):
-    """Problems (empty when fine): the published Linux server (no dotnet on PATH, folder outside any checkout) prints --help and exits 0, starts on a free port
+    """Problems (empty when fine): the published Linux server (PATH is only /usr/bin:/bin and DOTNET_ROOT is empty, so it must bring its own runtime; folder outside any checkout) prints --help and exits 0, starts on a free port
     (stdout line 'LISTENING <port>'), then stops on SIGTERM with exit 0. The host key and port are the only things it creates; the data dir is a temp folder."""
     import select
     import signal
@@ -141,24 +141,26 @@ def smoke_server(server_dir):
         h = subprocess.run([exe, "--help"], cwd=work, env=env, capture_output=True, text=True, timeout=SERVER_SMOKE_SECONDS)
         if h.returncode or "--game-id" not in h.stdout:
             return [f"Unciv.Server --help failed (exit {h.returncode}): {(h.stdout + h.stderr)[-600:]}"]
-        proc = subprocess.Popen([exe, "--port", "0", "--data-dir", str(Path(work) / "data"), "--game-id", "smoke"], cwd=work, env=env, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
-        seen, listening = [], False
+        proc = subprocess.Popen([exe, "--port", "0", "--data-dir", str(Path(work) / "data"), "--game-id", "smoke"], cwd=work, env=env, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        seen = b""
         try:
             deadline = time.monotonic() + SERVER_SMOKE_SECONDS
-            while time.monotonic() < deadline and proc.poll() is None and not listening:
-                if select.select([proc.stdout], [], [], 1)[0]:
-                    line = proc.stdout.readline()
-                    seen.append(line)
-                    listening = bool(re.match(r"LISTENING \d+$", line.strip()))
-            if not listening:
-                return [f"Unciv.Server did not print 'LISTENING <port>' within {SERVER_SMOKE_SECONDS}s (exit {proc.poll()}): {''.join(seen)[-600:]}"]
+            fd = proc.stdout.fileno()  # raw reads: a buffered readline() could hold the LISTENING line back from select()
+            while time.monotonic() < deadline and not re.search(rb"(?m)^LISTENING \d+\s*$", seen):
+                if select.select([fd], [], [], 1)[0]:
+                    chunk = os.read(fd, 65536)
+                    if not chunk:
+                        break
+                    seen += chunk
+            if not re.search(rb"(?m)^LISTENING \d+\s*$", seen):
+                return [f"Unciv.Server did not print 'LISTENING <port>' within {SERVER_SMOKE_SECONDS}s (exit {proc.poll()}): {seen.decode(errors='replace')[-600:]}"]
             proc.send_signal(signal.SIGTERM)
             try:
-                code = proc.wait(timeout=SERVER_SMOKE_SECONDS)
+                rest, _ = proc.communicate(timeout=SERVER_SMOKE_SECONDS)  # drains the pipe while waiting
             except subprocess.TimeoutExpired:
                 return ["Unciv.Server did not exit within the time limit after SIGTERM"]
-            if code != 0:
-                return [f"Unciv.Server exited {code} after SIGTERM (expected 0): {(''.join(seen) + proc.stdout.read())[-600:]}"]
+            if proc.returncode != 0:
+                return [f"Unciv.Server exited {proc.returncode} after SIGTERM (expected 0): {(seen + rest).decode(errors='replace')[-600:]}"]
         finally:
             if proc.poll() is None:
                 proc.kill()
@@ -218,7 +220,7 @@ def notes(tag, commit, date):
 | `{clients['macos']}` | **UNVERIFIED.** Exported and archive-checked only. Never started on a Mac. Unsigned and not notarised: Gatekeeper blocks the first launch, see `FIRST_RUN_MACOS.txt` inside. |
 | `{cli_archive_name('win-x64')}` | **UNVERIFIED.** Published self-contained, never run on Windows. |
 | `{cli_archive_name('osx-arm64')}` | **UNVERIFIED.** Published self-contained, never run on a Mac. Unsigned and not notarised. |
-| `{server_archive_name('linux-x64')}` | Smoke-tested in this workflow: `--help`, then started (printed `LISTENING <port>`) and stopped with SIGTERM (exit 0) with no .NET installed. Run guide: `Unciv.Server/README.md` in the repository. |
+| `{server_archive_name('linux-x64')}` | Smoke-tested in this workflow: `--help`, then started (printed `LISTENING <port>`) and stopped with SIGTERM (exit 0) without DOTNET_ROOT, from a folder outside the checkout. Run guide: `Unciv.Server/README.md` in the repository. |
 | `{server_archive_name('win-x64')}` | **UNVERIFIED.** Dedicated server published self-contained, never run on Windows (Ctrl+C is the only stop signal there). |
 
 This is a draft created by CI. The owner reviews it and publishes it by hand; nothing was published automatically.

@@ -20,7 +20,7 @@ There are no accounts, no web UI and no remote admin console.
 
 ## Get it
 
-- **Release archive.** `Unciv-server-linux-x64.tar.gz` or `Unciv-server-win-x64.zip` from the GitHub release (check them against `SHA256SUMS`). Each unpacks to one folder
+- **Release archive.** `Unciv-server-linux-x64.tar.gz` or `Unciv-server-win-x64.zip` from the GitHub release (check them against `SHA256SUMS`; in a local release the Windows folder may be absent if its build failed, which only warns). Each unpacks to one folder
   `Unciv-server-<rid>/` with the executable, the bundled .NET runtime (nothing to install), `data/jsons` (the rulesets, found next to the executable), `LICENSE` and this guide as `README.md`.
 - **Local release build.** `python3 -I migration/tools/release.py T###` writes `csharp-releases/<ticket>-<sha>/server-linux-x64/` and `server-win-x64/` (in the main checkout).
 - **From source.** `dotnet publish Unciv.Server -c Release -r linux-x64 --self-contained true -o out` (or `-r win-x64`), then copy `android/assets/jsons` to `out/data/jsons`,
@@ -91,7 +91,7 @@ A client that types only `address:port` is shown the fingerprint once and asks "
 - The invite is printed only with `--print-invite`; start the server with it whenever you need the invite again (the fingerprint only changes if `host-key.pfx` does). Read the fingerprint to friends
   over another channel if you want to be strict.
 - With a password set, `--print-invite` also mints a join token (`/token`, valid for 24 hours, redeemed when a friend uses it, so one friend per invite) so they need not type the password;
-  friends without the token must give the password. The password is never logged or written to disk.
+  friends without the token must give the password. The plain password is never logged or stored (only a hash is kept in `game.json`). Tokens live in memory only: after a restart, print a new invite.
 - TLS 1.3 is preferred, TLS 1.2 is the fallback, both with the pinned key (`design/SERVER.md` 6.3a, 6.4).
 
 ## Resume with --game-id
@@ -151,5 +151,5 @@ WantedBy=multi-user.target
 python3 -I migration/tools/release_assets.py smoke-server <unpacked Unciv-server-linux-x64 folder>
 ```
 
-(from `csharp/`) runs the binary with an empty `PATH`: `--help`, then a start on a free port that must print `LISTENING <port>`, then SIGTERM and exit 0. It prints `OK` and exits 0 when all pass.
+(from `csharp/`) runs the binary with `PATH=/usr/bin:/bin` and no `DOTNET_ROOT` (it must bring its own runtime): `--help`, then a start on a free port that must print `LISTENING <port>`, then SIGTERM and exit 0. It prints `OK` and exits 0 when all pass.
 CI (`csharp.yml`, job `server-publish`) and the release workflow run exactly this on the unpacked archive.
