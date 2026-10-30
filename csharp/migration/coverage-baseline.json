@@ -531,7 +531,7 @@
     "Unciv.Core/Models/Ruleset/PolicyBranch.cs": {"branch": 100.0, "line": 100.0},
     "Unciv.Core/Models/Ruleset/Quest.cs": {"branch": 95.65, "line": 97.56},
     "Unciv.Core/Models/Ruleset/RuinReward.cs": {"branch": 100.0, "line": 100.0},
-    "Unciv.Core/Models/Ruleset/Ruleset.cs": {"branch": 94.35, "line": 98.32},
+    "Unciv.Core/Models/Ruleset/Ruleset.cs": {"branch": 94.58, "line": 98.33},
     "Unciv.Core/Models/Ruleset/RulesetCache.cs": {"branch": 91.3, "line": 97.52},
     "Unciv.Core/Models/Ruleset/RulesetFile.cs": {"branch": 83.33, "line": 98.48},
     "Unciv.Core/Models/Ruleset/RulesetFiles.cs": {"branch": 50.0, "line": 64.71},
