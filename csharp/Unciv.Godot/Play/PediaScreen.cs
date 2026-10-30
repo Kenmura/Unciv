@@ -22,6 +22,7 @@ public partial class PediaScreen : PanelContainer
     private readonly TooltipHost tooltips;
     private readonly LineEdit search = new() { Name = "PediaSearch", PlaceholderText = "Search".Tr(), ClearButtonEnabled = true };
     private readonly Button back = new() { Name = "PediaBack", Text = "Back".Tr(), Disabled = true, ThemeTypeVariation = UiVariants.ButtonGhost, SizeFlagsHorizontal = SizeFlags.ShrinkBegin };
+    private readonly Button clear = new() { Name = "PediaSearchClear", Text = "Clear".Tr(), Visible = false, ThemeTypeVariation = UiVariants.ButtonGhost };
     private readonly List<PediaEntry> shown = [];
     private readonly Stack<PediaEntry> history = new();
     private readonly Dictionary<CivilopediaCategories, Button> categoryButtons = [];
@@ -59,6 +60,7 @@ public partial class PediaScreen : PanelContainer
         search.TextSubmitted += _ => OpenFirstResult();
         search.GuiInput += OnSearchInput;
         back.Pressed += Back;
+        clear.Pressed += () => SearchFor("");
         BuildFrame();
     }
 
@@ -83,6 +85,7 @@ public partial class PediaScreen : PanelContainer
         {
             search.GetParent()?.RemoveChild(search);
             back.GetParent()?.RemoveChild(back);
+            clear.GetParent()?.RemoveChild(clear);
             RemoveChild(frame);
             frame.QueueFree();
         }
@@ -97,7 +100,22 @@ public partial class PediaScreen : PanelContainer
         frame = new ScreenFrame(theme, "Civilopedia", closeLabel: "Close");
         frame.CloseRequested += Close;
         search.CustomMinimumSize = new Vector2(theme.Px(120), 0);
-        frame.SetHeaderStrip(search);
+        if (theme.MinTargetPx > 0)
+        {
+            // T285: the line edit's own clear icon is about 15 px; on a touch profile a real button replaces it
+            search.ClearButtonEnabled = false;
+            var strip = new HBoxContainer();
+            strip.AddThemeConstantOverride("separation", gap);
+            search.SizeFlagsHorizontal = SizeFlags.ExpandFill;
+            strip.AddChild(search);
+            strip.AddChild(clear);
+            frame.SetHeaderStrip(strip);
+        }
+        else
+        {
+            search.ClearButtonEnabled = true;
+            frame.SetHeaderStrip(search);
+        }
         AddChild(frame);
 
         var middle = new HBoxContainer();
@@ -266,6 +284,7 @@ public partial class PediaScreen : PanelContainer
             child.QueueFree();
         }
         bool searching = text.Trim().Length != 0;
+        clear.Visible = text.Length > 0;
         entryScroll.Visible = !searching;
         searchScroll.Visible = searching;
         if (!searching) return;

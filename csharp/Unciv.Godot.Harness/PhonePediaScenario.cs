@@ -9,7 +9,7 @@ namespace Unciv.GodotHarness;
 
 /// <summary>
 /// T285: the Civilopedia as a phone shows it: a 2400x1080 window at 400 ppi (scale 2.5, 48 dp = 120 px targets). A category page, an entry page (header card, headings, links),
-/// and the search results are each asserted to have only touch-sized buttons, no text that leaves the window, is cut off or overlaps another, and no content behind a
+/// and the search results are each asserted to have only touch-sized buttons, no label or button text that leaves the window, is cut off or overlaps another (the first screenful: what is scrolled out of view is not judged), and no content behind a
 /// container that cannot scroll. Real-device behaviour is not covered.
 /// </summary>
 public sealed class PhonePediaScenario : Scenario
@@ -61,7 +61,7 @@ public sealed class PhonePediaScenario : Scenario
         steps.Add(new Act("search for 'ar'", () => screen.Pedia.SearchFor("ar")));
         steps.Add(new WaitFrames(5));
         steps.AddRange(Check("Civilopedia search results", () => screen.Pedia));
-        steps.Add(new Capture("search", "Civilopedia search on a phone: results list with 48 dp rows over the whole pedia"));
+        steps.Add(new Capture("search", "Civilopedia search on a phone: results list with 48 dp rows over the whole pedia, and a 48 dp Clear button beside the box"));
         return steps;
     }
 }
