@@ -62,6 +62,25 @@ public sealed class ClientSessionOptions
     /// </summary>
     public string? StandbyRoot { get; init; }
 
+    /// <summary>
+    /// T273: opens a connection to one announced endpoint (<c>host:port</c>) of the successor after a <see cref="HostHandoff"/>. The fingerprint is checked by the session itself against the successor's
+    /// announcement (<see cref="HostSuccessor"/>). Without it (or <see cref="OnHandoff"/>) a hand-off is treated like a plain <see cref="HostClosing"/>.
+    /// </summary>
+    public Func<string, CancellationToken, Task<ITransport>>? ConnectEndpoint { get; init; }
+
+    /// <summary>
+    /// T273: called once per hand-off, after the old connection ended and before the session connects to the successor. The designated successor's process promotes its standby copy here (it must be
+    /// complete: a hand-off is only sent once it is) and returns the connector of its own new host (an in-memory loopback); every other client returns null and uses <see cref="ConnectEndpoint"/>.
+    /// A throw ends the redirect (the session then runs its normal reconnect and gives up).
+    /// </summary>
+    public Func<HostHandoff, CancellationToken, Task<Func<CancellationToken, Task<ITransport>>?>>? OnHandoff { get; init; }
+
+    /// <summary>T273: the promotion proof for <see cref="KnownEpoch"/> loaded from the per-game store (null: none). Sent in <c>Hello</c> so a superseded host can verify the claim.</summary>
+    public PromotionProof? EpochProof { get; init; }
+
+    /// <summary>T273: called when the session joined a promoted host, with the proof that host presented, so the UI layer persists it next to <see cref="KnownEpoch"/>.</summary>
+    public Action<PromotionProof>? PersistEpochProof { get; init; }
+
     public int MaxReconnectAttempts { get; init; } = 5;
 
     /// <summary>T292: waits before resubscribe attempt n (1-based) after the host answered a subscribe or stopped its stream with <c>standby-protocol</c>. The default backs off 1, 2, 4, ... 30 seconds; tests pass an immediate one.</summary>
@@ -147,6 +166,16 @@ public sealed class ClientSession : IAsyncDisposable
     private int connectionEpoch;
     private TaskCompletionSource? resyncWaiter;
 
+    // T273: a hand-off in progress. The address and fingerprint the next handshake is checked against start as the options say and move to the successor while a redirect runs.
+    private HostHandoff? redirect;
+    private Func<CancellationToken, Task<ITransport>>? redirectConnector;
+    private bool redirectPrepared;
+    private bool redirectAnnounced;
+    private string hostAddress = "";
+    private string? expectedFingerprint;
+    private PromotionProof? epochProof;
+    private PromotionProof? pendingProof;
+
     // T272: standby replication (receive-loop state; one connection at a time).
     // T292: the frames are applied (and fsynced) by a worker, not the receive loop, so a slow disk never delays heartbeats, pongs or the game stream. Everything below up to standbyHave is guarded by standbyGate
     // (the worker applies under it; closing the store waits for the frame in progress).
@@ -183,6 +212,9 @@ public sealed class ClientSession : IAsyncDisposable
         this.options = options;
         gameId = options.GameId;
         knownEpoch = Math.Max(0, options.KnownEpoch ?? 0);
+        hostAddress = options.HostAddress;
+        expectedFingerprint = options.ExpectedFingerprint;
+        epochProof = options.EpochProof;
         var random = options.Random ?? SystemSecureRandom.Instance;
         Span<byte> bytes = stackalloc byte[6];
         random.Fill(bytes);
@@ -646,8 +678,9 @@ public sealed class ClientSession : IAsyncDisposable
             handshakeTimedOut = false;
             using var timer = CancellationTokenSource.CreateLinkedTokenSource(token);
             handshakeTimer = timer;
+            if (redirect != null && !redirectPrepared && !await PrepareRedirectAsync(token).ConfigureAwait(false)) redirect = null; // promotion failed: the normal reconnect runs (and gives up)
             timer.CancelAfter(options.HandshakeTimeout);
-            try { current = await connect(timer.Token).ConfigureAwait(false); }
+            try { current = await ConnectAsync(attempt, timer.Token).ConfigureAwait(false); }
             catch (OperationCanceledException) when (token.IsCancellationRequested) { break; }
             catch (OperationCanceledException) { handshakeTimedOut = true; }
             catch (Exception) { /* any failure to connect (socket, TLS, factory bug) is a failed attempt: fall through to the retry logic */ }
@@ -680,6 +713,37 @@ public sealed class ClientSession : IAsyncDisposable
         }
     }
 
+    // The connection factory of the session, or, while a hand-off redirect runs, the successor: its own connector (the promoted process) or one of the announced endpoints (rotated per attempt).
+    private Task<ITransport> ConnectAsync(int attempt, CancellationToken token)
+    {
+        if (redirect == null) return connect(token);
+        if (redirectConnector != null) return redirectConnector(token);
+        var endpoints = redirect.Successor.Endpoints;
+        var endpoint = endpoints[attempt % endpoints.Count];
+        hostAddress = endpoint;
+        expectedFingerprint = redirect.Successor.Fingerprint;
+        return options.ConnectEndpoint!(endpoint, token);
+    }
+
+    private async Task<bool> PrepareRedirectAsync(CancellationToken token)
+    {
+        redirectPrepared = true;
+        var handoff = redirect!;
+        hostAddress = handoff.Successor.Endpoints[0];
+        expectedFingerprint = handoff.Successor.Fingerprint;
+        if (options.OnHandoff == null) return options.ConnectEndpoint != null;
+        try
+        {
+            redirectConnector = await options.OnHandoff(handoff, token).ConfigureAwait(false);
+            return redirectConnector != null || options.ConnectEndpoint != null;
+        }
+        catch (Exception e) when (e is not OperationCanceledException)
+        {
+            Emit(new ProtocolError(ClientCodes.BadPromotion)); // the successor's process could not promote; nobody else will host this game from here
+            return false;
+        }
+    }
+
     private async Task RunConnectionAsync(ITransport current, CancellationTokenSource timer, CancellationToken lifetimeToken)
     {
         transport = current;
@@ -702,7 +766,8 @@ public sealed class ClientSession : IAsyncDisposable
                 ModChecksums = options.ModSync != null && options.ModChecksums != null ? new Dictionary<string, string>(options.ModChecksums) : null,
                 GameId = gameId != null && knownEpoch > 0 ? gameId : null,
                 KnownEpoch = gameId != null && knownEpoch > 0 ? knownEpoch : null,
-                HostMigration = options.AdvertiseHostMigration ? true : null
+                HostMigration = options.AdvertiseHostMigration ? true : null,
+                EpochProof = gameId != null && knownEpoch > 0 && epochProof is { } held && held.Epoch == knownEpoch && string.Equals(held.GameId, gameId, StringComparison.Ordinal) ? held : null
             }, token).ConfigureAwait(false);
 
             keepAliveTask = RunKeepAliveAsync(keepAlive.Token);
@@ -817,6 +882,9 @@ public sealed class ClientSession : IAsyncDisposable
             case HostClosing:
                 Emit(new HostClosed());
                 return true;
+            case HostHandoff handoff:
+                HandleHandoff(handoff);
+                return true;
             case Error error:
                 Emit(new ProtocolError(error.Code));
                 if (string.Equals(error.Code, ErrorCodes.StandbyViolation, StringComparison.Ordinal)) ScheduleStandbyResubscribe(token);
@@ -828,6 +896,33 @@ public sealed class ClientSession : IAsyncDisposable
                 Emit(new ProtocolError(ErrorCodes.InvalidMessage));
                 return true;
         }
+    }
+
+    /// <summary>
+    /// T273: the host quit cleanly and named its successor. It came over the authenticated host channel, but is still checked: the next epoch of the game this session is in, and exactly the successor this host
+    /// announced earlier (same key and fingerprint, endpoints among the announced ones). Anything else is not followed (the session behaves as for a plain <see cref="HostClosing"/>).
+    /// </summary>
+    private void HandleHandoff(HostHandoff handoff)
+    {
+        var announced = Successor?.Successor;
+        var acceptable = (options.ConnectEndpoint != null || options.OnHandoff != null)
+            && announced != null && Successor!.Epoch == connectionEpoch && handoff.Epoch == connectionEpoch + 1
+            && (gameId == null || string.Equals(gameId, handoff.GameId, StringComparison.Ordinal))
+            && handoff.GameId.Length is > 0 and <= 200
+            && string.Equals(announced.KeyId, handoff.Successor.KeyId, StringComparison.Ordinal) && HostKey.Matches(announced.Fingerprint, handoff.Successor.Fingerprint)
+            && handoff.Successor.Endpoints.Count is > 0 and <= 8 && handoff.Successor.Endpoints.All(it => announced.Endpoints.Contains(it, StringComparer.Ordinal));
+        if (!acceptable)
+        {
+            Emit(new ProtocolError(ErrorCodes.InvalidMessage));
+            Emit(new HostClosed());
+            return;
+        }
+        gameId ??= handoff.GameId;
+        redirect = handoff;
+        redirectPrepared = false;
+        redirectAnnounced = false;
+        redirectConnector = null;
+        Emit(new HostHandedOff(handoff));
     }
 
     /// <summary>What the last mod sync installed (set before the session ends with <see cref="ModSyncCodes.Synced"/>); the caller hot-loads it and joins again.</summary>
@@ -928,6 +1023,20 @@ public sealed class ClientSession : IAsyncDisposable
             await EndAsync(ClientCodes.StaleEpoch, refused: true).ConfigureAwait(false);
             return false;
         }
+        pendingProof = null;
+        if (redirect != null)
+        {
+            // Redirected by a hand-off: the host here must be the successor the old host named, promoted to exactly the announced epoch, and say so with the successor's own signature.
+            var proof = welcome.Promotion;
+            if (epoch != redirect.Epoch || proof == null || !PlayerKeys.VerifyPromotion(proof) || proof.Epoch != redirect.Epoch
+                || !string.Equals(proof.GameId, redirect.GameId, StringComparison.Ordinal) || !string.Equals(proof.KeyId, redirect.Successor.KeyId, StringComparison.Ordinal)
+                || !HostKey.Matches(proof.Fingerprint, welcome.HostKeyFingerprint))
+            {
+                await EndAsync(ClientCodes.BadPromotion, refused: true).ConfigureAwait(false);
+                return false;
+            }
+            pendingProof = proof;
+        }
         connectedHostFingerprint = welcome.HostKeyFingerprint;
         connectionEpoch = epoch;
         pendingEpoch = epoch; // remembered only once the host accepted our seat (JoinOk), so a refused join or a wrong game cannot move the stored epoch
@@ -947,13 +1056,13 @@ public sealed class ClientSession : IAsyncDisposable
     private async Task<string?> CheckHostKeyAsync(string presented)
     {
         var known = options.KnownHosts;
-        var address = options.HostAddress;
+        var address = hostAddress;
         var pinnedTrust = known?.Check(address, presented) ?? HostTrust.Unknown;
         if (pinnedTrust == HostTrust.Mismatch) return ClientCodes.HostKeyChanged;
 
-        if (!string.IsNullOrEmpty(options.ExpectedFingerprint))
+        if (!string.IsNullOrEmpty(expectedFingerprint))
         {
-            if (!HostKey.Matches(options.ExpectedFingerprint, presented)) return ClientCodes.HostKeyMismatch;
+            if (!HostKey.Matches(expectedFingerprint, presented)) return ClientCodes.HostKeyMismatch;
         }
         else if (pinnedTrust != HostTrust.Trusted)
         {
@@ -988,6 +1097,19 @@ public sealed class ClientSession : IAsyncDisposable
             knownEpoch = pendingEpoch;
             try { options.PersistKnownEpoch?.Invoke(pendingEpoch); }
             catch (Exception e) when (e is IOException or UnauthorizedAccessException) { /* a store that cannot write must not abort the join; the epoch is kept in memory */ }
+        }
+        if (pendingProof != null)
+        {
+            epochProof = pendingProof;
+            try { options.PersistEpochProof?.Invoke(pendingProof); }
+            catch (Exception e) when (e is IOException or UnauthorizedAccessException) { /* kept in memory */ }
+            pendingProof = null;
+        }
+        if (redirect != null && !redirectAnnounced)
+        {
+            // The redirect is done. The session stays on the successor (a later drop reconnects there, not to the old host).
+            redirectAnnounced = true;
+            Emit(new HostChanged(redirect.Epoch));
         }
 
         // The state moves before JoinAsync completes, so a caller that awaits the join never observes the stale Joining state.
@@ -1039,6 +1161,7 @@ public sealed class ClientSession : IAsyncDisposable
                 queries.FailAll(); // an answer computed against the old state must not be applied to the new one
                 SetState(ClientSessionState.InGame);
                 Emit(new SnapshotReplaced(Game.Snapshot!));
+                if (message.RolledBack == true) Emit(new HostRolledBack(Math.Max(0, message.LostCommands ?? 0)));
                 lock (gate)
                 {
                     resyncWaiter?.TrySetResult();

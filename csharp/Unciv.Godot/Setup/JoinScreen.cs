@@ -265,6 +265,8 @@ public partial class JoinScreen : Control
                 KnownHosts = env.KnownHosts,
                 PersistKnownHosts = env.PersistKnownHosts,
                 TrustPrompt = (address, fingerprint) => AskTrustAsync(address, fingerprint, cancellation),
+                // T273: a host that quits cleanly hands the game to its backup host; the session follows the announced endpoint (its fingerprint is checked by the session itself).
+                ConnectEndpoint = (endpoint, token) => JoinModel.Parse(endpoint).Target is { } successor ? env.Connect(successor, token) : throw new InvalidOperationException("The announced endpoint is not usable"),
                 ModChecksums = round == 0 ? sync?.LocalChecksums() : null,
                 ModSync = round == 0 ? sync : null, // one download per attempt: a host that still disagrees afterwards is refused, never looped on
             });

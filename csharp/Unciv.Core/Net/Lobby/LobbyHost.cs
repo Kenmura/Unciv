@@ -113,6 +113,9 @@ public sealed class LobbyHost : IAsyncDisposable
         /// <summary>T247: the client announced it can take mod files and its rules differ, so this connection ends in a <see cref="ModManifest"/> instead of a seat.</summary>
         public bool ModSync { get; set; }
 
+        /// <summary>T273: the client's Hello advertised host migration (it understands <c>HostHandoff</c>).</summary>
+        public bool HostMigration { get; set; }
+
         /// <summary>T247: the manifest this connection was sent (null before); only its files are served, each once.</summary>
         public ModManifest? ModManifestSent { get; set; }
 
@@ -241,6 +244,16 @@ public sealed class LobbyHost : IAsyncDisposable
         lock (gate)
         {
             return sessions.TryGetValue(sessionId, out var s) ? s.GameTransport : null;
+        }
+    }
+
+    /// <summary>T273: true when the connection's Hello said it understands <c>HostHandoff</c> (so the running game may send it one instead of the plain <c>HostClosing</c>).</summary>
+    public bool AdvertisesHostMigration(string? sessionId)
+    {
+        if (sessionId == null) return false;
+        lock (gate)
+        {
+            return sessions.TryGetValue(sessionId, out var s) && s.HostMigration;
         }
     }
 
@@ -399,6 +412,10 @@ public sealed class LobbyHost : IAsyncDisposable
             return;
         }
 
+        lock (gate)
+        {
+            session.HostMigration = hello.HostMigration == true;
+        }
         var expectedRulesetHash = Settings.ComputeRulesetHash();
         if (!string.Equals(hello.RulesetHash, expectedRulesetHash, StringComparison.OrdinalIgnoreCase))
         {

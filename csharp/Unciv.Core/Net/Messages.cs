@@ -61,6 +61,12 @@ public sealed record Hello : Message
 
     /// <summary>T269: true when this client understands host migration (<c>HostSuccessor</c>, <c>HostHandoff</c>). A host sends the plain <see cref="HostClosing"/> to a client without it.</summary>
     public bool? HostMigration { get; init; }
+
+    /// <summary>
+    /// T273: proof that a promotion to <see cref="KnownEpoch"/> really happened (signed by the successor's seat key, see <see cref="PromotionProof"/>). A host persists "superseded" only for a claim it can verify;
+    /// a bare <see cref="KnownEpoch"/> from a seat holder only makes that one connection refuse (a forged epoch can no longer fence a host for good).
+    /// </summary>
+    public PromotionProof? EpochProof { get; init; }
 }
 
 public sealed record Join : Message
@@ -156,6 +162,9 @@ public sealed record Welcome : Message
 
     /// <summary>T281: the name-free trust notice, present while the host intends a backup host, so a client can show it before it sends <c>Join</c> (the player is named in <c>LobbyState.BackupHostNotice</c> after joining).</summary>
     public string? BackupHostNotice { get; init; }
+
+    /// <summary>T273: set by a host that was promoted from a standby (epoch above 0): the successor's signed statement that it took this game over at <see cref="Epoch"/> with this host key. Clients redirected by a <see cref="HostHandoff"/> require it.</summary>
+    public PromotionProof? Promotion { get; init; }
 }
 
 public sealed record JoinOk : Message
@@ -223,6 +232,12 @@ public sealed record Snapshot : Message
     public required List<JsonElement> Diplomacy { get; init; }
     public required List<JsonElement> PendingTrades { get; init; }
     public required List<JsonElement> Notifications { get; init; }
+
+    /// <summary>T273: true when this snapshot answers a <see cref="Resume"/> whose <c>LastSeq</c> was ahead of the host (the host changed and some acknowledged commands were never replicated): the mirror is replaced and the player is told.</summary>
+    public bool? RolledBack { get; init; }
+
+    /// <summary>T273: with <see cref="RolledBack"/>, how many commands the client had applied that this host does not have.</summary>
+    public long? LostCommands { get; init; }
 
     /// <summary>T224: the recipient's own popup alerts and pending decisions (empty for a message from a host that predates them).</summary>
     public List<JsonElement> PopupAlerts { get; init; } = [];
@@ -307,6 +322,35 @@ public sealed record ModFileData : Message
 }
 
 public sealed record HostClosing : Message;
+
+/// <summary>
+/// T273, design/HOST-MIGRATION.md section 2 (graceful hand-off): the host is quitting cleanly and the designated successor holds every command up to <c>FinalSeq</c>.
+/// Sent instead of <see cref="HostClosing"/>, on the authenticated session, to the successor and to every client that advertised <c>Hello.HostMigration</c>. <c>Epoch</c> is the new host's epoch (the old one plus one),
+/// <c>GameId</c> the game that is handed over, <c>Successor</c> the endpoints and fingerprint announced earlier (a client accepts it only when it equals its own announcement), <c>FinalHash</c> the full state hash (<c>ReplayVerifier.FullHash</c>, hex) of the game at
+/// <c>FinalSeq</c> that the promoted game must reproduce, and <c>DepartedKeyId</c> the key of the quitting host's own player seat (absent for a dedicated host), which the new host treats as a clean leave.
+/// </summary>
+public sealed record HostHandoff : Message
+{
+    public required string GameId { get; init; }
+    public required int Epoch { get; init; }
+    public required SuccessorInfo Successor { get; init; }
+    public required long FinalSeq { get; init; }
+    public required string FinalHash { get; init; }
+    public string? DepartedKeyId { get; init; }
+}
+
+/// <summary>
+/// T273: the successor's statement that it took game <c>GameId</c> over at <c>Epoch</c>, with host key <c>Fingerprint</c>, signed with its seat key <c>KeyId</c> (<see cref="Unciv.Net.Identity.PlayerKeys.VerifyPromotion"/>).
+/// Anyone can check the signature, but only the key the old host designated can be accepted as the signer, so a seat holder cannot invent a promotion.
+/// </summary>
+public sealed record PromotionProof
+{
+    public required string GameId { get; init; }
+    public required int Epoch { get; init; }
+    public required string KeyId { get; init; }
+    public required string Fingerprint { get; init; }
+    public required string Signature { get; init; }
+}
 
 // ---------------------------------------------------------------- backup host (T281, design/HOST-MIGRATION.md sections 1 and 3)
 

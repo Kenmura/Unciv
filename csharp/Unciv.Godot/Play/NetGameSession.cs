@@ -168,7 +168,7 @@ public sealed class NetGameSession : IGameSession, ITurnRoster, IGameSocial, IAs
                             ConnectionChanged?.Invoke();
                         });
                         break;
-                    case HostClosed:
+                    case HostClosed or HostHandedOff: // T273: the host handed the game to its backup host; the session reconnects there (the notices are T275)
                         Raise(() =>
                         {
                             HostClosing = true;

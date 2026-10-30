@@ -25,6 +25,9 @@ public sealed class HostSession
     public string? PlayerKeyId { get; init; }
     public required ITransport Transport { get; init; }
     public ClientSnapshot? PreviousSnapshot { get; set; }
+
+    /// <summary>T273: the client's Hello advertised host migration, so a clean quit may send it <see cref="HostHandoff"/>.</summary>
+    public bool HostMigration { get; init; }
     public bool IsOpen => Transport.IsOpen;
 
     private long lastInboundMillis;
@@ -168,7 +171,7 @@ public sealed partial class GameHost : IAsyncDisposable
     /// Attaches an authenticated session bound to <paramref name="boundCivId"/>, seeds its initial snapshot,
     /// sends the Snapshot message, and starts reading from the transport.
     /// </summary>
-    public async Task AttachSessionAsync(string sessionId, string boundCivId, ITransport transport, string? playerKeyId = null)
+    public async Task AttachSessionAsync(string sessionId, string boundCivId, ITransport transport, string? playerKeyId = null, bool hostMigration = false)
     {
         var completion = new TaskCompletionSource<bool>();
         await mailbox.Writer.WriteAsync(async () =>
@@ -182,6 +185,7 @@ public sealed partial class GameHost : IAsyncDisposable
                     SessionId = sessionId,
                     BoundCivId = boundCivId,
                     PlayerKeyId = playerKeyId,
+                    HostMigration = hostMigration,
                     Transport = new BoundedSendTransport(transport, limits.MaxQueuedFrames, limits.MaxQueuedBytes),
                     LastInboundMillis = clock.NowMillis
                 };
@@ -393,26 +397,33 @@ public sealed partial class GameHost : IAsyncDisposable
         if (closed) return;
         closed = true;
 
-        await EnqueueAsync(async () =>
-        {
-            // Finish a half-resolved round first so the final snapshot is taken at a safe point (SERVER.md 5.3).
-            if (session.Game.TurnState is { Phase: SimultaneousPhase.Resolving })
-            {
-                PumpResolving();
-            }
-            StopStandbyStream();
-            foreach (var s in sessions.Values.ToList())
-            {
-                await SafeSendAsync(s, new HostClosing());
-                await s.Transport.CloseAsync();
-                remoteQueries.EndSession(s.SessionId);
-                gate.EndSession(s.SessionId);
-                turnTimer.Disconnect(s.BoundCivId);
-            }
-            sessions.Clear();
-            store?.CloseCleanly(session.Game);
-        });
+        await EnqueueAsync(() => CloseSessionsAndStoreAsync(null)).ConfigureAwait(false);
+        await StopActorAsync().ConfigureAwait(false);
+    }
 
+    /// <summary>The body of a clean close, on the actor. <paramref name="handoff"/> (T273) is sent instead of <see cref="HostClosing"/> to the sessions that advertised host migration.</summary>
+    private async Task CloseSessionsAndStoreAsync(HostHandoff? handoff)
+    {
+        // Finish a half-resolved round first so the final snapshot is taken at a safe point (SERVER.md 5.3).
+        if (session.Game.TurnState is { Phase: SimultaneousPhase.Resolving })
+        {
+            PumpResolving();
+        }
+        StopStandbyStream();
+        foreach (var s in sessions.Values.ToList())
+        {
+            await SafeSendAsync(s, handoff != null && s.HostMigration ? handoff : new HostClosing());
+            await s.Transport.CloseAsync();
+            remoteQueries.EndSession(s.SessionId);
+            gate.EndSession(s.SessionId);
+            turnTimer.Disconnect(s.BoundCivId);
+        }
+        sessions.Clear();
+        store?.CloseCleanly(session.Game);
+    }
+
+    private async Task StopActorAsync()
+    {
         cts.Cancel();
         mailbox.Writer.TryComplete();
         if (actorTask != null)
@@ -541,7 +552,8 @@ public sealed partial class GameHost : IAsyncDisposable
             await SafeSendAsync(hostSession, new Error { Code = ErrorCodes.InvalidMessage, Detail = "Mismatched game ID" });
             return;
         }
-        await SendFullSnapshotAsync(hostSession);
+        // T273: a client ahead of this host (the host changed and some acknowledged commands were never replicated) gets its mirror replaced and is told how much was lost.
+        await SendFullSnapshotAsync(hostSession, resume.LastSeq > session.LastSeq ? resume.LastSeq - session.LastSeq : null);
     }
 
     private static RemoteQueryHost CreateDefaultRemoteQueryHost()
@@ -580,7 +592,7 @@ public sealed partial class GameHost : IAsyncDisposable
         }
     }
 
-    private async Task SendFullSnapshotAsync(HostSession hostSession)
+    private async Task SendFullSnapshotAsync(HostSession hostSession, long? lostCommands = null)
     {
         var civ = session.Game.GetCivilizationOrNull(hostSession.BoundCivId);
         if (civ == null) return;
@@ -590,6 +602,7 @@ public sealed partial class GameHost : IAsyncDisposable
         hostSession.PreviousSnapshot = snapshot;
 
         var msg = SnapshotBuilder.ToMessage(snapshot);
+        if (lostCommands is > 0) msg = msg with { RolledBack = true, LostCommands = lostCommands };
         await SafeSendAsync(hostSession, msg);
     }
 

@@ -95,7 +95,7 @@ public sealed class FileGameStore : IGameStore, IReplicationSource
         lock (gate)
         {
             var held = ReadMeta();
-            WriteAtomic(PathOf(MetaName), Encoding.UTF8.GetBytes(UncivJson.Serialize(meta with { GameId = GameId, HostSecret = held.HostSecret, HostEpoch = held.HostEpoch, SeenEpoch = held.SeenEpoch })));
+            WriteAtomic(PathOf(MetaName), Encoding.UTF8.GetBytes(UncivJson.Serialize(meta with { GameId = GameId, HostSecret = held.HostSecret, HostEpoch = held.HostEpoch, SeenEpoch = held.SeenEpoch, Promotion = held.Promotion })));
             Changed?.Invoke(ReplicationChange.Meta);
         }
     }
@@ -110,6 +110,32 @@ public sealed class FileGameStore : IGameStore, IReplicationSource
             var seen = Math.Max(held.SeenEpoch, seenEpoch);
             if (host == held.HostEpoch && seen == held.SeenEpoch) return;
             WriteAtomic(PathOf(MetaName), Encoding.UTF8.GetBytes(UncivJson.Serialize(held with { HostEpoch = host, SeenEpoch = seen })));
+        }
+    }
+
+    /// <summary>
+    /// T273: this directory becomes the game of a promoted host. <c>game.json</c> gets <paramref name="epoch"/> and <paramref name="proof"/> (the successor's signed statement, whose game and epoch must match),
+    /// and the log header line gets <c>HostEpoch</c> too (the log is rewritten atomically, so a crash leaves a complete old or new file). The epoch never goes down.
+    /// </summary>
+    /// <exception cref="GameStoreException">the epoch is not above the one the directory holds, or the proof is for another game or epoch.</exception>
+    public void PromoteTo(int epoch, PromotionProof proof)
+    {
+        lock (gate)
+        {
+            ThrowIfClosed();
+            var held = ReadMeta();
+            if (epoch <= held.HostEpoch) throw new GameStoreException("A promotion must raise the host epoch");
+            if (proof.Epoch != epoch || !string.Equals(proof.GameId, GameId, StringComparison.Ordinal)) throw new GameStoreException("The promotion proof is for another game or epoch");
+            WriteAtomic(PathOf(MetaName), Encoding.UTF8.GetBytes(UncivJson.Serialize(held with { HostEpoch = epoch, SeenEpoch = Math.Max(held.SeenEpoch, epoch), Promotion = proof })));
+
+            var all = File.ReadAllBytes(PathOf(LogName));
+            var headerEnd = Array.IndexOf(all, (byte)'\n') + 1;
+            var header = UncivJson.Deserialize<CommandLogHeader>(Encoding.UTF8.GetString(all, 0, headerEnd).Trim()) ?? throw new GameStoreException("The command log has no readable header");
+            var rewritten = Encoding.UTF8.GetBytes(UncivJson.Serialize(header with { HostEpoch = epoch }) + "\n").Concat(all.Skip(headerEnd)).ToArray();
+            log.Dispose();
+            WriteAtomic(PathOf(LogName), rewritten);
+            log = OpenLog(PathOf(LogName));
+            logGeneration++;
         }
     }
 

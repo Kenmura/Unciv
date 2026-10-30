@@ -84,7 +84,7 @@ public sealed class ServerLobby : IAsyncDisposable
             }
             try
             {
-                await gameHost.AttachSessionAsync(sessionId, nation, transport, playerKeyId).ConfigureAwait(false);
+                await gameHost.AttachSessionAsync(sessionId, nation, transport, playerKeyId, lobbyHost.AdvertisesHostMigration(sessionId)).ConfigureAwait(false);
             }
             catch (Exception) when (lobbyHost.GameTransportFor(sessionId) == null)
             {

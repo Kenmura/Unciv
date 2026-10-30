@@ -31,6 +31,24 @@ public sealed record InProcessHostOptions
 
     /// <summary>Time a remote client gets to finish Hello, Join and Auth.</summary>
     public TimeSpan HandshakeTimeout { get; init; } = TimeSpan.FromSeconds(10);
+
+    /// <summary>T273: set by <see cref="InProcessHost.ResumeFromDirectory"/> callers that are promoting a standby copy (see <see cref="HostPromotion"/>); null for an ordinary resume.</summary>
+    public HostPromotion? Promotion { get; init; }
+}
+
+/// <summary>
+/// T273: how a standby copy becomes the host (design/HOST-MIGRATION.md section 2). <see cref="InProcessHost.ResumeFromDirectory"/> first checks what it opened against the old host's <c>HostHandoff</c>
+/// (<see cref="FinalSeq"/>, <see cref="FinalHash"/>: the promoted game must reproduce the state hash of the old host at the hand-off point, else nothing is promoted), then raises the epoch to
+/// <see cref="Epoch"/> and stores the successor's signed <see cref="Proof"/> in <c>game.json</c> and the log header, and finally treats the old host's seat (<see cref="DepartedKeyId"/>) as a clean leave
+/// (the T267 rule: its civ stays human, its turn is force-ended, the AI takes over at the next boundary unless that player reconnects).
+/// </summary>
+public sealed record HostPromotion
+{
+    public required int Epoch { get; init; }
+    public required PromotionProof Proof { get; init; }
+    public required long FinalSeq { get; init; }
+    public required string FinalHash { get; init; }
+    public string? DepartedKeyId { get; init; }
 }
 
 /// <summary>
@@ -117,12 +135,27 @@ public sealed class InProcessHost : IAsyncDisposable
         var opened = FileGameStore.Open(directory, options.Store);
         try
         {
+            var promotion = options.Promotion;
+            if (promotion != null) VerifyPromotable(opened, promotion);
             var meta = opened.Store.ReadMeta();
             var hostCiv = meta.Slots.FirstOrDefault(x => string.Equals(x.Value.PlayerKey, hostPlayerKey, StringComparison.Ordinal)).Key
                 ?? throw new GameStoreException("The host player key is not bound to a civ in this game");
             var session = new GameSession(opened.Session.Game, lastSeq: opened.Session.LastSeq) { Clock = () => clock.NowMillis };
             var host = new GameHost(session, opened.Store, clock: clock, announceRoster: options.AnnounceRoster, turnPolicy: options.TurnPolicy ?? meta.TimerPolicy);
             var result = new InProcessHost(host, opened.Store, hostCiv, options, opened.Report);
+            if (promotion != null)
+            {
+                opened.Store.PromoteTo(promotion.Epoch, promotion.Proof);
+                var departed = promotion.DepartedKeyId == null ? null : meta.Slots.FirstOrDefault(x => string.Equals(x.Value.PlayerKey, promotion.DepartedKeyId, StringComparison.Ordinal)).Key;
+                if (departed != null && !string.Equals(departed, hostCiv, StringComparison.Ordinal))
+                {
+                    host.EnqueueAsync(() =>
+                    {
+                        host.TurnTimer.Depart(departed); // the old process is gone: its player left cleanly (T267)
+                        return Task.CompletedTask;
+                    }).GetAwaiter().GetResult();
+                }
+            }
             // Crash mid-resolve: the log holds the steps already applied, the rest is derived from the state.
             if (session.Game.TurnState is { Phase: SimultaneousPhase.Resolving })
             {
@@ -141,12 +174,33 @@ public sealed class InProcessHost : IAsyncDisposable
         }
     }
 
+    // The promoted game must be exactly the old host's game at the hand-off: a clean recovery of the whole replicated log, at the announced seq, with the announced state hash.
+    private static void VerifyPromotable(OpenedGame opened, HostPromotion promotion)
+    {
+        if (opened.Report.Outcome != RecoveryOutcome.Recovered) throw new GameStoreException("standby-invalid: the standby copy did not recover cleanly");
+        if (opened.Store.LastSeq != promotion.FinalSeq) throw new GameStoreException($"standby-incomplete: the standby copy ends at {opened.Store.LastSeq}, the hand-off at {promotion.FinalSeq}");
+        var hash = ReplayVerifier.FullHash(opened.Session.Game).ToString("x16", System.Globalization.CultureInfo.InvariantCulture);
+        if (!string.Equals(hash, promotion.FinalHash, StringComparison.OrdinalIgnoreCase)) throw new GameStoreException("standby-diverged: the standby copy's state hash differs from the old host's");
+        if (opened.Store.ReadMeta().HostEpoch >= promotion.Epoch) throw new GameStoreException("standby-epoch: the standby copy is already at or above the new epoch");
+    }
+
     /// <summary>Connects the host player through the in-memory loopback transport and returns the client end (the first frame is the Snapshot).</summary>
     public async Task<ITransport> ConnectHostPlayerAsync()
     {
         var (client, hostEnd) = InMemoryTransport.CreatePair();
         var binding = store.ReadMeta().Slots[hostCivId];
         await host.AttachSessionAsync("local-" + hostCivId, hostCivId, hostEnd, binding.PlayerKey).ConfigureAwait(false);
+        return client;
+    }
+
+    /// <summary>
+    /// T273: an in-memory connection that goes through the same admission as a TCP friend (Hello, Welcome, Join, Auth with the player's key), for the player of this process when it is a promoted successor
+    /// (its <c>ClientSession</c> redirects to its own host with the same key, seat and pinned fingerprint as everybody else). Returns the client end.
+    /// </summary>
+    public ITransport ConnectLoopback()
+    {
+        var (client, hostEnd) = InMemoryTransport.CreatePair();
+        _ = AdmitAsync(hostEnd, cts.Token);
         return client;
     }
 
@@ -173,6 +227,20 @@ public sealed class InProcessHost : IAsyncDisposable
         listener = new TcpTlsListener(certificate, port, options.HandshakeTimeout);
         listener.Start();
         background.Add(RunAcceptLoopAsync(listener, cts.Token));
+    }
+
+    /// <summary>
+    /// T273: quits by handing the game to the designated successor when its standby copy is current (see <see cref="GameHost.HandOffAsync"/>): the host stops, clients are sent to the successor.
+    /// <paramref name="hostPlayerKey"/> is the key of this process's own player (its seat is treated as a clean leave by the new host). When there is no ready successor, or it does not catch up within
+    /// <paramref name="flushTimeout"/> (default 5 s), this is a plain <see cref="StopAsync"/> and the refusal code is returned; null means the hand-off was made.
+    /// </summary>
+    public async Task<string?> HandOffAndStopAsync(string? hostPlayerKey = null, TimeSpan? flushTimeout = null)
+    {
+        if (stopped) return GameHost.HandoffRefusals.Closed;
+        listener?.Stop(); // no new connection can slip past the hand-off; the game's own sessions are told by it
+        var refusal = await host.HandOffAsync(flushTimeout ?? TimeSpan.FromSeconds(5), hostPlayerKey ?? store.ReadMeta().Slots.GetValueOrDefault(hostCivId)?.PlayerKey).ConfigureAwait(false);
+        await StopAsync().ConfigureAwait(false);
+        return refusal;
     }
 
     /// <summary>Clean stop: no new connections, the current command finishes, a half-resolved round is completed, then snapshot, clean marker, and HostClosing to every client.</summary>
@@ -241,6 +309,7 @@ public sealed class InProcessHost : IAsyncDisposable
                 HostKeyFingerprint = fingerprint,
                 RequiresPassword = false,
                 Epoch = epochs.HostEpoch,
+                Promotion = epochs.HostEpoch > 0 ? epochs.Promotion : null,
             }), timeout.Token);
 
             if (await ReceiveAsync(transport, timeout.Token) is not Join join || !PlayerKeys.IsValid(join.PlayerKey))
@@ -263,14 +332,15 @@ public sealed class InProcessHost : IAsyncDisposable
 
             if (claimedEpoch > epochs.HostEpoch)
             {
-                // A seat holder has seen a newer host: this one is superseded, for good (it is remembered across a restart).
-                store.RaiseEpochs(epochs.HostEpoch, claimedEpoch);
+                // A seat holder claims a newer host. Only a promotion proof signed by the successor this host designated makes it supersede this host for good (it is remembered across a restart);
+                // a bare claim, which any seat holder could forge, refuses just this connection (T273, the T269 residual risk).
+                if (ProvesPromotion(hello.EpochProof, claimedEpoch)) store.RaiseEpochs(epochs.HostEpoch, claimedEpoch);
                 await RefuseAsync(transport, JoinRefusedCodes.StaleEpoch);
                 return;
             }
 
             await transport.SendAsync(ProtocolCodec.Encode(new JoinOk { Successor = await host.SuccessorForJoinAsync().ConfigureAwait(false) }), timeout.Token);
-            await host.AttachSessionAsync(challenge.SessionId, civ, transport, join.PlayerKey).ConfigureAwait(false);
+            await host.AttachSessionAsync(challenge.SessionId, civ, transport, join.PlayerKey, hello.HostMigration == true).ConfigureAwait(false);
         }
         catch (Exception)
         {
@@ -278,6 +348,11 @@ public sealed class InProcessHost : IAsyncDisposable
             await transport.CloseAsync();
         }
     }
+
+    // The proof must be for this game and the claimed epoch, signed by the key this host designated as its successor (and only that key: any seat key can sign something), with a valid signature.
+    private bool ProvesPromotion(PromotionProof? proof, int claimedEpoch) =>
+        proof != null && proof.Epoch == claimedEpoch && string.Equals(proof.GameId, store.GameId, StringComparison.Ordinal)
+        && host.Standby.IsDesignated(proof.KeyId) && PlayerKeys.VerifyPromotion(proof);
 
     private static async Task<Message?> ReceiveAsync(ITransport transport, CancellationToken token)
     {

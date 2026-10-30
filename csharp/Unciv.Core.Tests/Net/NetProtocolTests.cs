@@ -66,6 +66,12 @@ public class NetProtocolTests
         { new JoinOk { Successor = new HostSuccessor { Epoch = 0, Status = "offered", Roster = [] } }, """{"type":"JoinOk","successor":{"epoch":0,"status":"offered","roster":[]}}""" },
         { new LobbyState { Settings = J("{}"), Slots = [], HostName = "Bob", BackupHost = 1, BackupHostState = "offered", BackupHostNotice = "n" }, """{"type":"LobbyState","settings":{},"slots":[],"hostName":"Bob","backupHost":1,"backupHostState":"offered","backupHostNotice":"n"}""" },
         { new Welcome { Protocol = 2, SessionId = "s", Challenge = "ch", HostKeyFingerprint = "fp", RequiresPassword = false, BackupHostNotice = "n" }, """{"type":"Welcome","protocol":2,"sessionId":"s","challenge":"ch","hostKeyFingerprint":"fp","requiresPassword":false,"backupHostNotice":"n"}""" },
+        { new HostHandoff { GameId = "g", Epoch = 1, Successor = new SuccessorInfo { KeyId = "k", Endpoints = ["a.example:47821"], Fingerprint = "fp" }, FinalSeq = 7, FinalHash = "ab", DepartedKeyId = "d" },
+            """{"type":"HostHandoff","gameId":"g","epoch":1,"successor":{"keyId":"k","endpoints":["a.example:47821"],"fingerprint":"fp"},"finalSeq":7,"finalHash":"ab","departedKeyId":"d"}""" },
+        { new Snapshot { Seq = 5, Turn = 3, Phase = "playing", TurnStatus = Status, You = "Rome", Civs = [], Tiles = [], Cities = [], Units = [], Diplomacy = [], PendingTrades = [], Notifications = [], ViewHash = "vh", RolledBack = true, LostCommands = 2 },
+            """{"type":"Snapshot","seq":5,"turn":3,"phase":"playing","turnStatus":{"turn":3,"ended":["Rome"],"deadline":1700000000000,"phase":"playing"},"you":"Rome","civs":[],"tiles":[],"cities":[],"units":[],"diplomacy":[],"pendingTrades":[],"notifications":[],"rolledBack":true,"lostCommands":2,"popupAlerts":[],"pendingDecisions":[],"viewHash":"vh"}""" },
+        { new Welcome { Protocol = 4, SessionId = "s", Challenge = "ch", HostKeyFingerprint = "fp", RequiresPassword = false, Epoch = 1, Promotion = new PromotionProof { GameId = "g", Epoch = 1, KeyId = "k", Fingerprint = "fp", Signature = "sig" } },
+            """{"type":"Welcome","protocol":4,"sessionId":"s","challenge":"ch","hostKeyFingerprint":"fp","requiresPassword":false,"epoch":1,"promotion":{"gameId":"g","epoch":1,"keyId":"k","fingerprint":"fp","signature":"sig"}}""" },
     };
 
     [Theory]

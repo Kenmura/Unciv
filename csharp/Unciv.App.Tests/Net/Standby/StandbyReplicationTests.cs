@@ -43,7 +43,7 @@ internal sealed class TestSuccessor : IAsyncDisposable
     public static async Task<TestSuccessor> JoinAsync(InProcessHost host, ClientIdentity identity, string root, string gameId)
     {
         var tcp = await TcpTlsClientTransport.ConnectAsync("127.0.0.1", host.Port!.Value, expectedFingerprint: host.Fingerprint);
-        await tcp.SendAsync(ProtocolCodec.Encode(new Hello { Protocol = ProtocolVersion.Current, ClientVersion = "test", RulesetHash = "", ModList = [] }));
+        await tcp.SendAsync(ProtocolCodec.Encode(new Hello { Protocol = ProtocolVersion.Current, ClientVersion = "test", RulesetHash = "", ModList = [], HostMigration = true }));
         Welcome? welcome = null;
         while (welcome == null) welcome = ProtocolCodec.Decode((await tcp.ReceiveAsync())!) as Welcome;
         await tcp.SendAsync(ProtocolCodec.Encode(new Join { PlayerKey = identity.PlayerKey, DisplayName = "x" }));

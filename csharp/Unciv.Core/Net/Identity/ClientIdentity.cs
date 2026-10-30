@@ -26,16 +26,17 @@ public static class AuthMessage
     /// Length-prefixed so the parts cannot be shifted into each other. The verifying host's fingerprint is signed
     /// too, so a proof obtained by a malicious host cannot be relayed to another host.
     /// </summary>
-    public static byte[] Build(string hostFingerprint, string sessionId, string challenge)
+    public static byte[] Build(string hostFingerprint, string sessionId, string challenge) => Frame(Domain, hostFingerprint, sessionId, challenge);
+
+    /// <summary>Length-prefixed, domain-separated concatenation (a signature made for one domain never verifies in another).</summary>
+    internal static byte[] Frame(string domainText, params string[] texts)
     {
-        var host = Encoding.UTF8.GetBytes(hostFingerprint);
-        var session = Encoding.UTF8.GetBytes(sessionId);
-        var chal = Encoding.UTF8.GetBytes(challenge);
-        var domain = Encoding.UTF8.GetBytes(Domain);
-        var result = new byte[16 + domain.Length + host.Length + session.Length + chal.Length];
+        var parts = new List<byte[]> { Encoding.UTF8.GetBytes(domainText) };
+        parts.AddRange(texts.Select(Encoding.UTF8.GetBytes));
+        var result = new byte[parts.Sum(it => 4 + it.Length)];
         var span = result.AsSpan();
         var pos = 0;
-        foreach (var part in new[] { domain, host, session, chal })
+        foreach (var part in parts)
         {
             System.Buffers.Binary.BinaryPrimitives.WriteInt32BigEndian(span[pos..], part.Length);
             pos += 4;
@@ -44,6 +45,15 @@ public static class AuthMessage
         }
         return result;
     }
+}
+
+/// <summary>T273: the signed statement of a host promotion (game, epoch, the new host's key fingerprint), in its own domain so an auth proof can never double as one.</summary>
+public static class PromotionMessage
+{
+    private const string Domain = "unciv-promotion-v1";
+
+    public static byte[] Build(string gameId, int epoch, string hostFingerprint) =>
+        AuthMessage.Frame(Domain, gameId, epoch.ToString(System.Globalization.CultureInfo.InvariantCulture), hostFingerprint);
 }
 
 /// <summary>The client's ECDSA P-256 identity. <see cref="PlayerKey"/> (base64url SPKI) is what goes into <c>Join.PlayerKey</c>.</summary>
@@ -90,6 +100,10 @@ public sealed class ClientIdentity : IDisposable
     public string Sign(string hostFingerprint, string sessionId, string challenge) =>
         Base64Url.Encode(key.SignData(AuthMessage.Build(hostFingerprint, sessionId, challenge), HashAlgorithmName.SHA256));
 
+    /// <summary>T273: signs the statement that this player's host took <paramref name="gameId"/> over at <paramref name="epoch"/> with host key <paramref name="hostFingerprint"/> (<c>PromotionProof.Signature</c>).</summary>
+    public string SignPromotion(string gameId, int epoch, string hostFingerprint) =>
+        Base64Url.Encode(key.SignData(PromotionMessage.Build(gameId, epoch, hostFingerprint), HashAlgorithmName.SHA256));
+
     public void Dispose() => key.Dispose();
 }
 
@@ -106,6 +120,18 @@ public static class PlayerKeys
         using var ecdsa = TryImport(playerKey);
         if (ecdsa == null) return false;
         try { return ecdsa.VerifyData(AuthMessage.Build(hostFingerprint, sessionId, challenge), signature, HashAlgorithmName.SHA256); }
+        catch (CryptographicException) { return false; }
+    }
+
+    /// <summary>T273: true when <paramref name="proof"/> is a valid signature of its own game, epoch and fingerprint by its own <c>KeyId</c>. Says nothing about whether that key may promote: the caller compares <c>KeyId</c> with the designation.</summary>
+    public static bool VerifyPromotion(PromotionProof? proof)
+    {
+        if (proof == null) return false;
+        var signature = Base64Url.TryDecode(proof.Signature);
+        if (signature == null || signature.Length != 64) return false;
+        using var ecdsa = TryImport(proof.KeyId);
+        if (ecdsa == null) return false;
+        try { return ecdsa.VerifyData(PromotionMessage.Build(proof.GameId, proof.Epoch, proof.Fingerprint), signature, HashAlgorithmName.SHA256); }
         catch (CryptographicException) { return false; }
     }
 

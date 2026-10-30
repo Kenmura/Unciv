@@ -146,6 +146,10 @@ public sealed class HostingSession : IAsyncDisposable
         return Task.FromResult(new HostingSession(host.Fingerprint, host.Port ?? port, null, null, null, host, directory));
     }
 
+    /// <summary>T273: wraps the host a <see cref="StandbyPromotion"/> started, so the successor's UI treats it like a resumed hosted game (invite, quit).</summary>
+    public static HostingSession Adopt(InProcessHost promoted, string directory) =>
+        new(promoted.Fingerprint, promoted.Port ?? 0, null, null, null, promoted, directory);
+
     private static async Task AcceptAsync(TcpTlsListener tcp, ServerLobby lobby, CancellationToken token)
     {
         while (!token.IsCancellationRequested)

@@ -106,8 +106,11 @@ public sealed class InProcessHostTests : IDisposable
         return (transport, welcome, await ReadAsync(transport));
     }
 
-    private static Hello HelloWith(string? gameId, int? knownEpoch) =>
-        new() { Protocol = ProtocolVersion.Current, ClientVersion = "test", RulesetHash = "", ModList = [], GameId = gameId, KnownEpoch = knownEpoch, HostMigration = true };
+    private static Hello HelloWith(string? gameId, int? knownEpoch, PromotionProof? proof = null) =>
+        new() { Protocol = ProtocolVersion.Current, ClientVersion = "test", RulesetHash = "", ModList = [], GameId = gameId, KnownEpoch = knownEpoch, HostMigration = true, EpochProof = proof };
+
+    private static PromotionProof ProofBy(ClientIdentity signer, string gameId, int epoch, string fingerprint = "ab") =>
+        new() { GameId = gameId, Epoch = epoch, KeyId = signer.PlayerKey, Fingerprint = fingerprint, Signature = signer.SignPromotion(gameId, epoch, fingerprint) };
 
     [Fact]
     public async Task HostEpoch_NewGame_IsZeroAndLeavesTheFilesUnchanged()
@@ -146,14 +149,15 @@ public sealed class InProcessHostTests : IDisposable
     }
 
     [Fact]
-    public async Task HostEpoch_ClientThatSawANewerHost_FencesThisHostForGood()
+    public async Task HostEpoch_ClientHoldingTheDesignatedSuccessorsProof_FencesThisHostForGood()
     {
         var dir = Path.Combine(root, "fenced");
         await using (var host = StartHost("fenced"))
         {
             using var cert = HostCertificate.Generate();
             host.Listen(cert, 0);
-            var (transport, welcome, last) = await HandshakeAsync(host, greece, HelloWith(host.GameId, 1));
+            Assert.Null(await host.Host.DesignateBackupAsync("Greece", babylon.PlayerKey));
+            var (transport, welcome, last) = await HandshakeAsync(host, babylon, HelloWith(host.GameId, 1, ProofBy(greece, host.GameId, 1)));
             await using (transport)
             {
                 Assert.Equal(0, welcome.Epoch);
@@ -173,6 +177,34 @@ public sealed class InProcessHostTests : IDisposable
         using var opened = FileGameStore.Open(dir);
         Assert.Equal(1, opened.Store.ReadMeta().SeenEpoch);
         Assert.Equal(0, opened.Store.ReadMeta().HostEpoch);
+    }
+
+    [Fact]
+    public async Task HostEpoch_ForgedClaim_RefusesThatConnectionOnly_NeverFencesTheHost()
+    {
+        await using var host = StartHost("forged");
+        using var cert = HostCertificate.Generate();
+        host.Listen(cert, 0);
+        Assert.Null(await host.Host.DesignateBackupAsync("Greece", babylon.PlayerKey));
+        var store = (FileGameStore)host.Host.Store!;
+        using var outsider = ClientIdentity.Generate();
+        var claims = new[]
+        {
+            HelloWith(host.GameId, 7), // a bare claim of a seat holder (the T269 residual risk)
+            HelloWith(host.GameId, 7, ProofBy(babylon, host.GameId, 7)), // a seat key that is not the designated successor
+            HelloWith(host.GameId, 7, ProofBy(outsider, host.GameId, 7)), // a key that holds no seat
+            HelloWith(host.GameId, 7, ProofBy(greece, host.GameId, 6)), // the successor's proof of another epoch
+            HelloWith(host.GameId, 7, ProofBy(greece, "another-game", 7)), // of another game
+            HelloWith(host.GameId, 7, ProofBy(greece, host.GameId, 7) with { Signature = ProofBy(babylon, host.GameId, 7).Signature }), // a signature that is not the signer's
+        };
+        foreach (var claim in claims)
+        {
+            var (transport, _, last) = await HandshakeAsync(host, babylon, claim);
+            await using (transport) Assert.Equal(JoinRefusedCodes.StaleEpoch, Assert.IsType<JoinRefused>(last).Code);
+            Assert.Equal(0, store.ReadMeta().SeenEpoch);
+        }
+        var (honest, _, joined) = await HandshakeAsync(host, babylon, HelloWith(null, null)); // the host still serves everyone else
+        await using (honest) Assert.IsType<JoinOk>(joined);
     }
 
     [Fact]

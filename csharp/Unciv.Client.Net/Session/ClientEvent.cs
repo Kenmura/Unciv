@@ -37,6 +37,9 @@ public static class ClientCodes
     public const string HandshakeTimeout = "handshake-timeout";
     public const string SnapshotRejected = "snapshot-rejected";
     public const string InternalError = "internal-error";
+
+    /// <summary>T273: the host a hand-off sent this client to did not prove it is the promoted successor (no valid, matching <c>Welcome.Promotion</c>): a hard stop.</summary>
+    public const string BadPromotion = "bad-promotion";
 }
 
 /// <summary>The final answer to one submitted command. <see cref="Code"/> is a host code or a <see cref="ClientCodes"/> value, never free text.</summary>
@@ -94,3 +97,12 @@ public sealed record SuccessorChanged(HostSuccessor Successor) : ClientEvent;
 
 /// <summary>T272: a frame of the standby replication stream was refused (<c>Reason</c> is the store's rejection: a tampered or out-of-order snapshot chunk, a bad log line, a gap, an unusable disk). The session asks the host to restart from a snapshot, a few times; the copy already on disk is kept.</summary>
 public sealed record StandbyRejected(string Reason) : ClientEvent;
+
+/// <summary>T273: the host quit cleanly and handed the game to its backup host (<see cref="HostHandoff"/>); the session now reconnects to the announced endpoint with the same key. Replaces <see cref="HostClosed"/> for such a quit.</summary>
+public sealed record HostHandedOff(HostHandoff Handoff) : ClientEvent;
+
+/// <summary>T273: the session joined the promoted host (<see cref="Epoch"/> is the new host epoch); the mirror is resumed from it.</summary>
+public sealed record HostChanged(int Epoch) : ClientEvent;
+
+/// <summary>T273: the new host did not have the last <see cref="LostCommands"/> commands this client had applied (they were never replicated); the mirror was replaced and the UI should say so.</summary>
+public sealed record HostRolledBack(long LostCommands) : ClientEvent;

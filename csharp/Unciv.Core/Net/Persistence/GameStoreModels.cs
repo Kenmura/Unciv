@@ -53,6 +53,11 @@ public sealed record GameMeta
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
     public int SeenEpoch { get; init; }
 
+    /// <summary>T273: the successor's signed statement of the promotion that created <see cref="HostEpoch"/> (null for the original host). Sent in <c>Welcome.Promotion</c>; set only by <see cref="FileGameStore.PromoteTo"/>.</summary>
+    [JsonPropertyName("promotion")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public PromotionProof? Promotion { get; init; }
+
     /// <summary>T281: the designated backup host and what it announced (null: none; not written then, so a game without a backup host keeps its file).</summary>
     [JsonPropertyName("standby")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
