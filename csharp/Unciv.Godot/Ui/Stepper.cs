@@ -25,7 +25,7 @@ public partial class Stepper : HBoxContainer
         Plus = new IconButton(theme, AssetKey.Of(RulesetAssetKeys.UiIcon, "Increase"), increaseLabel);
         Minus.Pressed += () => Value -= Step;
         Plus.Pressed += () => Value += Step;
-        shown.CustomMinimumSize = new Vector2(theme.Px(UiTokens.S8 + UiTokens.S4), 0);
+        shown.FitMin(theme, UiTokens.S8 + UiTokens.S4);
         AddChild(Minus);
         AddChild(shown);
         AddChild(Plus);

@@ -53,8 +53,11 @@ public sealed class LayoutMatrixScenario : Scenario
         {
             var at = new At(run, width, height, os);
             steps.AddRange(GameSteps(at));
-            steps.AddRange(MenuSteps(at));
+            steps.AddRange(MenuSteps(at, (a, n, r) => Check(a, n, r)));
         }
+
+        // T316: the same menu screens, opened once and then resized (and rescaled) live
+        steps.AddRange(MenuSteps(new At(run, 1366, 768, 1f), ResizeCycle));
 
         steps.Add(new Act("report", () =>
         {
@@ -147,7 +150,7 @@ public sealed class LayoutMatrixScenario : Scenario
     }
 
     /// <summary>The menu screens, through a screen manager over the same size.</summary>
-    private static List<ScenarioStep> MenuSteps(At at)
+    private static List<ScenarioStep> MenuSteps(At at, Func<At, string, Func<Node>, ScenarioStep[]> check)
     {
         var run = at.Run;
         var steps = new List<ScenarioStep>
@@ -165,9 +168,9 @@ public sealed class LayoutMatrixScenario : Scenario
         };
         ScreenManager M() => at.Manager.NotNull();
         UiTheme T() => at.Theme.NotNull();
-        steps.AddRange(Check(at, "main-menu", () => M().Top.NotNull()));
+        steps.AddRange(check(at, "main-menu", () => M().Top.NotNull()));
         steps.Add(new Act("open new game", () => M().Push(new NewGameScreen(T(), NewGameForm.FromRulesetCache(), _ => throw new InvalidOperationException("not started")))));
-        steps.AddRange(Check(at, "new-game", () => M().Top.NotNull()));
+        steps.AddRange(check(at, "new-game", () => M().Top.NotNull()));
         steps.Add(new Act("back", () => M().Pop()));
         steps.Add(new Act("open host", () => M().Push(new HostScreen(T(), new HostSettingsForm(NewGameForm.FromRulesetCache()), new HostScreenEnvironment
         {
@@ -179,7 +182,7 @@ public sealed class LayoutMatrixScenario : Scenario
             SetClipboard = _ => { },
             Addresses = () => [new LocalAddress("192.168.1.20", "Wi-Fi", AddressScope.Lan)],
         }))));
-        steps.AddRange(Check(at, "host", () => M().Top.NotNull()));
+        steps.AddRange(check(at, "host", () => M().Top.NotNull()));
         steps.Add(new Act("back", () => M().Pop()));
         steps.Add(new Act("open the lobby", () =>
         {
@@ -192,7 +195,7 @@ public sealed class LayoutMatrixScenario : Scenario
         }));
         steps.Add(new WaitUntil("the host joined its lobby", () => at.Joined.NotNull().IsCompleted && at.Joined.NotNull().Result.Joined, 3000));
         steps.Add(new Act("show the lobby", () => M().Push(new LobbyScreen(T(), NewGameForm.FromRulesetCache(), at.LobbySession.NotNull(), run.Identity.PlayerKey, at.Lobby.NotNull()))));
-        steps.AddRange(Check(at, "lobby", () => M().Top.NotNull()));
+        steps.AddRange(check(at, "lobby", () => M().Top.NotNull()));
         steps.Add(new Act("back", () => M().Pop()));
         steps.Add(new Act("open join", () => M().Push(new JoinScreen(T(), new JoinScreenEnvironment
         {
@@ -203,17 +206,44 @@ public sealed class LayoutMatrixScenario : Scenario
             PersistKnownHosts = _ => { },
             Connect = (_, _) => throw new InvalidOperationException("not connecting"),
         }))));
-        steps.AddRange(Check(at, "join", () => M().Top.NotNull()));
+        steps.AddRange(check(at, "join", () => M().Top.NotNull()));
         steps.Add(new Act("back", () => M().Pop()));
         steps.Add(new Act("open options", () => M().Push(new OptionsScreen(run.Settings, T(), null, ["Retro", "Neon"]))));
-        steps.AddRange(Check(at, "options", () => M().Top.NotNull()));
+        steps.AddRange(check(at, "options", () => M().Top.NotNull()));
         steps.Add(new Act("back", () => M().Pop()));
         steps.Add(new Act("show a modal", () => M().Popups.Show(new PopupSpec("Leave the game?", "Progress since the last save is lost.", [new PopupChoice("Cancel"), new PopupChoice("Leave", null, ChoiceRole.Primary)]))));
-        steps.AddRange(Check(at, "modal", () => M().Popups));
+        steps.AddRange(check(at, "modal", () => M().Popups));
         steps.Add(new Act($"{at.Size}: free the menus", () => at.Sub.NotNull().QueueFree()));
         steps.Add(new WaitFrames(2));
         return steps;
     }
+
+    /// <summary>
+    /// T316: a screen already open is checked at its size, then the viewport is resized to 4K and back to 1366x768 and the UI scale is changed and restored, checking after each: the screen has to follow the live
+    /// window (a width taken from the theme at construction would stay what it was and overflow or waste the window).
+    /// </summary>
+    private static ScenarioStep[] ResizeCycle(At at, string name, Func<Node> root)
+    {
+        var steps = new List<ScenarioStep>();
+        void Phase(string label, Action change)
+        {
+            steps.Add(new Act($"{name}: {label}", () =>
+            {
+                at.Size = "resize-" + label;
+                change();
+            }));
+            steps.AddRange(Check(at, name, root));
+            steps.Add(new AssertQuery($"{name} {label}: the main menu column follows the live scale", () => name != "main-menu" || MenuColumnWidth(root()) == at.Theme.NotNull().Px(260)));
+        }
+        Phase("1366x768", () => { });
+        Phase("3840x2160", () => at.Sub.NotNull().Size = new Vector2I(3840, 2160));
+        Phase("1366x768-again", () => at.Sub.NotNull().Size = new Vector2I(1366, 768));
+        Phase("scale-1.5", () => at.Theme.NotNull().SetScale(1.5f));
+        Phase("scale-1", () => at.Theme.NotNull().SetScale(1f));
+        return [.. steps];
+    }
+
+    private static float MenuColumnWidth(Node menu) => menu.FindChild("MenuColumn", true, false) is Control column ? column.CustomMinimumSize.X : -1f;
 
     /// <summary>What the whole run shares: the game, the host control, where pictures go and the problems found.</summary>
     private sealed class Run(Control host, GameSession session, string? outDir)
@@ -248,7 +278,7 @@ public sealed class LayoutMatrixScenario : Scenario
 
         public float Os { get; } = os;
 
-        public string Size { get; } = $"{width}x{height}" + (os > 1f ? "@" + os.ToString(CultureInfo.InvariantCulture) : "");
+        public string Size { get; set; } = $"{width}x{height}" + (os > 1f ? "@" + os.ToString(CultureInfo.InvariantCulture) : "");
 
         public SubViewport? Sub { get; set; }
 

@@ -26,7 +26,7 @@ public partial class IconButton : Button
         if (icon is { } key)
         {
             Icon = theme.Icon(key);
-            AddThemeConstantOverride("icon_max_width", theme.Px(UiTheme.IconSize));
+            this.FitConstant(theme, "icon_max_width", UiTheme.IconSize);
         }
         if (text != null) Text = text.TrText();
         TooltipText = UiText.TooltipFor(label.TrText(), hotkey);
@@ -58,8 +58,11 @@ public partial class IconButton : Button
             badge = new Badge(count, accent);
             badge.SetAnchorsPreset(LayoutPreset.TopRight);
             badge.GrowHorizontal = GrowDirection.Begin;
-            badge.OffsetRight = theme.Px(UiTokens.S1);
-            badge.OffsetTop = -theme.Px(UiTokens.S1);
+            theme.Fit(badge, () =>
+            {
+                badge.OffsetRight = theme.Px(UiTokens.S1);
+                badge.OffsetTop = -theme.Px(UiTokens.S1);
+            });
             AddChild(badge);
         }
         else

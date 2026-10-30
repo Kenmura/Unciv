@@ -76,7 +76,7 @@ public partial class JoinScreen : Control
         var centre = new CenterContainer();
         centre.Fill();
         AddChild(centre);
-        var column = new VBoxContainer { CustomMinimumSize = new Vector2(theme.Px(420), 0) };
+        var column = new VBoxContainer().FitMin(theme, 420);
         centre.AddChild(column);
         column.AddChild(new Label { Text = "Join a game".Tr(), HorizontalAlignment = HorizontalAlignment.Center });
 

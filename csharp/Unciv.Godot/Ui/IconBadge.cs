@@ -34,10 +34,15 @@ public partial class IconBadge : Control
         picture.Modulate = glyph;
         picture.MouseFilter = MouseFilterEnum.Ignore;
         picture.SetAnchorsPreset(LayoutPreset.FullRect);
-        picture.OffsetLeft = picture.OffsetTop = Inset;
-        picture.OffsetRight = picture.OffsetBottom = -Inset;
         AddChild(picture);
-        CustomMinimumSize = new Vector2(theme.Px(size), theme.Px(size));
+        // T316: the size and the inset are in theme pixels: follow a window resize or a scale change
+        theme.Fit(this, () =>
+        {
+            picture.OffsetLeft = picture.OffsetTop = Inset;
+            picture.OffsetRight = picture.OffsetBottom = -Inset;
+            CustomMinimumSize = new Vector2(theme.Px(size), theme.Px(size));
+            QueueRedraw();
+        });
         MouseFilter = MouseFilterEnum.Ignore;
     }
 

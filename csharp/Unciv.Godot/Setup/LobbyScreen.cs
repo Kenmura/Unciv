@@ -188,7 +188,7 @@ public partial class LobbyScreen : Control
         {
             var margin = new MarginContainer { Name = "LobbyMargin" };
             margin.Fill();
-            foreach (string side in new[] { "left", "top", "right", "bottom" }) margin.AddThemeConstantOverride("margin_" + side, theme.Px(UiTokens.S3));
+            foreach (string side in new[] { "left", "top", "right", "bottom" }) margin.FitConstant(theme, "margin_" + side, UiTokens.S3);
             AddChild(margin);
             column.SetAnchorsPreset(LayoutPreset.TopLeft);
             column.SizeFlagsVertical = SizeFlags.ExpandFill;
@@ -198,12 +198,14 @@ public partial class LobbyScreen : Control
         {
             AddChild(column);
             // T312: on a window wider than the widest content (ultrawide) the lobby keeps that width, centred
-            Resized += () =>
+            void CapWidth()
             {
                 float extra = Math.Max(0f, (Size.X - theme.Px(UiTokens.MaxContentWidth)) / 2f);
                 column.OffsetLeft = extra;
                 column.OffsetRight = -extra;
-            };
+            }
+            Resized += CapWidth;
+            theme.Fit(this, CapWidth); // T316
         }
         column.AddChild(titleLabel);
         slotsBox.SizeFlagsHorizontal = SizeFlags.ExpandFill;
@@ -228,7 +230,7 @@ public partial class LobbyScreen : Control
         var settings = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
         settingsScroll.AddChild(settings);
         settings.AddChild(new Label { Text = (host ? "Settings (change them on the Host screen)" : "Settings (set by the host)").Tr(), AutowrapMode = TextServer.AutowrapMode.WordSmart });
-        settingsLabel.AddThemeFontSizeOverride("font_size", theme.Px(13));
+        theme.Fit(settingsLabel, () => settingsLabel.AddThemeFontSizeOverride("font_size", theme.Px(13)));
         settings.AddChild(settingsLabel);
         bottomRow.AddChild(settingsScroll);
         var right = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill, SizeFlagsStretchRatio = 3 };
@@ -278,12 +280,12 @@ public partial class LobbyScreen : Control
         {
             int index = slot.Slot;
             var line = new HBoxContainer { Name = $"Slot{(index + 1).ToString(CultureInfo.InvariantCulture)}" };
-            var text = new Label { Text = LobbyModel.SlotText(slot, ownKey, state.HostName), CustomMinimumSize = new Vector2(theme.Px(185), 0) };
+            var text = new Label { Text = LobbyModel.SlotText(slot, ownKey, state.HostName) }.FitMin(theme, 185);
             line.AddChild(text);
             slotLabels.Add(text);
             if (slot.Kind == "Human")
             {
-                line.AddChild(new Label { Text = (slot.Ready ? "Ready" : "Not ready").TrText(), CustomMinimumSize = new Vector2(theme.Px(72), 0) });
+                line.AddChild(new Label { Text = (slot.Ready ? "Ready" : "Not ready").TrText() }.FitMin(theme, 72));
                 line.AddChild(NationLabel(slot));
                 line.AddChild(Swatch(slot.Color));
             }
@@ -303,7 +305,7 @@ public partial class LobbyScreen : Control
     private Control NationLabel(LobbySlot slot)
     {
         string nation = slot.Nation ?? Constants.Random;
-        var label = new Label { Text = nation.TrText(), CustomMinimumSize = new Vector2(theme.Px(100), 0) };
+        var label = new Label { Text = nation.TrText() }.FitMin(theme, 100);
         if (nations.NationColours(nation) is { } colours) label.AddThemeColorOverride("font_color", ProceduralAssets.ToColor(colours.Background).Lightened(0.35f));
         return label;
     }
@@ -311,8 +313,7 @@ public partial class LobbyScreen : Control
     private Control Swatch(string? colour) => new ColorRect
     {
         Color = ProceduralAssets.ToColor(PlaceholderPalette.ForLobbyColour(colour)),
-        CustomMinimumSize = new Vector2(theme.Px(24), theme.Px(24)),
-    };
+    }.FitMin(theme, 24, 24);
 
     private void AddHostButtons(HBoxContainer line, LobbySlot slot)
     {

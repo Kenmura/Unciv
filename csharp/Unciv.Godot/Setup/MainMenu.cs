@@ -26,7 +26,8 @@ public partial class MainMenu : Control
         var centre = new CenterContainer();
         centre.Fill();
         AddChild(centre);
-        var column = new VBoxContainer { Name = "MenuColumn", CustomMinimumSize = new Vector2(theme?.Px(260) ?? 260, 0) };
+        var column = new VBoxContainer { Name = "MenuColumn", CustomMinimumSize = new Vector2(260, 0) };
+        if (theme != null) column.FitMin(theme, 260);
         column.AddThemeConstantOverride("separation", UiTokens.S2);
         centre.AddChild(column);
         column.AddChild(new Label { Name = "Logo", Text = "Unciv".Tr(), HorizontalAlignment = HorizontalAlignment.Center, ThemeTypeVariation = UiVariants.LabelDisplay });

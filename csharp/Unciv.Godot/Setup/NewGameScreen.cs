@@ -49,13 +49,13 @@ public partial class NewGameScreen : Control
         frame.Fill();
         AddChild(frame);
         var column = new VBoxContainer();
-        column.AddThemeConstantOverride("separation", theme.Px(UiTokens.S2));
+        column.FitConstant(theme, "separation", UiTokens.S2);
         Tabs = new TabBar { SizeFlagsVertical = SizeFlags.ExpandFill };
         foreach (var (title, page) in new[] { ("Players", playersPage), ("Game", gamePage), ("Map", mapPage), ("Rules", rulesPage), ("Advanced", advancedPage) })
         {
             var scroll = new ScrollContainer { HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled, SizeFlagsVertical = SizeFlags.ExpandFill, SizeFlagsHorizontal = SizeFlags.ExpandFill };
             page.SizeFlagsHorizontal = SizeFlags.ExpandFill;
-            page.AddThemeConstantOverride("separation", theme.Px(UiTokens.S2));
+            page.FitConstant(theme, "separation", UiTokens.S2);
             scroll.AddChild(page);
             Tabs.AddTab(title, scroll);
         }
@@ -227,7 +227,7 @@ public partial class NewGameScreen : Control
         selectedSlot = Math.Clamp(selectedSlot, 0, Math.Max(0, Form.Slots.Count - 1));
 
         var counts = new HFlowContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
-        counts.AddThemeConstantOverride("h_separation", theme.Px(UiTokens.S6));
+        counts.FitConstant(theme, "h_separation", UiTokens.S6);
         AddStepper(counts, "Players", new Stepper(theme, NewGameForm.MinPlayers, Math.Max(NewGameForm.MinPlayers, Form.MaxPlayers), Form.Slots.Count, decreaseLabel: "Fewer players", increaseLabel: "More players"),
             value => Form.SetPlayerCount(value));
         AddStepper(counts, "City-states", new Stepper(theme, 0, Form.MaxCityStates, Form.CityStates, decreaseLabel: "Fewer city-states", increaseLabel: "More city-states"),
@@ -235,14 +235,14 @@ public partial class NewGameScreen : Control
         playersPage.AddChild(counts);
 
         var body = new HBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
-        body.AddThemeConstantOverride("separation", theme.Px(UiTokens.S3));
+        body.FitConstant(theme, "separation", UiTokens.S3);
         var list = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
-        list.AddThemeConstantOverride("separation", theme.Px(UiTokens.S1));
+        list.FitConstant(theme, "separation", UiTokens.S1);
         for (int i = 0; i < Form.Slots.Count; i++)
         {
             int slot = i;
             var line = new HBoxContainer { Name = $"Slot{(i + 1).ToString(CultureInfo.InvariantCulture)}" };
-            line.AddThemeConstantOverride("separation", theme.Px(UiTokens.S2));
+            line.FitConstant(theme, "separation", UiTokens.S2);
             var nation = new Button
             {
                 Text = $"{(i + 1).ToString(CultureInfo.InvariantCulture)}. {Form.Slots[i].Nation.TrText()}",
@@ -273,8 +273,8 @@ public partial class NewGameScreen : Control
 
         AddHeading(playersPage, $"Nation for player {(selectedSlot + 1).ToString(CultureInfo.InvariantCulture)}:");
         var grid = new HFlowContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
-        grid.AddThemeConstantOverride("h_separation", theme.Px(UiTokens.S2));
-        grid.AddThemeConstantOverride("v_separation", theme.Px(UiTokens.S2));
+        grid.FitConstant(theme, "h_separation", UiTokens.S2);
+        grid.FitConstant(theme, "v_separation", UiTokens.S2);
         playersPage.AddChild(grid);
         foreach (string name in new[] { Constants.Random }.Concat(Form.PlayableNations))
         {
@@ -283,13 +283,13 @@ public partial class NewGameScreen : Control
                 ToggleMode = true,
                 ButtonPressed = Form.Slots[selectedSlot].Nation == name,
                 ThemeTypeVariation = UiVariants.ButtonRow,
-                CustomMinimumSize = new Vector2(theme.Px(88), theme.Px(72)),
                 TooltipText = name.TrText(),
             };
+            button.FitMin(theme, 88, 72);
             button.SetMeta(IconButton.LabelMeta, name);
             var cell = new VBoxContainer { Alignment = BoxContainer.AlignmentMode.Center, MouseFilter = MouseFilterEnum.Ignore };
             cell.SetAnchorsPreset(Control.LayoutPreset.FullRect);
-            cell.AddThemeConstantOverride("separation", theme.Px(UiTokens.S1));
+            cell.FitConstant(theme, "separation", UiTokens.S1);
             var emblem = Emblem(name, 36);
             emblem.SizeFlagsHorizontal = SizeFlags.ShrinkCenter;
             cell.AddChild(emblem);
@@ -310,7 +310,7 @@ public partial class NewGameScreen : Control
     private void AddStepper(Container parent, string label, Stepper stepper, Func<int, string?> changed)
     {
         var row = new HBoxContainer();
-        row.AddThemeConstantOverride("separation", theme.Px(UiTokens.S2));
+        row.FitConstant(theme, "separation", UiTokens.S2);
         row.AddChild(new Label { Text = label.TrText(), ThemeTypeVariation = UiVariants.LabelSecondary, VerticalAlignment = VerticalAlignment.Center });
         row.AddChild(stepper);
         stepper.Changed += value => Change(changed(value));
@@ -329,11 +329,12 @@ public partial class NewGameScreen : Control
     // The detail pane of the selected slot's nation: emblem and name, leader, unique ability and start preference.
     private PanelContainer NationCard(string nation)
     {
-        var card = new PanelContainer { Name = "NationDetail", ThemeTypeVariation = UiVariants.PanelCard, CustomMinimumSize = new Vector2(theme.Px(theme.Breakpoint == UiBreakpoint.Compact ? 170 : 260), 0f) };
+        var card = new PanelContainer { Name = "NationDetail", ThemeTypeVariation = UiVariants.PanelCard };
+        theme.Fit(card, () => card.CustomMinimumSize = new Vector2(theme.Px(theme.Breakpoint == UiBreakpoint.Compact ? 170 : 260), 0f));
         var box = new VBoxContainer();
-        box.AddThemeConstantOverride("separation", theme.Px(UiTokens.S2));
+        box.FitConstant(theme, "separation", UiTokens.S2);
         var head = new HBoxContainer();
-        head.AddThemeConstantOverride("separation", theme.Px(UiTokens.S2));
+        head.FitConstant(theme, "separation", UiTokens.S2);
         head.AddChild(Emblem(nation, 40));
         head.AddChild(new Label { Text = nation.TrText(), ThemeTypeVariation = UiVariants.LabelHeading, VerticalAlignment = VerticalAlignment.Center, SizeFlagsHorizontal = SizeFlags.ExpandFill, TextOverrunBehavior = TextServer.OverrunBehavior.TrimEllipsis });
         box.AddChild(head);
@@ -383,7 +384,7 @@ public partial class NewGameScreen : Control
         AddCheck(flags, "No ancient ruins", Form.NoRuins, on => Form.NoRuins = on);
         AddCheck(flags, "No natural wonders", Form.NoNaturalWonders, on => Form.NoNaturalWonders = on);
         AddHeading(mapPage, "Seed (empty for a random map)");
-                seedField = new LineEdit { Name = "SeedField", Text = Form.SeedText, PlaceholderText = "random".Tr(), CustomMinimumSize = new Vector2(theme.Px(240), 0) };
+                seedField = new LineEdit { Name = "SeedField", Text = Form.SeedText, PlaceholderText = "random".Tr() }.FitMin(theme, 240);
         seedField.TextChanged += text =>
         {
             Form.SeedText = text;

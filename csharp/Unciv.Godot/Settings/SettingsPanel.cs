@@ -111,9 +111,9 @@ public partial class SettingsPanel : HBoxContainer
         this.theme = theme;
         this.tutorialRuleset = tutorialRuleset;
         Name = "SettingsPanel";
-        AddThemeConstantOverride("separation", theme.Px(UiTokens.S3));
-        tabColumn.CustomMinimumSize = new Vector2(theme.Px(theme.Breakpoint == UiBreakpoint.Compact ? 104 : 148), 0);
-        tabColumn.AddThemeConstantOverride("separation", theme.Px(UiTokens.S1));
+        this.FitConstant(theme, "separation", UiTokens.S3);
+        theme.Fit(tabColumn, () => tabColumn.CustomMinimumSize = new Vector2(theme.Px(theme.Breakpoint == UiBreakpoint.Compact ? 104 : 148), 0));
+        tabColumn.FitConstant(theme, "separation", UiTokens.S1);
         AddChild(tabColumn);
 
         BuildDisplay();
@@ -257,7 +257,7 @@ public partial class SettingsPanel : HBoxContainer
         tabColumn.AddChild(tab);
         var scroller = new ScrollContainer { Name = "Page_" + title, HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled, SizeFlagsHorizontal = SizeFlags.ExpandFill, SizeFlagsVertical = SizeFlags.ExpandFill, Visible = false };
         var column = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
-        column.AddThemeConstantOverride("separation", theme.Px(UiTokens.S2));
+        column.FitConstant(theme, "separation", UiTokens.S2);
         scroller.AddChild(column);
         AddChild(scroller);
         tabs.Add((tab, scroller));
@@ -361,8 +361,8 @@ public partial class SettingsPanel : HBoxContainer
     {
         var action = ActionLabels[row].Action;
         var box = new HBoxContainer();
-        box.AddThemeConstantOverride("separation", theme.Px(UiTokens.S2));
-        var chip = new Button { Name = "Key_" + action, ThemeTypeVariation = UiVariants.ButtonChip, CustomMinimumSize = new Vector2(theme.Px(96), 0) };
+        box.FitConstant(theme, "separation", UiTokens.S2);
+        var chip = new Button { Name = "Key_" + action, ThemeTypeVariation = UiVariants.ButtonChip }.FitMin(theme, 96);
         chip.Pressed += () => BeginRebind(action);
         keyButtons[action] = chip;
         var rebind = new Button { Name = "Rebind_" + action, Text = "Rebind".Tr(), ThemeTypeVariation = UiVariants.ButtonGhost };
@@ -414,7 +414,7 @@ public partial class SettingsPanel : HBoxContainer
         }
         foreach (var entry in TutorialModel.List(tutorialRuleset!, service.Current))
         {
-            var text = new Label { Visible = false, AutowrapMode = TextServer.AutowrapMode.WordSmart, CustomMinimumSize = new Vector2(theme.Px(260), 0), Text = entry.Text.TrText() };
+            var text = new Label { Visible = false, AutowrapMode = TextServer.AutowrapMode.WordSmart, Text = entry.Text.TrText() }.FitMin(theme, 260);
             var title = entry.Name.Tr();
             var button = new Button { Name = "Tutorial_" + entry.Name, Text = entry.Seen ? title + " *" : title, Alignment = HorizontalAlignment.Left };
             button.Pressed += () => text.Visible = !text.Visible;
@@ -435,8 +435,8 @@ public partial class SettingsPanel : HBoxContainer
     private void AddRow(Container page, string key, Control control)
     {
         var row = new HBoxContainer();
-        row.AddThemeConstantOverride("separation", theme.Px(UiTokens.S3));
-        var label = new Label { SizeFlagsHorizontal = SizeFlags.ExpandFill, SizeFlagsStretchRatio = 1f, CustomMinimumSize = new Vector2(theme.Px(110), 0), AutowrapMode = TextServer.AutowrapMode.WordSmart, VerticalAlignment = VerticalAlignment.Center };
+        row.FitConstant(theme, "separation", UiTokens.S3);
+        var label = new Label { SizeFlagsHorizontal = SizeFlags.ExpandFill, SizeFlagsStretchRatio = 1f, AutowrapMode = TextServer.AutowrapMode.WordSmart, VerticalAlignment = VerticalAlignment.Center }.FitMin(theme, 110);
         refreshers.Add(() => label.Text = key.Tr());
         row.AddChild(label);
         control.SizeFlagsHorizontal = SizeFlags.ShrinkEnd;
@@ -446,8 +446,8 @@ public partial class SettingsPanel : HBoxContainer
 
     private void AddSlider(Container page, string key, HSlider slider, Func<ClientSettings, float, ClientSettings> write, Func<ClientSettings, float> read, Func<double, string> readout)
     {
-        var shown = new Label { ThemeTypeVariation = UiVariants.LabelNumber, HorizontalAlignment = HorizontalAlignment.Right, CustomMinimumSize = new Vector2(theme.Px(UiTokens.S8), 0), VerticalAlignment = VerticalAlignment.Center };
-        slider.CustomMinimumSize = new Vector2(theme.Px(theme.Breakpoint == UiBreakpoint.Compact ? 100 : 160), 0);
+        var shown = new Label { ThemeTypeVariation = UiVariants.LabelNumber, HorizontalAlignment = HorizontalAlignment.Right, VerticalAlignment = VerticalAlignment.Center }.FitMin(theme, UiTokens.S8);
+        theme.Fit(slider, () => slider.CustomMinimumSize = new Vector2(theme.Px(theme.Breakpoint == UiBreakpoint.Compact ? 100 : 160), 0));
         slider.SizeFlagsVertical = SizeFlags.ShrinkCenter;
         slider.ValueChanged += value =>
         {
@@ -460,7 +460,7 @@ public partial class SettingsPanel : HBoxContainer
             shown.Text = readout(slider.Value);
         });
         var box = new HBoxContainer();
-        box.AddThemeConstantOverride("separation", theme.Px(UiTokens.S2));
+        box.FitConstant(theme, "separation", UiTokens.S2);
         box.AddChild(slider);
         box.AddChild(shown);
         AddRow(page, key, box);

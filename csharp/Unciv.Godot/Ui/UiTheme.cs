@@ -112,6 +112,24 @@ public sealed class UiTheme
         else ThemeBuilder.Populate(Theme, Scale, Breakpoint == UiBreakpoint.Compact, minTarget);
     }
 
+    /// <summary>
+    /// T316: runs <paramref name="apply"/> now and again whenever the window is resized or the scale changes while <paramref name="owner"/> is in the scene tree, so a size taken through <see cref="Px"/>
+    /// (a column width, a margin, a separation) follows the live window instead of the one the screen was built in. Also runs once on entering the tree, since the theme may have been refitted meanwhile.
+    /// </summary>
+    public void Fit(Node owner, Action apply)
+    {
+        apply();
+        void Handler() { if (GodotObject.IsInstanceValid(owner)) apply(); }
+        owner.TreeEntered += () =>
+        {
+            LayoutChanged -= Handler;
+            LayoutChanged += Handler;
+            apply();
+        };
+        owner.TreeExited += () => LayoutChanged -= Handler;
+        if (owner.IsInsideTree()) LayoutChanged += Handler;
+    }
+
     /// <summary>C096: the smallest height of a touch target in this theme's pixels (48 dp); 0 on a mouse build or before a viewport is bound.</summary>
     public int MinTargetPx => minTarget;
 

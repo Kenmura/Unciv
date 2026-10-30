@@ -77,12 +77,14 @@ public partial class HostScreen : Control
         column.Fill();
         AddChild(column);
         // T312: on a window wider than the widest content (ultrawide) the settings keep that width, centred
-        Resized += () =>
+        void CapWidth()
         {
             float extra = Math.Max(0f, (Size.X - theme.Px(UiTokens.MaxContentWidth)) / 2f);
             column.OffsetLeft = extra;
             column.OffsetRight = -extra;
-        };
+        }
+        Resized += CapWidth;
+        theme.Fit(this, CapWidth); // T316: the cap is in theme pixels, so a scale change moves it without a resize
 
         settingsColumn.SizeFlagsVertical = SizeFlags.ExpandFill;
         column.AddChild(settingsColumn);
@@ -465,7 +467,7 @@ public partial class HostScreen : Control
     private LineEdit AddField(Container page, string heading, string name, string text, string placeholder, Action<string> changed)
     {
         AddHeading(page, heading);
-        var field = new LineEdit { Name = name, Text = text, PlaceholderText = placeholder.TrText(), CustomMinimumSize = new Vector2(theme.Px(260), 0) };
+        var field = new LineEdit { Name = name, Text = text, PlaceholderText = placeholder.TrText() }.FitMin(theme, 260);
         field.TextChanged += value =>
         {
             changed(value);
@@ -610,8 +612,7 @@ public partial class HostScreen : Control
             Name = "AddressHint",
             Text = AddressNoteText(Form.Port is >= 1 and <= 65535 ? Form.Port : HostSettingsForm.DefaultPort),
             AutowrapMode = TextServer.AutowrapMode.WordSmart,
-            CustomMinimumSize = new Vector2(theme.Px(420), 0),
-        });
+        }.FitMin(theme, 420));
     }
 
     private void FillSaved()

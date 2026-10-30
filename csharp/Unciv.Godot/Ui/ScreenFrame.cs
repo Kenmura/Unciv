@@ -23,7 +23,7 @@ public partial class ScreenFrame : VBoxContainer
     private readonly MarginContainer headerMargin = new();
     private readonly MarginContainer footerMargin = new();
     private readonly UiTheme theme;
-    private readonly int baseMargin;
+    private int baseMargin;
 
     public ScreenFrame(UiTheme theme, string titleText, bool closeButton = true, string closeLabel = "Close")
     {
@@ -32,7 +32,7 @@ public partial class ScreenFrame : VBoxContainer
         header.Bind(theme, 0);
         AddThemeConstantOverride("separation", 0);
         title.Text = titleText.TrText();
-        headerRow.AddThemeConstantOverride("separation", theme.Px(UiTokens.S3));
+        headerRow.FitConstant(theme, "separation", UiTokens.S3);
         headerRow.AddChild(title);
         headerRow.AddChild(strip);
         close = new IconButton(theme, AssetKey.Of(RulesetAssetKeys.UiIcon, "Close"), closeLabel, hotkey: "Esc") { Visible = closeButton };
@@ -41,11 +41,15 @@ public partial class ScreenFrame : VBoxContainer
         headerMargin.AddChild(headerRow);
         header.AddChild(headerMargin);
         AddChild(header);
-        int margin = theme.Px(theme.Breakpoint == UiBreakpoint.Compact ? UiTokens.S2 : UiTokens.S4);
-        baseMargin = margin;
-        foreach (string side in new[] { "left", "top", "right", "bottom" }) content.AddThemeConstantOverride("margin_" + side, margin);
+        // T316: the margin and the width cap are in theme pixels (and the margin depends on the breakpoint): follow a resize or a scale change
+        theme.Fit(this, () =>
+        {
+            baseMargin = theme.Px(theme.Breakpoint == UiBreakpoint.Compact ? UiTokens.S2 : UiTokens.S4);
+            FitWidth();
+            foreach (string side in new[] { "top", "bottom" }) content.AddThemeConstantOverride("margin_" + side, baseMargin);
+        });
         AddChild(content);
-        footerRow.AddThemeConstantOverride("separation", theme.Px(UiTokens.S2));
+        footerRow.FitConstant(theme, "separation", UiTokens.S2);
         footerMargin.AddChild(footerRow);
         footer.AddChild(footerMargin);
         Resized += FitWidth;

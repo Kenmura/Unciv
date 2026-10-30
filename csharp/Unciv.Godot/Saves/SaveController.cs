@@ -289,9 +289,9 @@ public partial class SaveController : Control
         dialogPanel.AddChild(frame);
 
         var content = new HBoxContainer { Name = "SaveContent" };
-        content.AddThemeConstantOverride("separation", theme.Px(UiTokens.S3));
+        content.FitConstant(theme, "separation", UiTokens.S3);
         var left = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill, SizeFlagsStretchRatio = 1.5f };
-        left.AddThemeConstantOverride("separation", theme.Px(UiTokens.S2));
+        left.FitConstant(theme, "separation", UiTokens.S2);
         search = new LineEdit { Name = "SaveSearch", PlaceholderText = "Search saves".Tr(), ClearButtonEnabled = true };
         search.TextChanged += _ => ApplyFilter();
         left.AddChild(search);
@@ -332,19 +332,19 @@ public partial class SaveController : Control
     {
         var card = new PanelContainer { Name = "SaveDetails", ThemeTypeVariation = UiVariants.PanelCard, SizeFlagsHorizontal = SizeFlags.ExpandFill, SizeFlagsStretchRatio = 1f };
         var column = new VBoxContainer();
-        column.AddThemeConstantOverride("separation", theme.Px(UiTokens.S2));
+        column.FitConstant(theme, "separation", UiTokens.S2);
         detailsTitle = new Label { Name = "SaveDetailsTitle", ThemeTypeVariation = UiVariants.LabelHeading, TextOverrunBehavior = TextServer.OverrunBehavior.TrimEllipsis };
-        detailsBody = new Label { Name = "SaveDetailsBody", ThemeTypeVariation = UiVariants.LabelSecondary, AutowrapMode = TextServer.AutowrapMode.WordSmart, MaxLinesVisible = 6, TextOverrunBehavior = TextServer.OverrunBehavior.TrimEllipsis, CustomMinimumSize = new Vector2(theme.Px(96), 0) };
-        detailsWarning = new Label { Name = "SaveDetailsWarning", AutowrapMode = TextServer.AutowrapMode.WordSmart, MaxLinesVisible = 4, TextOverrunBehavior = TextServer.OverrunBehavior.TrimEllipsis, CustomMinimumSize = new Vector2(theme.Px(96), 0), Visible = false };
+        detailsBody = new Label { Name = "SaveDetailsBody", ThemeTypeVariation = UiVariants.LabelSecondary, AutowrapMode = TextServer.AutowrapMode.WordSmart, MaxLinesVisible = 6, TextOverrunBehavior = TextServer.OverrunBehavior.TrimEllipsis }.FitMin(theme, 96);
+        detailsWarning = new Label { Name = "SaveDetailsWarning", AutowrapMode = TextServer.AutowrapMode.WordSmart, MaxLinesVisible = 4, TextOverrunBehavior = TextServer.OverrunBehavior.TrimEllipsis, Visible = false }.FitMin(theme, 96);
         detailsWarning.AddThemeColorOverride("font_color", ProceduralAssets.ToColor(UiTokens.Warning));
         column.AddChild(detailsTitle);
         column.AddChild(detailsBody);
         column.AddChild(detailsWarning);
-        column.AddChild(new Control { CustomMinimumSize = new Vector2(0, theme.Px(UiTokens.S2)) });
+        column.AddChild(new Control().FitMin(theme, 0, UiTokens.S2));
         column.AddChild(new Label { Text = "Save name".Tr(), ThemeTypeVariation = UiVariants.LabelOverline });
         NameField = new LineEdit { Name = "SaveName", PlaceholderText = "Save name".Tr() };
         column.AddChild(NameField);
-        dialogMessage = new Label { Name = "SaveDialogMessage", ThemeTypeVariation = UiVariants.LabelSecondary, AutowrapMode = TextServer.AutowrapMode.WordSmart, MaxLinesVisible = 4, TextOverrunBehavior = TextServer.OverrunBehavior.TrimEllipsis, CustomMinimumSize = new Vector2(theme.Px(96), 0) };
+        dialogMessage = new Label { Name = "SaveDialogMessage", ThemeTypeVariation = UiVariants.LabelSecondary, AutowrapMode = TextServer.AutowrapMode.WordSmart, MaxLinesVisible = 4, TextOverrunBehavior = TextServer.OverrunBehavior.TrimEllipsis }.FitMin(theme, 96);
         column.AddChild(dialogMessage);
         var scrolled = new ScrollContainer { HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled }; // the card never makes the dialog taller than the window
         column.SizeFlagsHorizontal = SizeFlags.ExpandFill;

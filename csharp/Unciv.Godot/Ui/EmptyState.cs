@@ -13,7 +13,7 @@ public partial class EmptyState : VBoxContainer
     public EmptyState(UiTheme theme, AssetKey? icon, string text, string? actionText = null)
     {
         Alignment = AlignmentMode.Center;
-        AddThemeConstantOverride("separation", theme.Px(UiTokens.S2));
+        this.FitConstant(theme, "separation", UiTokens.S2);
         if (icon is { } key)
         {
             AddChild(new TextureRect
@@ -22,11 +22,10 @@ public partial class EmptyState : VBoxContainer
                 ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize,
                 StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered,
                 TextureFilter = TextureFilterEnum.LinearWithMipmaps,
-                CustomMinimumSize = new Vector2(theme.Px(UiTokens.S8), theme.Px(UiTokens.S8)),
                 Modulate = ProceduralAssets.ToColor(UiTokens.TextMuted),
                 SizeFlagsHorizontal = SizeFlags.ShrinkCenter,
                 MouseFilter = MouseFilterEnum.Ignore,
-            });
+            }.FitMin(theme, UiTokens.S8, UiTokens.S8));
         }
         message.Text = text.TrText();
         AddChild(message);
