@@ -84,7 +84,7 @@ flowchart TD
   class T280 waiting
   class T282 ready
   class T283 prog
-  class T285 prog
+  class T285 review
   class T287 review
   class T288 ready
   class T289 prog
@@ -150,6 +150,6 @@ xychart-beta
 | T278 | Available (waiting on T260) | T260, T276 | 0 | Android on-device verification: TLS join, lifecycle reconnect, frame time and APK size on a mid-range phone |
 | T280 | Available (waiting on T260, T277) | T279, T260, T277 | 0 | Add the Android APK to the tagged GitHub release workflow |
 | T283 | In-Progress [Claude-T283] | C101 | 0 | Phone layout: Tech and policy screens (C101 follow-up) |
-| T285 | In-Progress [Claude-T285] | C101 | 0 | Phone layout: Civilopedia (C101 follow-up) |
+| T285 | Needs-Review [Claude-T285] | C101 | 0 | Phone layout: Civilopedia (C101 follow-up) |
 | T287 | Needs-Review [Claude-T287] | T271 | 0 | Far-zoom draw-call reduction |
 | T289 | In-Progress [Claude-T289] | T271 | 0 | Ultra water ripple and sun glint tuning |
