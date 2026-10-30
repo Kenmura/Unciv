@@ -1840,5 +1840,8 @@
         "caption": "Option 4 (bronze hoplite, recommended second baseline) against the current Warrior."
       }
     ]
+  },
+  "T311": {
+    "none": "A scale model, not a screen: the real-GPU scale sheet (tools/scale-sheet.sh) renders the HUD and menu at each common window size on demand and is deliberately not a CI golden; the all-screens pass with screenshots is T312."
   }
 }
