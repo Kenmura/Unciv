@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- T337: the relay server (design/RELAY.md). Splices bytes between a host that dialled out and a joiner; knows nothing of the game protocol,
+       so it references Unciv.Core only for the host-key fingerprint, the clock and the secure random source. -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>$(UncivTfm)</TargetFramework>
+    <!-- as Unciv.Server: an Exe that is not referenced by the Godot client needs no RID, but staying agnostic costs nothing and test_ci.py guards the pattern. -->
+    <IsRidAgnostic>true</IsRidAgnostic>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Unciv.Core\Unciv.Core.csproj" />
+  </ItemGroup>
+
+</Project>

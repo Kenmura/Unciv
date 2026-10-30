@@ -19,6 +19,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Unciv.Client.Net", "Unciv.C
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Unciv.App.Tests", "Unciv.App.Tests\Unciv.App.Tests.csproj", "{CF0FFE63-C5B5-4F37-ADF5-36588832B83E}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Unciv.Relay", "Unciv.Relay\Unciv.Relay.csproj", "{22EBFE2D-6571-4BA1-9DF1-A9863148827F}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -125,6 +127,18 @@ Global
 		{CF0FFE63-C5B5-4F37-ADF5-36588832B83E}.Release|x64.Build.0 = Release|Any CPU
 		{CF0FFE63-C5B5-4F37-ADF5-36588832B83E}.Release|x86.ActiveCfg = Release|Any CPU
 		{CF0FFE63-C5B5-4F37-ADF5-36588832B83E}.Release|x86.Build.0 = Release|Any CPU
+		{22EBFE2D-6571-4BA1-9DF1-A9863148827F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{22EBFE2D-6571-4BA1-9DF1-A9863148827F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{22EBFE2D-6571-4BA1-9DF1-A9863148827F}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{22EBFE2D-6571-4BA1-9DF1-A9863148827F}.Debug|x64.Build.0 = Debug|Any CPU
+		{22EBFE2D-6571-4BA1-9DF1-A9863148827F}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{22EBFE2D-6571-4BA1-9DF1-A9863148827F}.Debug|x86.Build.0 = Debug|Any CPU
+		{22EBFE2D-6571-4BA1-9DF1-A9863148827F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{22EBFE2D-6571-4BA1-9DF1-A9863148827F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{22EBFE2D-6571-4BA1-9DF1-A9863148827F}.Release|x64.ActiveCfg = Release|Any CPU
+		{22EBFE2D-6571-4BA1-9DF1-A9863148827F}.Release|x64.Build.0 = Release|Any CPU
+		{22EBFE2D-6571-4BA1-9DF1-A9863148827F}.Release|x86.ActiveCfg = Release|Any CPU
+		{22EBFE2D-6571-4BA1-9DF1-A9863148827F}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

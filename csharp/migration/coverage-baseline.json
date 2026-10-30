@@ -766,6 +766,25 @@
     "Unciv.Harness/ScenarioGame.cs": {"branch": 95.92, "line": 99.59},
     "Unciv.Harness/ScenarioReplay.cs": {"branch": 100.0, "line": 100.0},
     "Unciv.Harness/ScenarioResult.cs": {"branch": 100.0, "line": 100.0},
+    "Unciv.Relay/ListingValidator.cs": {"branch": 77.78, "line": 98.0},
+    "Unciv.Relay/Program.cs": {"branch": 100.0, "line": 0.0},
+    "Unciv.Relay/ProxyProtocol.cs": {"branch": 97.62, "line": 100.0},
+    "Unciv.Relay/RateLimiting.cs": {"branch": 100.0, "line": 100.0},
+    "Unciv.Relay/RelayCertificates.cs": {"branch": 80.0, "line": 100.0},
+    "Unciv.Relay/RelayConn.cs": {"branch": 91.67, "line": 97.56},
+    "Unciv.Relay/RelayLog.cs": {"branch": 97.22, "line": 93.33},
+    "Unciv.Relay/RelayModels.cs": {"branch": 50.0, "line": 100.0},
+    "Unciv.Relay/RelayOptions.cs": {"branch": 98.91, "line": 99.6},
+    "Unciv.Relay/RelayPolicyFiles.cs": {"branch": 98.33, "line": 98.91},
+    "Unciv.Relay/RelayProtocol.cs": {"branch": 100.0, "line": 100.0},
+    "Unciv.Relay/RelayRunner.cs": {"branch": 100.0, "line": 100.0},
+    "Unciv.Relay/RelayServer.Directory.cs": {"branch": 96.81, "line": 97.41},
+    "Unciv.Relay/RelayServer.Host.cs": {"branch": 88.28, "line": 90.95},
+    "Unciv.Relay/RelayServer.Http.cs": {"branch": 87.65, "line": 92.11},
+    "Unciv.Relay/RelayServer.Join.cs": {"branch": 93.75, "line": 93.1},
+    "Unciv.Relay/RelayServer.Sweep.cs": {"branch": 87.1, "line": 95.89},
+    "Unciv.Relay/RelayServer.cs": {"branch": 91.91, "line": 95.56},
+    "Unciv.Relay/Splice.cs": {"branch": 86.84, "line": 95.95},
     "Unciv.Server/CommandGate.cs": {"branch": 89.66, "line": 91.49},
     "Unciv.Server/GameHost.Handoff.cs": {"branch": 76.19, "line": 92.98},
     "Unciv.Server/GameHost.Replication.cs": {"branch": 84.54, "line": 89.84},
@@ -786,6 +805,7 @@
   "excused": {
     "Unciv.Core/Logic/Battle/AirInterception.cs": "the interception damage/XP and notification tails sit behind Battle.takeDamage/addXp (BattleSeams, T083); T083 wires them and tests the rest",
     "Unciv.Core/Logic/Civilization/Diplomacy/CityStateFunctions.cs": "election rigging, diplomatic marriage, worker tribute, the military part of tribute willingness and the in-border unit checks need a TileMap, spies and units: TestGame fixtures (T072); the great-person/military-gift paths are blocked on NextTurnAutomation (T094) and CityCombatant (T081)",
-    "Unciv.Core/Logic/Civilization/Managers/UnitManager.cs": "T099 only retargets a TODO marker comment; the file keeps T066 coverage (T104 final sweep owns it)"
+    "Unciv.Core/Logic/Civilization/Managers/UnitManager.cs": "T099 only retargets a TODO marker comment; the file keeps T066 coverage (T104 final sweep owns it)",
+    "Unciv.Relay/Program.cs": "POSIX signal wiring only (SIGINT/SIGTERM stop, SIGHUP reload); RelayRunner takes the stop token and ReloadSignal and is covered by RelayRunnerTests; the published binary was run by hand (--help, start, SIGTERM) and T366 adds that smoke to release.py"
   }
 }

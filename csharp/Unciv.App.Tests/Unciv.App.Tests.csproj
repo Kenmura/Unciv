@@ -32,6 +32,7 @@
     <ProjectReference Include="..\Unciv.Core\Unciv.Core.csproj" />
     <ProjectReference Include="..\Unciv.Cli\Unciv.Cli.csproj" />
     <ProjectReference Include="..\Unciv.Server\Unciv.Server.csproj" />
+    <ProjectReference Include="..\Unciv.Relay\Unciv.Relay.csproj" />
     <ProjectReference Include="..\Unciv.Client.Net\Unciv.Client.Net.csproj" />
     <ProjectReference Include="..\Unciv.Assets\Unciv.Assets.csproj" />
     <ProjectReference Include="..\Unciv.Harness\Unciv.Harness.csproj" />
