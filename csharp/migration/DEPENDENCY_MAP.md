@@ -15,7 +15,7 @@ Work is completed phase by phase (`phases.txt`; `ticket.py ready`/`next` list ea
 
 | Phase | Done | Remaining | Ready | In flight | Remaining tickets |
 |---|---|---|---|---|---|
-| Phase 1: CLI (headless engine) | 231/231 | 0 | 0 | 0 | complete |
+| Phase 1: CLI (headless engine) | 231/234 | 3 | 3 | 0 | [T330](backlog/T330.md) [T331](backlog/T331.md) [T332](backlog/T332.md) |
 | Phase 2: single player (Godot client) | 57/57 | 0 | 0 | 0 | complete |
 | Phase 3: multiplayer | 29/29 | 0 | 0 | 0 | complete |
 | Phase 4: queued plans (UI redesign, unit models, BNW) | 72/76 | 4 | 0 | 0 | [T326](backlog/T326.md) [T327](backlog/T327.md) [T328](backlog/T328.md) [T329](backlog/T329.md) |
@@ -60,6 +60,9 @@ flowchart TD
     T327["T327<br/>Golden scenarios city-a, city-b, flat-city and phone-menus f..."]
     T328["T328<br/>Modal owners that use the width Fit() returns keep a stale b..."]
     T329["T329<br/>Layout-matrix resize phase covers only menu screens: HUD, ci..."]
+    T330["T330<br/>GitHub Actions does not run for csharp-migration or csharp-v..."]
+    T331["T331<br/>Local release fallback: release.py --github-draft builds all..."]
+    T332["T332<br/>Verify Windows and macOS CLI and the Windows dedicated serve..."]
   end
   T274 --> T275
   T278 --> T306
@@ -101,6 +104,9 @@ flowchart TD
   class T327 ondeck
   class T328 ondeck
   class T329 ondeck
+  class T330 ready
+  class T331 ready
+  class T332 ready
 ```
 
 ## Remaining tickets over time
@@ -119,7 +125,7 @@ xychart-beta
     title "Remaining tickets"
     x-axis ["Oct 24 00:00", "Oct 24 12:00", "Oct 25 00:00", "Oct 25 12:00", "Oct 26 00:00", "Oct 26 12:00", "Oct 27 00:00", "Oct 27 12:00", "Oct 28 00:00", "Oct 28 12:00", "Oct 29 00:00", "Oct 29 12:00", "Oct 30 00:00", "Oct 30 12:00", "Oct 31 00:00"]
     y-axis "Tickets" 0 --> 55
-    line [5, 46, 2, 54, 39, 19, 11, 9, 9, 9, 9, 31, 14, 6, 18]
+    line [5, 46, 2, 54, 39, 19, 11, 9, 9, 9, 9, 31, 14, 6, 21]
     line [0, 11, 11, 0, 0, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1]
     line [1, 0, 4, 2, 6, 6, 3, 2, 2, 2, 2, 3, 5, 5, 6]
 ```
@@ -138,13 +144,16 @@ xychart-beta
     x-axis ["Oct 24 00:00", "Oct 24 12:00", "Oct 25 00:00", "Oct 25 12:00", "Oct 26 00:00", "Oct 26 12:00", "Oct 27 00:00", "Oct 27 12:00", "Oct 28 00:00", "Oct 28 12:00", "Oct 29 00:00", "Oct 29 12:00", "Oct 30 00:00", "Oct 30 12:00", "Oct 31 00:00"]
     y-axis "Tickets" 0 --> 475
     line [0, 69, 153, 200, 246, 280, 294, 297, 297, 297, 297, 354, 413, 433, 446]
-    line [6, 126, 170, 256, 291, 305, 309, 309, 309, 309, 309, 388, 433, 445, 471]
+    line [6, 126, 170, 256, 291, 305, 309, 309, 309, 309, 309, 388, 433, 445, 474]
 ```
 
 ## Incomplete tickets
 
 | Ticket | State | Depends on | Unblocks | Title |
 |---|---|---|---|---|
+| T330 | **Ready to start** | none | 0 | GitHub Actions does not run for csharp-migration or csharp-v tags: diagnose (account, billing, rename to Kenmura/UncivSharp, settings), restore CI, then re-run the tag workflow |
+| T331 | **Ready to start** | T279, T280 | 0 | Local release fallback: release.py --github-draft builds all four clients plus CLI and server archives from a tag and creates the draft release without GitHub Actions; notes flag --local |
+| T332 | **Ready to start** | none | 0 | Verify Windows and macOS CLI and the Windows dedicated server on real systems, then drop the UNVERIFIED marks from the release notes |
 | T275 | **On deck** (after T274) | T274, C034, C035 | 0 | Host migration 5/5: client UI and docs (backup-host picker, trust notice, standby status, rollback and host-changed notices, superseded-host screen) |
 | T326 | **On deck** (after T323) | T323 | 0 | TooltipHost text width is re-measured on a live resize only while a tip is visible |
 | T327 | **On deck** (after T323) | T323 | 0 | Golden scenarios city-a, city-b, flat-city and phone-menus fail on the dev machine at the unmodified base (renderer differences) |
