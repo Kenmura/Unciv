@@ -76,10 +76,15 @@ public static class GraphicsModel
     public static bool IsIntegratedAdapterName(string? adapterName)
     {
         if (string.IsNullOrEmpty(adapterName) || IsSoftwareAdapter(adapterName)) return false;
-        bool intel = adapterName.Contains("Intel", StringComparison.OrdinalIgnoreCase) && !adapterName.Contains("Arc", StringComparison.OrdinalIgnoreCase);
-        bool amdApu = adapterName.Contains("Radeon(TM) Graphics", StringComparison.OrdinalIgnoreCase) || adapterName.Contains("Radeon Graphics", StringComparison.OrdinalIgnoreCase);
-        return intel || amdApu;
+        if (adapterName.Contains("Intel", StringComparison.OrdinalIgnoreCase))
+            return !System.Text.RegularExpressions.Regex.IsMatch(adapterName, @"\bArc\(TM\) [AB]\d{3}", System.Text.RegularExpressions.RegexOptions.CultureInvariant); // discrete Arc: A770, B580; Arc 140V / "Arc(TM) Graphics" are iGPUs
+        if (!adapterName.Contains("Radeon", StringComparison.OrdinalIgnoreCase) || adapterName.Contains("RX", StringComparison.Ordinal) || adapterName.Contains("Pro", StringComparison.Ordinal)) return false;
+        // APU names: "Radeon(TM) Graphics", "Radeon(TM) 780M Graphics", "Radeon(TM) Vega 8 Graphics"; RADV's bare "AMD Radeon Graphics" is ambiguous, the device type decides on Forward+
+        return System.Text.RegularExpressions.Regex.IsMatch(adapterName, @"Radeon(\(TM\))? (Graphics|\d{3}M|Vega)", System.Text.RegularExpressions.RegexOptions.CultureInvariant);
     }
+
+    /// <summary>Integrated or not: the renderer's device type when it reports one (<paramref name="deviceIntegrated"/> true or false), the adapter name when it does not (null: compatibility renderer, type Other).</summary>
+    public static bool IsIntegrated(bool? deviceIntegrated, string? adapterName) => deviceIntegrated ?? IsIntegratedAdapterName(adapterName);
 
     /// <summary>The rendering method to run on for the chosen level: Forward+ for Ultra unless an attempt failed, otherwise the compatibility renderer.</summary>
     public static string WantedRenderer(GraphicsQuality requested, bool ultraFailed) => requested == GraphicsQuality.Ultra && !ultraFailed ? ForwardPlus : Compatibility;
@@ -133,11 +138,16 @@ public static class GraphicsModel
     }
 
     /// <summary>
-    /// T288: advice only, never a change of the chosen level. Measured on an Intel Arrow Lake iGPU at 1080p (design/ULTRA-GRAPHICS.md section 7): Low holds 45+ fps in every view,
-    /// High is about 30 fps at the default zoom and Ultra 30 fps at the default zoom and about 20 fps zoomed all the way out.
+    /// T288: advice only, never a change of the chosen level. Measured on an Intel Arrow Lake iGPU at 1080p (design/ULTRA-GRAPHICS.md section 7): Low holds about 40+ fps in every view,
+    /// High is about 35-44 fps at the default zoom and Ultra about 31 fps there and about 21 fps zoomed all the way out.
     /// </summary>
     public static string IntegratedNote(GraphicsQuality level) =>
-        level == GraphicsQuality.Low ? "" : $"{level} may run slowly on integrated graphics; Low is the smoothest";
+        level switch
+        {
+            GraphicsQuality.High => "High may run slowly on integrated graphics; Low is the smoothest",
+            GraphicsQuality.Ultra => "Ultra may run slowly on integrated graphics; Low is the smoothest",
+            _ => "",
+        };
 
     /// <summary>The command line to restart with: the original arguments minus any earlier rendering-method choice, then <c>--rendering-method <paramref name="method"/></c>. Arguments after <c>--</c> are the game's own and are kept as they are.</summary>
     public static IReadOnlyList<string> RestartArgs(IEnumerable<string> original, string method)

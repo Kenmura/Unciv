@@ -39,13 +39,13 @@ public static class GraphicsRuntime
         get
         {
             if (IntegratedOverride is { } forced) return forced;
+            bool? device = null;
             if (AdapterOverride == null)
             {
                 var type = RenderingServer.GetVideoAdapterType();
-                if (type == RenderingDevice.DeviceType.IntegratedGpu) return true;
-                if (type != RenderingDevice.DeviceType.Other) return false;
+                if (type != RenderingDevice.DeviceType.Other) device = type == RenderingDevice.DeviceType.IntegratedGpu;
             }
-            return GraphicsModel.IsIntegratedAdapterName(Adapter);
+            return GraphicsModel.IsIntegrated(device, Adapter);
         }
     }
 

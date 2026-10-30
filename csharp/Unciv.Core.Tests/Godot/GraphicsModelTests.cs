@@ -238,12 +238,27 @@ public sealed class GraphicsModelTests : IDisposable
     [InlineData("Intel(R) UHD Graphics 630", true)]
     [InlineData("AMD Radeon(TM) Graphics", true)]
     [InlineData("Intel(R) Arc(TM) A770 Graphics", false)]
+    [InlineData("Intel(R) Arc(TM) B580 Graphics", false)]
+    [InlineData("Intel(R) Arc(TM) Graphics", true)]
+    [InlineData("AMD Radeon(TM) 780M Graphics", true)]
+    [InlineData("AMD Radeon(TM) Vega 8 Graphics", true)]
+    [InlineData("AMD Radeon RX 9070 XT", false)]
+    [InlineData("AMD Radeon Pro W7800", false)]
     [InlineData("NVIDIA GeForce RTX 5060 Ti", false)]
     [InlineData("AMD Radeon RX 7800 XT", false)]
     [InlineData("llvmpipe (LLVM 22.1.8, 256 bits)", false)]
     [InlineData("", false)]
     [InlineData(null, false)]
     public void IntegratedAdapterNames(string? name, bool expected) => Assert.Equal(expected, GraphicsModel.IsIntegratedAdapterName(name));
+
+    [Fact]
+    public void DeviceTypeWinsOverTheName()
+    {
+        Assert.True(GraphicsModel.IsIntegrated(true, Gpu));
+        Assert.False(GraphicsModel.IsIntegrated(false, "Intel(R) Graphics (ARL)"));
+        Assert.True(GraphicsModel.IsIntegrated(null, "Intel(R) Graphics (ARL)"));
+        Assert.False(GraphicsModel.IsIntegrated(null, Gpu));
+    }
 
     [Fact]
     public void IntegratedNoteIsAdviceForHighAndUltraOnly()
