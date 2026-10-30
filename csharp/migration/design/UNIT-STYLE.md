@@ -19,8 +19,6 @@
 - [8. What was not verified](#8-what-was-not-verified)
 <!-- /toc -->
 
-<!-- toc -->
-
 The owner asked for units that look more gritty and real and less chibi. This page shows six clearly different Warrior designs next to the current one so the owner can pick one or two baselines. The roll-out to the other ~40 units is ticket T295 and is blocked on that choice. Nothing here changes the shipped game: the current `unit/Warrior` and every CI golden are untouched.
 
 ## 1. Decision needed
@@ -147,6 +145,8 @@ Polygon counts are triangles of the whole Warrior glb; the current Warrior is **
 
 ## 8. What was not verified
 
+- The projections of section 6 (2 to 4 draw calls and about 15 MB after an atlas merge) and the roll-out effort estimates of section 4: they are estimates, not measurements.
+- The blue patches on option 3's skin (a known defect, not fixed).
 - Frame time or draw-call cost with the options in the game (the renders prove they load and draw; see section 6).
 - The turntable pictures use a studio scene; the in-game crops use the real game but are small (the figure is about 70 px high at the closest zoom, 1920x1080).
 - High and Ultra were rendered; Low and the compatibility renderer were not.

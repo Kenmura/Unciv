@@ -18,7 +18,7 @@ namespace Unciv.GodotHarness;
 /// one machine, and real-GPU output must not become a golden). It ignores the seeded Tiny session it is handed and builds its own bigger game (Large map by default, ten AI civs,
 /// many cities and units for the human, the whole map explored) so the map is a real one, then runs the full <see cref="GameScreen"/>.
 /// Per configuration and camera view it records wall frame time (Godot's process delta, vsync off), the GPU and CPU render time the renderer measures, and a PNG.
-/// Configuration through environment variables: <c>UNCIV_BENCH_OUT</c> (output folder, required), <c>UNCIV_BENCH_MODE</c> = <c>levels</c> (Low/High/Ultra, default) or
+/// Configuration through environment variables: <c>UNCIV_BENCH_OUT</c> (output folder, required), <c>UNCIV_BENCH_MODE</c> = <c>levels</c> (Low/High/Ultra, default), <c>warrior</c> (T294, see <see cref="WarriorShots"/>) or
 /// <c>ablation</c> (Low plus each effect alone, then everything), <c>UNCIV_BENCH_SIZE</c> (Medium/Large/Huge), <c>UNCIV_BENCH_RES</c> (WxH, default 1920x1080),
 /// <c>UNCIV_BENCH_FRAMES</c> (frames per measurement, default 300), <c>UNCIV_BENCH_VIEWS</c> (comma list, default all), <c>UNCIV_BENCH_SEQ</c>=N (N extra shots 0.5 s apart in every coast view, T289), <c>UNCIV_BENCH_CLEAN</c>=1 (hide HUD, minimap, panels and yield chips, for documentation pictures). Run it with
 /// <c>Unciv.Godot.Harness/tools/gpu-bench.sh</c>, which also picks the renderer and the adapter.
@@ -156,11 +156,7 @@ public sealed partial class GpuBenchScenario : Scenario
 
         void Shot(string name) => ViewportCapture.CaptureViewportPng(host.GetViewport(), Path.Combine(outDir, Safe(renderer + "_" + name) + ".png"));
 
-        if (mode == "warrior")
-        {
-            return WarriorShots(screen, map, Capital, configs, Shot);
-        }
-
+        if (mode == "warrior") return WarriorShots(screen, map, Capital, configs, Shot);
         var steps = new List<ScenarioStep> { new WaitFrames(30) };
         var panDirection = 1f;
         foreach (var config in configs)
