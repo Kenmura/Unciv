@@ -5,10 +5,10 @@ namespace Unciv.GodotClient.Assets;
 
 /// <summary>
 /// C098: the Ultra-only shader for the merged terrain chunks (design/ULTRA-GRAPHICS.md ranks 3 and 4). One spatial shader draws land and water: it reproduces the plain chunk
-/// material (vertex colour times the shared grain texture) and adds, on top, a world-space noise detail and a slope-to-rock blend on land, and an animated normal, a sky fresnel
-/// tint and a sun glint on water. Water is recognised in the fragment stage as an upward-facing surface below <see cref="WaterCeiling"/> (no mesh change, so the Low and High
+/// material (vertex colour times the shared grain texture) and adds, on top, a world-space noise detail and a slope-to-rock blend on land, and an animated ripple normal, a sky fresnel
+/// tint and a sparse virtual sun glint on water. Water is recognised in the fragment stage as an upward-facing surface below <see cref="WaterCeiling"/> (no mesh change, so the Low and High
 /// chunk meshes and their baked colours are untouched). Only <c>GraphicsPreset.ShaderTier</c> 1 and up uses it; Low and High keep the StandardMaterial3D.
-/// Written against the spatial shader language that every renderer supports (compatibility included); never run on a real GPU yet, see ticket T271.
+/// Written against the spatial shader language that every renderer supports (compatibility included); run and tuned on an RTX 5060 Ti Forward+ (T271, T289).
 /// </summary>
 public static class MapShaders
 {

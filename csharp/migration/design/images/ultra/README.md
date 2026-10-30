@@ -8,7 +8,7 @@ These are **documentation images, not goldens**. They were rendered on a real GP
 | Driver | NVIDIA proprietary 615.71.09, Vulkan 1.4.351 |
 | Renderer | Godot 4.7.2 Forward+ (Vulkan), `--rendering-method forward_plus --rendering-driver vulkan --gpu-index 0`, vsync off |
 | Resolution | rendered at 1920x1080; the single views are downscaled to 1600x900 JPEG, the comparison sheet is 3 x 640x360 tiles |
-| Date | 2026-10-29 |
+| Date | 2026-10-29 (Ultra water re-rendered after T289) |
 | Scene | real `GameScreen` over the T271 fixture: generated Large Pangaea (2838 tiles, 11 civs plus 4 city-states, 24 cities, 84 units, map explored) |
 | Levels | `GraphicsModel.Preset` Low / High / Ultra with the T271 calibration (Ultra exposure 0.6, ambient 0.3, saturation 1.3) |
 | Clean mode | `UNCIV_BENCH_CLEAN=1`: HUD, minimap, unit panel and yield chips hidden so the pictures show the map and its lighting only |
@@ -25,7 +25,7 @@ Views: `mid` is the default play zoom (14), `coast` zoom 9 over a shoreline, `co
 | `compare-low-high-ultra.jpg` | 3 x 3 sheet: columns Low / High / Ultra, rows mid / coast / overview |
 | `low-mid.jpg`, `high-mid.jpg`, `ultra-mid.jpg` | the default play view at each level |
 | `ultra-coast.jpg` | Ultra over a shoreline |
-| `ultra-water-closeup.jpg` | Ultra water at a low tilt (the C098 shader: depth tint and a faint ripple; subtle by design, see T289) |
+| `ultra-water-closeup.jpg` | Ultra water at a low tilt (the C098 shader: depth tint, a visible ripple and sparse glint sparkles, T289) |
 | `ultra-overview.jpg` | Ultra with the whole Large map in view |
 
-Not shown: Intel iGPU, the compatibility renderer, Windows, macOS, Android. Ultra's water animation cannot be seen in a still.
+Not shown: Intel iGPU, the compatibility renderer, Windows, macOS, Android. Ultra's water animation cannot be seen in a still (the ripple and glint were tuned on 0.5 s frame sequences, see ULTRA-GRAPHICS.md T289).
