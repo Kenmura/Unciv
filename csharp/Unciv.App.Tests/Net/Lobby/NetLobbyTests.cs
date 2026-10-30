@@ -29,6 +29,17 @@ public sealed class NetLobbyTests : IDisposable
         throw new DirectoryNotFoundException("android/assets/jsons not found above " + AppContext.BaseDirectory);
     }
 
+    /// <summary>
+    /// A LobbySet is sent without waiting for the host (and the LobbyState a raw test reads next may be an older broadcast), so a start issued right after it could still see the
+    /// slot on Random: BNW then drew Japan for the seed where Gods &amp; Kings happened to draw Rome (T364). Wait until the host applied the nation.
+    /// </summary>
+    private static async Task WaitForNationAsync(ServerLobby lobby, int slot, string nation)
+    {
+        using var cts = new CancellationTokenSource(Bound);
+        while (!string.Equals(lobby.Lobby.CreateLobbyState().Slots[slot].Nation, nation, StringComparison.Ordinal))
+            await Task.Delay(5, cts.Token);
+    }
+
     private static async Task<T> ReceiveMessageAsync<T>(ITransport transport, int timeoutMs = 2000) where T : Message
     {
         using var cts = new CancellationTokenSource(timeoutMs);
@@ -572,6 +583,7 @@ public sealed class NetLobbyTests : IDisposable
 
         Assert.True((await session.JoinAsync().WaitAsync(Bound)).Joined);
         await session.SetLobbySlotAsync(0, "Rome", null, true);
+        await WaitForNationAsync(lobby, 0, "Rome");
         await lobby.StartGameAsync(force: true, seed: 42L, clockMillis: 5000L);
 
         // Several commands in a row: any frame taken by a competing lobby reader would leave one without a CommandResult.
@@ -592,6 +604,7 @@ public sealed class NetLobbyTests : IDisposable
         await using var first = NewClient(lobby, id, "Alice", clientEnd);
         Assert.True((await first.JoinAsync().WaitAsync(Bound)).Joined);
         await first.SetLobbySlotAsync(0, "Rome", null, true);
+        await WaitForNationAsync(lobby, 0, "Rome");
         await lobby.StartGameAsync(force: true, seed: 42L, clockMillis: 5000L);
 
         var (client2, server2) = InMemoryTransport.CreatePair();
@@ -615,6 +628,7 @@ public sealed class NetLobbyTests : IDisposable
         await using var session = NewClient(lobby, alice, "Alice", c1);
         Assert.True((await session.JoinAsync().WaitAsync(Bound)).Joined);
         await session.SetLobbySlotAsync(0, "Rome", null, true);
+        await WaitForNationAsync(lobby, 0, "Rome");
         await lobby.Lobby.SetSlotKindAsync(1, SlotKind.AI);
         await lobby.StartGameAsync(force: true, seed: 42L, clockMillis: 5000L);
 
@@ -643,6 +657,7 @@ public sealed class NetLobbyTests : IDisposable
         await using var second = NewClient(lobby, id, "Alice", c2);
         Assert.True((await second.JoinAsync().WaitAsync(Bound)).Joined);
         await second.SetLobbySlotAsync(0, "Rome", null, true);
+        await WaitForNationAsync(lobby, 0, "Rome");
         await lobby.StartGameAsync(force: true, seed: 42L, clockMillis: 5000L);
 
         Assert.False(string.IsNullOrEmpty((await second.SubmitAsync(new EndTurn()).WaitAsync(Bound)).ClientCmdId));
@@ -652,21 +667,19 @@ public sealed class NetLobbyTests : IDisposable
         while (await c1.ReceiveAsync(cts.Token) != null) { }
     }
 
-    // T359: the default ruleset became Brave New World; these two seat-race tests fail deterministically under it (the start is slower), so they keep Gods & Kings until T364 finds out why.
-    private static LobbySettings TimingSensitiveSettings => new() { Ruleset = "Civ V - Gods & Kings" };
-
     [Fact]
     public async Task ServerLobby_TwoRapidSameKeyReconnectsAfterStart_TheLatestIsSeated_NotLeftWithoutSnapshot()
     {
         for (var round = 0; round < 6; round++)
         {
-            await using var lobby = new ServerLobby(TimingSensitiveSettings);
+            await using var lobby = new ServerLobby();
             using var id = ClientIdentity.Generate();
             var (c1, s1) = InMemoryTransport.CreatePair();
             _ = lobby.AttachConnectionAsync(s1);
             await using var first = NewClient(lobby, id, "Alice", c1);
             Assert.True((await first.JoinAsync().WaitAsync(Bound)).Joined);
             await first.SetLobbySlotAsync(0, "Rome", null, true);
+            await WaitForNationAsync(lobby, 0, "Rome");
             await lobby.StartGameAsync(force: true, seed: 42L, clockMillis: 5000L);
 
             var (c2, s2) = InMemoryTransport.CreatePair();
@@ -682,13 +695,26 @@ public sealed class NetLobbyTests : IDisposable
             using var cts = new CancellationTokenSource(Bound);
             var seatedSecond = WaitForSnapshotAsync(second, cts.Token);
             var seatedThird = WaitForSnapshotAsync(third, cts.Token);
-            Assert.True(await await Task.WhenAny(seatedSecond, seatedThird));
+            Assert.True(await AnyTrueAsync(seatedSecond, seatedThird));
             var outcomes = await Task.WhenAll(TrySubmitAsync(second), TrySubmitAsync(third));
             Assert.Contains(true, outcomes);
             var romeSessions = 0;
             await lobby.ActiveGameHost!.EnqueueAsync(() => { romeSessions = lobby.ActiveGameHost.Sessions.Values.Count(x => x.BoundCivId == "Rome"); return Task.CompletedTask; });
             Assert.Equal(1, romeSessions);
         }
+    }
+
+    /// <summary>True as soon as one task yields true; false once all finished without. A superseded connection's stream ends (false) and must not decide for the seated one (T364).</summary>
+    private static async Task<bool> AnyTrueAsync(params Task<bool>[] tasks)
+    {
+        var pending = tasks.ToList();
+        while (pending.Count > 0)
+        {
+            var done = await Task.WhenAny(pending);
+            if (await done) return true;
+            pending.Remove(done);
+        }
+        return false;
     }
 
     /// <summary>True when the host answered the command (accepted or not): the connection is seated and its reader works.</summary>
@@ -735,6 +761,7 @@ public sealed class NetLobbyTests : IDisposable
         await using var first = NewClient(lobby, id, "Alice", c1);
         Assert.True((await first.JoinAsync().WaitAsync(Bound)).Joined);
         await first.SetLobbySlotAsync(0, "Rome", null, true);
+        await WaitForNationAsync(lobby, 0, "Rome");
         await lobby.StartGameAsync(force: true, seed: 42L, clockMillis: 5000L);
 
         // Seating of the first reconnect is held back until the second one has been fully seated.
@@ -818,13 +845,14 @@ public sealed class NetLobbyTests : IDisposable
     {
         foreach (var dispose in new[] { false, true })
         {
-            await using var lobby = new ServerLobby(TimingSensitiveSettings);
+            await using var lobby = new ServerLobby();
             using var id = ClientIdentity.Generate();
             var (c1, s1) = InMemoryTransport.CreatePair();
             _ = lobby.AttachConnectionAsync(s1);
             await using var first = NewClient(lobby, id, "Alice", c1);
             Assert.True((await first.JoinAsync().WaitAsync(Bound)).Joined);
             await first.SetLobbySlotAsync(0, "Rome", null, true);
+            await WaitForNationAsync(lobby, 0, "Rome");
             var host = await lobby.StartGameAsync(force: true, seed: 42L, clockMillis: 5000L);
             var sessionId = host.Sessions.Keys.Single();
             var gameSide = lobby.Lobby.GameTransportFor(sessionId);
@@ -867,6 +895,7 @@ public sealed class NetLobbyTests : IDisposable
         _ = lobby.AttachConnectionAsync(s1);
         await RawJoinAsync(lobby, c1, id);
         await c1.SendAsync(ProtocolCodec.Encode(new LobbySet { Slot = 0, Nation = "Rome", Ready = true }));
+        await WaitForNationAsync(lobby, 0, "Rome");
         await ReceiveMessageAsync<LobbyState>(c1);
         await lobby.StartGameAsync(force: true, seed: 42L, clockMillis: 5000L);
         await ReceiveMessageAsync<Snapshot>(c1, 10000);
@@ -883,6 +912,7 @@ public sealed class NetLobbyTests : IDisposable
         _ = lobby.AttachConnectionAsync(s1);
         await RawJoinAsync(lobby, c1, id);
         await c1.SendAsync(ProtocolCodec.Encode(new LobbySet { Slot = 0, Nation = "Rome", Ready = true }));
+        await WaitForNationAsync(lobby, 0, "Rome");
         await ReceiveMessageAsync<LobbyState>(c1);
 
         var start = Task.Run(() => lobby.StartGameAsync(force: true, seed: 42L, clockMillis: 5000L));
@@ -995,6 +1025,7 @@ public sealed class NetLobbyTests : IDisposable
         await RawJoinAsync(lobby, a, idA);
         await RawJoinAsync(lobby, b, idB);
         await a.SendAsync(ProtocolCodec.Encode(new LobbySet { Slot = 0, Nation = "Rome", Ready = true }));
+        await WaitForNationAsync(lobby, 0, "Rome");
         await b.SendAsync(ProtocolCodec.Encode(new LobbySet { Slot = 1, Nation = "Greece", Ready = true }));
         await b.CloseAsync();
         while (lobby.Lobby.Slots[1].Connected) await Task.Yield();
@@ -1035,6 +1066,7 @@ public sealed class NetLobbyTests : IDisposable
         _ = lobby.AttachConnectionAsync(s1);
         await RawJoinAsync(lobby, c1, id);
         await c1.SendAsync(ProtocolCodec.Encode(new LobbySet { Slot = 0, Nation = "Rome", Ready = true }));
+        await WaitForNationAsync(lobby, 0, "Rome");
         await ReceiveMessageAsync<LobbyState>(c1);
         await lobby.StartGameAsync(force: true, seed: 42L, clockMillis: 5000L);
 
@@ -1054,6 +1086,7 @@ public sealed class NetLobbyTests : IDisposable
         _ = lobby.AttachConnectionAsync(s1);
         await RawJoinAsync(lobby, c1, id);
         await c1.SendAsync(ProtocolCodec.Encode(new LobbySet { Slot = 0, Nation = "Rome", Ready = true }));
+        await WaitForNationAsync(lobby, 0, "Rome");
         await ReceiveMessageAsync<LobbyState>(c1);
         lobby.Lobby.GameFactory = (_, _, _) => throw new InvalidOperationException("creation failed");
         await Assert.ThrowsAnyAsync<Exception>(() => lobby.StartGameAsync(force: true, seed: 42L, clockMillis: 5000L));
@@ -1090,12 +1123,13 @@ public sealed class NetLobbyTests : IDisposable
     [Fact]
     public async Task ServerLobby_SeatSupersededWhileTheStartSeatsIt_DoesNotFailTheStart()
     {
-        await using var lobby = new ServerLobby(TimingSensitiveSettings);
+        await using var lobby = new ServerLobby();
         using var id = ClientIdentity.Generate();
         var (c1, s1) = InMemoryTransport.CreatePair();
         _ = lobby.AttachConnectionAsync(new SupersededWhileSeatingTransport(s1, () => lobby.Lobby.ReleaseSeatAsync("Rome", id.PlayerKey)));
         await RawJoinAsync(lobby, c1, id);
         await c1.SendAsync(ProtocolCodec.Encode(new LobbySet { Slot = 0, Nation = "Rome", Ready = true }));
+        await WaitForNationAsync(lobby, 0, "Rome");
         await ReceiveMessageAsync<LobbyState>(c1);
 
         var host = await lobby.StartGameAsync(force: true, seed: 42L, clockMillis: 5000L);
