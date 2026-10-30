@@ -5,7 +5,7 @@
 #
 # forward_plus runs Vulkan (--gpu-index picks the device; the index order is Godot's, the adapter name is printed in <out>/info.txt).
 # gl_compatibility runs OpenGL 3 on the display's GL vendor; "nvidia" / "intel" select it through the PRIME offload variables.
-# Environment: UNCIV_BENCH_MODE (levels|ablation), UNCIV_BENCH_SIZE, UNCIV_BENCH_RES, UNCIV_BENCH_FRAMES, UNCIV_BENCH_VIEWS (see GpuBenchScenario).
+# Environment: UNCIV_BENCH_MODE (levels|ablation), UNCIV_BENCH_SIZE, UNCIV_BENCH_RES, UNCIV_BENCH_FRAMES, UNCIV_BENCH_VIEWS, UNCIV_BENCH_SEQ, UNCIV_BENCH_CLEAN (see GpuBenchScenario; the default view list now also has coast30, coast55, coast75, T289).
 # Run on the host (not in dotnet-dev, which has no NVIDIA userspace): the GPU needs the host driver. Godot .NET needs a dotnet runtime there: set DOTNET_ROOT to a copy of
 # the container's /usr/lib64/dotnet (dotnet, host/, shared/Microsoft.NETCore.App/<version>). Build first inside dotnet-dev: (cd Unciv.Godot.Harness && dotnet build).
 # Use a quiet machine (check uptime): timings under load are noisy; repeat and report the spread.

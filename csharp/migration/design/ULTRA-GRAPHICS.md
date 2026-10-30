@@ -236,7 +236,7 @@ Tuned on the RTX 5060 Ti (Forward+, 1920x1080) from stills at tilts 30, 55 and 7
 
 1. The C097 defaults stand: Low default, High and Ultra opt-in; no level is too slow on a discrete GPU.
 2. Ultra's colour constants are calibrated (above); the tests pin the calibration direction, not the exact numbers.
-3. Follow-ups filed in the backlog: T287 far-zoom draw-call reduction (13.3k draw calls at the maximum zoom-out, the CPU bound on every GPU); T288 an integrated-GPU note for Ultra; T289 (done) water ripple and glint tuning, see "Water tuning (T289)" below; T290 real-device passes on Windows, macOS and a mid-range Android phone.
+3. Follow-ups filed in the backlog: T287 far-zoom draw-call reduction (13.3k draw calls at the maximum zoom-out, the CPU bound on every GPU); T288 an integrated-GPU note for Ultra; T289 (done) water ripple and glint tuning, see "Water tuning (T289)" above; T290 real-device passes on Windows, macOS and a mid-range Android phone.
 
 ### Far-zoom draw-call reduction (T287)
 
