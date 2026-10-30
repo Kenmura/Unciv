@@ -196,7 +196,12 @@ public sealed class StandbyCoordinator
         }
         var code = await ProbeCoreAsync(gen, cancellationToken).ConfigureAwait(false);
         int count;
-        lock (gate) count = endpoints.Count;
+        lock (gate)
+        {
+            count = endpoints.Count;
+            // The follow-up dials are tentative: a standby that was reachable stays so (for a client joining meanwhile) until every endpoint has failed.
+            if (gen == generation && code is ErrorCodes.ProbeFailed or ErrorCodes.ProbeFingerprint && count > 1 && string.Equals(before, StandbyStates.Ready, StringComparison.Ordinal)) reachable = true;
+        }
         // The probe tries one endpoint per call: with several announced (a LAN and a public address) one dead one would flip ready/unreachable every interval. The periodic path tries the others before giving up.
         for (var extra = 1; extra < count && code is ErrorCodes.ProbeFailed or ErrorCodes.ProbeFingerprint; extra++)
             code = await ProbeCoreAsync(gen, cancellationToken, followUp: true).ConfigureAwait(false);

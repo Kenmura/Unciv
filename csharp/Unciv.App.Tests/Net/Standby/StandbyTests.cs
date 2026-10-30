@@ -145,6 +145,12 @@ public sealed class StandbyCoordinatorTests
         Assert.Null(await c.AcceptAsync("candidate", Accept(Fp, 47821, "lan.example", "wan.example"))); // the repeat tries the next one in rotation
         Assert.Equal(StandbyStates.Ready, c.State);
 
+        var observed = new List<string>();
+        prober.Answer = (host, _) =>
+        {
+            observed.Add(c.State); // what a client joining mid-round would see
+            return host == "lan.example" ? null : Fp;
+        };
         for (var round = 0; round < 4; round++)
         {
             clock.AdvanceSeconds(121);
@@ -152,6 +158,7 @@ public sealed class StandbyCoordinatorTests
             Assert.Equal(StandbyStates.Ready, c.State);
         }
 
+        Assert.All(observed, state => Assert.Equal(StandbyStates.Ready, state)); // a failed first endpoint is tentative while the others are tried
         prober.Answer = (_, _) => null; // now everything is dead: one re-probe tries every endpoint, then reports the loss
         var dialled = prober.Dialled.Count;
         clock.AdvanceSeconds(121);
@@ -520,7 +527,8 @@ public sealed class StandbyListenerTests
         var (transport, _) = await ConnectAsync(listener, cert);
         await using (transport)
         {
-            await transport.SendAsync(new string('x', StandbyListener.MaxFrameBytes * 2));
+            try { await transport.SendAsync(new string('x', StandbyListener.MaxFrameBytes * 2)); }
+            catch (IOException) { /* the listener closed on the length prefix, before the rest was written: that is the point */ }
             Assert.Null(await ReadAsync(transport));
         }
     }

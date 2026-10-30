@@ -74,7 +74,7 @@ public sealed class ServerLobby : IAsyncDisposable
                 await lobbyHost.ReprobeStandbyAsync(disposed.Token).ConfigureAwait(false); // sends to a dead connection are swallowed by the lobby itself
             }
         }
-        catch (Exception e) when (e is OperationCanceledException or ObjectDisposedException or InvalidOperationException) { /* disposed */ }
+        catch (Exception e) when (e is not OutOfMemoryException) { /* disposed, or a failed round: the loop ends here and DisposeAsync never sees a fault */ }
     }
 
     /// <summary>A known player reconnects after the start: their connection joins the running game (the lobby reader stays its only reader).</summary>
