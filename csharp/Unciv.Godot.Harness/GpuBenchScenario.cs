@@ -20,7 +20,7 @@ namespace Unciv.GodotHarness;
 /// Per configuration and camera view it records wall frame time (Godot's process delta, vsync off), the GPU and CPU render time the renderer measures, and a PNG.
 /// Configuration through environment variables: <c>UNCIV_BENCH_OUT</c> (output folder, required), <c>UNCIV_BENCH_MODE</c> = <c>levels</c> (Low/High/Ultra, default) or
 /// <c>ablation</c> (Low plus each effect alone, then everything), <c>UNCIV_BENCH_SIZE</c> (Medium/Large/Huge), <c>UNCIV_BENCH_RES</c> (WxH, default 1920x1080),
-/// <c>UNCIV_BENCH_FRAMES</c> (frames per measurement, default 300), <c>UNCIV_BENCH_VIEWS</c> (comma list, default all), <c>UNCIV_BENCH_CLEAN</c>=1 (hide HUD, minimap, panels and yield chips, for documentation pictures). Run it with
+/// <c>UNCIV_BENCH_FRAMES</c> (frames per measurement, default 300), <c>UNCIV_BENCH_VIEWS</c> (comma list, default all), <c>UNCIV_BENCH_SEQ</c>=N (N extra shots 0.5 s apart in every coast view, T289), <c>UNCIV_BENCH_CLEAN</c>=1 (hide HUD, minimap, panels and yield chips, for documentation pictures). Run it with
 /// <c>Unciv.Godot.Harness/tools/gpu-bench.sh</c>, which also picks the renderer and the adapter.
 /// </summary>
 public sealed partial class GpuBenchScenario : Scenario
@@ -83,6 +83,7 @@ public sealed partial class GpuBenchScenario : Scenario
         string mode = System.Environment.GetEnvironmentVariable("UNCIV_BENCH_MODE") ?? "levels";
         string sizeName = System.Environment.GetEnvironmentVariable("UNCIV_BENCH_SIZE") ?? "Large";
         int frames = int.TryParse(System.Environment.GetEnvironmentVariable("UNCIV_BENCH_FRAMES"), out int f) ? f : 300;
+        int seqShots = int.TryParse(System.Environment.GetEnvironmentVariable("UNCIV_BENCH_SEQ"), out int sq) ? sq : 0;
         var wantedViews = (System.Environment.GetEnvironmentVariable("UNCIV_BENCH_VIEWS") ?? "").Split(',', StringSplitOptions.RemoveEmptyEntries);
 
         var game = BuildGame(sizeName, out var human, out int cityCount, out int unitCount);
@@ -135,6 +136,9 @@ public sealed partial class GpuBenchScenario : Scenario
             new("close", 6f, 60f, Capital),
             new("coast", 9f, 50f, Coast),
             new("coastlow", 5f, 28f, Coast),
+            new("coast30", 7f, 30f, Coast),
+            new("coast55", 7f, 55f, Coast),
+            new("coast75", 7f, 75f, Coast),
             new("pan", 14f, 55f, Capital, Pan: true),
         }.Where(it => wantedViews.Length == 0 || wantedViews.Contains(it.Name)).ToList();
 
@@ -183,7 +187,19 @@ public sealed partial class GpuBenchScenario : Scenario
                 else if (mode != "ablation")
                 {
                     steps.Add(new Act("shot", () => Shot($"{config.Name}_{view.Name}")));
-                    if (view.Name is "coast" or "coastlow")
+                    if (seqShots > 0 && view.Name.StartsWith("coast", StringComparison.Ordinal))
+                    {
+                        // T289: a short animation sequence, one shot every half second of wall time (the water animates with TIME)
+                        for (int i = 1; i <= seqShots; i++)
+                        {
+                            ulong start = 0;
+                            int shotIndex = i;
+                            steps.Add(new Act("seq wait", () => start = Time.GetTicksMsec()));
+                            steps.Add(new WaitUntil("half second", () => Time.GetTicksMsec() - start >= 500, MaxFrames: 100000));
+                            steps.Add(new Act("seq shot", () => Shot($"{config.Name}_{view.Name}_t{shotIndex}")));
+                        }
+                    }
+                    else if (view.Name is "coast" or "coastlow")
                     {
                         steps.Add(new WaitFrames(40));
                         steps.Add(new Act("shot later", () => Shot($"{config.Name}_{view.Name}_later")));

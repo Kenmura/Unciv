@@ -33,6 +33,11 @@ public static class MapShaders
         uniform vec3 rock_tint : source_color = vec3(0.42, 0.40, 0.38);
         uniform float detail_strength = 0.10;
         uniform float wave_speed = 0.35;
+        uniform float ripple_slope = 0.8;
+        uniform vec3 glint_dir = vec3(0.30, 1.0, -0.22);
+        uniform float glint_threshold = 0.996;
+        uniform float glint_strength = 0.3;
+        uniform float glint_slope = 0.5;
 
         varying vec3 world_pos;
         varying vec3 world_normal;
@@ -52,6 +57,20 @@ public static class MapShaders
             return mix(mix(a, b, f.x), mix(c, d, f.x), f.y);
         }
 
+        // Value noise with its analytic gradient: x is the value, yz the slope, so a ripple normal costs the same as one plain noise lookup.
+        vec3 noised(vec2 p) {
+            vec2 i = floor(p);
+            vec2 f = fract(p);
+            vec2 u = f * f * f * (f * (f * 6.0 - 15.0) + 10.0); // quintic fade: a continuous slope AND curvature, so the lattice never shows in the ripple normal
+            vec2 du = 30.0 * f * f * (f - 1.0) * (f - 1.0);
+            float a = hash21(i);
+            float b = hash21(i + vec2(1.0, 0.0));
+            float c = hash21(i + vec2(0.0, 1.0));
+            float d = hash21(i + vec2(1.0, 1.0));
+            float k = a - b - c + d;
+            return vec3(a + (b - a) * u.x + (c - a) * u.y + k * u.x * u.y, du * (vec2(b - a, c - a) + k * u.yx));
+        }
+
         void vertex() {
             world_pos = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz;
             world_normal = normalize((MODEL_MATRIX * vec4(NORMAL, 0.0)).xyz);
@@ -61,15 +80,21 @@ public static class MapShaders
             vec3 base = COLOR.rgb * texture(grain, UV).rgb;
             bool up = normalize(world_normal).y > flat_normal_y;
             if (up && world_pos.y < water_ceiling) {
-                // Water: two noise layers drifting in different directions tilt the normal; the colour keeps the baked depth and shore shading.
+                // Water: the slope of two height-noise layers drifting in different directions tilts the normal (a ripple), the colour keeps the baked depth and shore shading.
                 float t = TIME * wave_speed;
-                vec2 p = world_pos.xz * 2.2;
-                float n1 = value_noise(p + vec2(t, t * 0.6));
-                float n2 = value_noise(p * 1.7 - vec2(t * 0.8, t));
-                vec3 tilt = normalize(vec3((n1 - 0.5) * 0.35, 1.0, (n2 - 0.5) * 0.35));
+                vec3 w1 = noised(world_pos.xz * 3.2 + vec2(t, t * 0.6));
+                // The second layer is rotated against the first so the two noise lattices do not line up into visible rectangles; its slope is rotated back.
+                mat2 turn = mat2(vec2(0.8, -0.6), vec2(0.6, 0.8));
+                vec3 w2 = noised(turn * (world_pos.xz * 6.1) - vec2(t * 0.8, t));
+                vec2 slope = (w1.yz * 0.65 + (w2.yz * turn) * 0.35) * ripple_slope;
+                vec3 tilt = normalize(vec3(-slope.x, 1.0, -slope.y));
                 NORMAL = normalize((VIEW_MATRIX * vec4(tilt, 0.0)).xyz);
                 float fresnel = pow(1.0 - clamp(dot(NORMAL, VIEW), 0.0, 1.0), 3.0);
                 ALBEDO = mix(base, sky_tint, 0.08 + fresnel * 0.4);
+                // Sun glint: the sun sits behind the camera, so a true reflection never reaches it; a fixed virtual glint direction lights the ripple crests that face it as sparkles.
+                vec3 glint_n = normalize(vec3(-w1.y * glint_slope, 1.0, -w1.z * glint_slope));
+                float glint = smoothstep(glint_threshold, 1.0, dot(glint_n, normalize(glint_dir)));
+                EMISSION = vec3(1.0, 0.93, 0.75) * glint * glint_strength;
                 ROUGHNESS = 0.12;
                 SPECULAR = 0.7;
                 METALLIC = 0.0;
