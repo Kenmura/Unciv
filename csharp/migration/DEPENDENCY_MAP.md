@@ -66,12 +66,12 @@ flowchart TD
   classDef done fill:#eeeeee,stroke:#999999,color:#666,stroke-dasharray:4 3
   class C099 waiting
   class T260 blocked
-  class T274 ready
-  class T275 waiting
+  class T274 prog
+  class T275 ondeck
   class T277 waiting
   class T278 waiting
   class T280 waiting
-  class T282 prog
+  class T282 ready
   class T290 ready
   class T295 blocked
   class T296 review
@@ -120,15 +120,15 @@ xychart-beta
 
 | Ticket | State | Depends on | Unblocks | Title |
 |---|---|---|---|---|
-| T274 | **Ready to start** | T273 | 1 | Host migration 4/5: crash election (loss detection, signed HostLossVote quorum, split-brain refusal, superseded-host mode, forced take-over, kill-the-host scenarios) |
+| T282 | **Ready to start** | T281 | 0 | Host migration 1c: periodic standby re-probe and the standby-mode Welcome answer (probe beyond the TLS handshake) |
 | T290 | **Ready to start** | T271 | 0 | Real-device frame-time pass: Windows, macOS, Android phone |
+| T275 | **On deck** (after T274) | T274, C034, C035 | 0 | Host migration 5/5: client UI and docs (backup-host picker, trust notice, standby status, rollback and host-changed notices, superseded-host screen) |
 | T297 | **On deck** (after T296) | T263, T296 | 0 | Host: optional parallel per-recipient view building, default off, byte-identical frames (T263 go) |
 | T260 | Blocked | T259, C042 | 4 | Android APK build: unblock the .NET export (net9.0 target or Gradle), Android preset, debug-signed arm64 APK from tools/package.sh android |
+| T274 | In-Progress [Claude-T274] | T273 | 1 | Host migration 4/5: crash election (loss detection, signed HostLossVote quorum, split-brain refusal, superseded-host mode, forced take-over, kill-the-host scenarios) |
 | T277 | Available (waiting on T260) | T260, T276 | 1 | Android CI: build the APK (arm64 plus x86_64) as an artifact and smoke it on an emulator |
 | T296 | Needs-Review [Claude] | T263 | 1 | Audit lazy engine caches reachable from host view building and add a read-only guard test (T263 precondition) |
 | C099 | Available (waiting on T260) | T260, C096 | 0 | Android shell behaviour: back button, safe area, orientation, lifecycle autosave, virtual keyboard, hide Host, permissions |
-| T275 | Available (waiting on T274) | T274, C034, C035 | 0 | Host migration 5/5: client UI and docs (backup-host picker, trust notice, standby status, rollback and host-changed notices, superseded-host screen) |
 | T278 | Available (waiting on T260) | T260, T276 | 0 | Android on-device verification: TLS join, lifecycle reconnect, frame time and APK size on a mid-range phone |
 | T280 | Available (waiting on T260, T277) | T279, T260, T277 | 0 | Add the Android APK to the tagged GitHub release workflow |
-| T282 | In-Progress [Claude] | T281 | 0 | Host migration 1c: periodic standby re-probe and the standby-mode Welcome answer (probe beyond the TLS handshake) |
 | T295 | Blocked | T294 | 0 | Roll the chosen gritty unit style out to the remaining units |
