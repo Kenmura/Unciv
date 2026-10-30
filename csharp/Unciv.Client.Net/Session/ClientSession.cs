@@ -415,13 +415,9 @@ public sealed class ClientSession : IAsyncDisposable
                 _ => StandbyApply.Rejected,
             };
         }
-        catch (ObjectDisposedException)
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException or ObjectDisposedException)
         {
-            return; // the copy was closed (declined) while this frame was in flight
-        }
-        catch (Exception e) when (e is IOException or UnauthorizedAccessException)
-        {
-            standbyBroken = true; // the disk cannot take the copy: nothing further is acked, the host's stream turns lagging
+            standbyBroken = true; // (a decline closing the copy while a frame is in flight lands here too) the disk cannot take the copy: nothing further is acked, the host's stream turns lagging
             Emit(new StandbyRejected("store-io"));
             return;
         }
