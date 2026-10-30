@@ -48,6 +48,13 @@ public sealed class UserProfileTests
     [InlineData("a b")]
     [InlineData("")]
     [InlineData("name\0x")]
+    [InlineData("alpha\n")]
+    [InlineData("CON")]
+    [InlineData("nul")]
+    [InlineData("Com1")]
+    [InlineData("alpha.")]
+    [InlineData("\u0663")]
+    [InlineData("\u00e9")]
     [InlineData("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")]
     public void PathTraversalAndOddNames_AreRejectedFromBothSources(string bad)
     {
@@ -94,6 +101,9 @@ public sealed class UserProfileTests
         Assert.All(new[] { files.Identity, files.Settings, files.Saves, files.HostKey, files.KnownHosts, files.LastJoin, files.HostedGames }, p => Assert.StartsWith(folder, p, StringComparison.Ordinal));
         Assert.Equal(Path.Combine("/data", "mods"), files.Mods);
     }
+
+    [Fact]
+    public void CaseVariants_ShareOneFolder() => Assert.Equal(new ProfileFiles("/d", "Alpha").Identity, new ProfileFiles("/d", "alpha").Identity);
 
     [Fact]
     public void WindowTitle_NamesTheProfile() => Assert.Equal(("Unciv", "Unciv - bob"), (UserProfile.WindowTitle(null), UserProfile.WindowTitle("bob")));

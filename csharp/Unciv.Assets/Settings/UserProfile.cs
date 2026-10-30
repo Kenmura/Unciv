@@ -14,12 +14,15 @@ public static class UserProfile
     public const string EnvironmentVariable = "UNCIV_PROFILE";
     public const int MaxLength = 32;
 
-    private static readonly Regex Valid = new("^[A-Za-z0-9][A-Za-z0-9_-]{0,31}$", RegexOptions.CultureInvariant | RegexOptions.NonBacktracking);
+    private static readonly Regex Valid = new(@"\A[A-Za-z0-9][A-Za-z0-9_-]{0,31}\z", RegexOptions.CultureInvariant | RegexOptions.NonBacktracking);
 
     /// <summary>The command a player types to start a second copy as another player (shown in the host and join help).</summary>
     public const string SecondInstanceHelp = "Testing with two copies on one computer? Start the second copy with: Unciv -- --profile=friend (or set UNCIV_PROFILE=friend). Each profile is its own player with its own settings and saves.";
 
-    public static bool IsValidName(string? name) => name != null && Valid.IsMatch(name);
+    private static readonly Regex WindowsReserved = new(@"\A(CON|PRN|AUX|NUL|COM[0-9]|LPT[0-9])\z", RegexOptions.CultureInvariant | RegexOptions.IgnoreCase | RegexOptions.NonBacktracking);
+
+    /// <summary>Windows device names (CON, NUL, COM1...) cannot be folder names there, so they are refused everywhere.</summary>
+    public static bool IsValidName(string? name) => name != null && Valid.IsMatch(name) && !WindowsReserved.IsMatch(name);
 
     /// <summary>
     /// The profile asked for: the argument wins over the environment. Returns the name (null for the default profile) and, for a bad name or a missing value, an error sentence instead
@@ -50,8 +53,8 @@ public static class UserProfile
             : (null, $"Invalid profile name '{requested}': use 1 to {MaxLength} letters, digits, '-' or '_', starting with a letter or digit");
     }
 
-    /// <summary>The folder (relative to <c>user://</c>, with a trailing slash, or empty for the default profile) that holds the profile's files.</summary>
-    public static string FolderFor(string? name) => name == null ? "" : $"profiles/{name}/";
+    /// <summary>The folder (relative to <c>user://</c>, lower-cased so Alpha and alpha are one player on a case-insensitive file system, with a trailing slash, or empty for the default profile) that holds the profile's files.</summary>
+    public static string FolderFor(string? name) => name == null ? "" : $"profiles/{name.ToLowerInvariant()}/";
 
     /// <summary>The window title: the plain name for the default profile, else with the profile so two windows can be told apart.</summary>
     public static string WindowTitle(string? name) => name == null ? "Unciv" : $"Unciv - {name}";
