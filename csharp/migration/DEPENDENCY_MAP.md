@@ -293,6 +293,6 @@ xychart-beta
 | T355 | Available (waiting on T338) | T338 | 0 | Verify nested TLS and the relay path on Windows, macOS and Android (manual, UNVERIFIED until run) |
 | T356 | Available (waiting on T337, T338, T339) | T337, T338, T339 | 0 | Deploy the relay on the owner's server: concrete nginx config, manual connectivity matrix, result recorded |
 | T357 | Available (waiting on T337, T338) | T337, T338 | 0 | WebSocket gateway so the web export can join and host through the relay (optional) |
-| T358 | Needs-Review [Claude] | none | 0 | Dependency map unreadable at ~500 tickets: one wide diagram shrinks to unreadable boxes |
+| T358 | In-Review [Claude] | none | 0 | Dependency map unreadable at ~500 tickets: one wide diagram shrinks to unreadable boxes |
 | T363 | Available (waiting on ) | none | 0 | QuickStart and harness scenario games still start on Vanilla/Gods & Kings: move them to BNW and regenerate goldens |
 | T364 | In-Progress [Claude] | none | 0 | NetLobbyTests seat-race tests fail under Brave New World: find out whether the race is in the test transport or in the server |
