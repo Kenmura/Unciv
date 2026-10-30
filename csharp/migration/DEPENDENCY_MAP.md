@@ -167,11 +167,11 @@ flowchart TD
   class T355 waiting
   class T356 waiting
   class T357 waiting
-  class T358 ready
+  class T358 prog
   class T361 ready
   class T362 ondeck
   class T363 waiting
-  class T364 prog
+  class T364 ready
 ```
 
 ## Remaining tickets over time
@@ -217,8 +217,8 @@ xychart-beta
 | Ticket | State | Depends on | Unblocks | Title |
 |---|---|---|---|---|
 | T337 | **Ready to start** | T336 | 6 | Relay server: Unciv.Relay executable (room registry, byte splicing, lobby directory API, limits), tests, Docker and nginx example |
-| T358 | **Ready to start** | none | 0 | Dependency map unreadable at ~500 tickets: one wide diagram shrinks to unreadable boxes |
 | T361 | **Ready to start** | T360 | 0 | Godot package.sh / run-scenario.sh / run-smoke.sh dotnet calls: apply the T360 memory settings |
+| T364 | **Ready to start** | none | 0 | NetLobbyTests seat-race tests fail under Brave New World: find out whether the race is in the test transport or in the server |
 | T275 | **On deck** (after T274) | T274, C034, C035 | 0 | Host migration 5/5: client UI and docs (backup-host picker, trust notice, standby status, rollback and host-changed notices, superseded-host screen) |
 | T340 | **On deck** (after T274) | T274 | 0 | Two-human split-brain: playtest scenario and in-game warning when a partition could give each machine a host |
 | T362 | **On deck** (after T334) | T334 | 0 | Two real client processes host and join on the real GPU (manual two-profile smoke) |
@@ -269,5 +269,5 @@ xychart-beta
 | T355 | Available (waiting on T338) | T338 | 0 | Verify nested TLS and the relay path on Windows, macOS and Android (manual, UNVERIFIED until run) |
 | T356 | Available (waiting on T337, T338, T339) | T337, T338, T339 | 0 | Deploy the relay on the owner's server: concrete nginx config, manual connectivity matrix, result recorded |
 | T357 | Available (waiting on T337, T338) | T337, T338 | 0 | WebSocket gateway so the web export can join and host through the relay (optional) |
+| T358 | In-Progress [Claude] | none | 0 | Dependency map unreadable at ~500 tickets: one wide diagram shrinks to unreadable boxes |
 | T363 | Available (waiting on ) | none | 0 | QuickStart and harness scenario games still start on Vanilla/Gods & Kings: move them to BNW and regenerate goldens |
-| T364 | In-Progress [Claude] | none | 0 | NetLobbyTests seat-race tests fail under Brave New World: find out whether the race is in the test transport or in the server |
