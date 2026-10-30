@@ -64,11 +64,11 @@ flowchart TD
   class T278 ready
   class T280 prog
   class T282 review
-  class T290 ready
+  class T290 prog
   class T295 blocked
   class T300 prog
   class T301 prog
-  class T302 prog
+  class T302 ready
   class T303 prog
 ```
 
@@ -115,14 +115,14 @@ xychart-beta
 | Ticket | State | Depends on | Unblocks | Title |
 |---|---|---|---|---|
 | T278 | **Ready to start** | T260, T276 | 0 | Android on-device verification: TLS join, lifecycle reconnect, frame time and APK size on a mid-range phone |
-| T290 | **Ready to start** | T271 | 0 | Real-device frame-time pass: Windows, macOS, Android phone |
+| T302 | **Ready to start** | T297 | 0 | Dedicated server and in-process host: wire the parallel view building option (T297) to ServerOptions and a CLI flag |
 | T275 | **On deck** (after T274) | T274, C034, C035 | 0 | Host migration 5/5: client UI and docs (backup-host picker, trust notice, standby status, rollback and host-changed notices, superseded-host screen) |
 | T274 | In-Progress [Claude-T274] | T273 | 1 | Host migration 4/5: crash election (loss detection, signed HostLossVote quorum, split-brain refusal, superseded-host mode, forced take-over, kill-the-host scenarios) |
 | C099 | In-Progress [Claude] | T260, C096 | 0 | Android shell behaviour: back button, safe area, orientation, lifecycle autosave, virtual keyboard, hide Host, permissions |
 | T280 | In-Progress [Claude] | T279, T260, T277 | 0 | Add the Android APK to the tagged GitHub release workflow |
 | T282 | Needs-Review [Claude] | T281 | 0 | Host migration 1c: periodic standby re-probe and the standby-mode Welcome answer (probe beyond the TLS handshake) |
+| T290 | In-Progress [Claude] | T271 | 0 | Real-device frame-time pass: Windows, macOS, Android phone |
 | T295 | Blocked | T294 | 0 | Roll the chosen gritty unit style out to the remaining units |
 | T300 | In-Progress [Claude] | none | 0 | Replace text-letter placeholder icons (resource chips etc.) with real pictorial icons |
 | T301 | In-Progress [Claude] | none | 0 | Maximizing a windowed game freaks out and may crash |
-| T302 | In-Progress [Claude] | T297 | 0 | Dedicated server and in-process host: wire the parallel view building option (T297) to ServerOptions and a CLI flag |
 | T303 | In-Progress [Claude] | T298 | 0 | Persist last-known tile ownership for fogged tiles across reconnect and load (server-side per-civ memory) |
