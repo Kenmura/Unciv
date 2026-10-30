@@ -389,6 +389,7 @@ public class CityConquestFunctions(CityObject city)
 
         if (newCiv.HasUnique(UniqueType.MayNotAnnexCities)) MakePuppet();
 
+        foreach (var tile in city.GetTiles().ToList()) tile.SetRoadOwnerToOwningCiv(); // T293
         city.TryUpdateRoadStatus();
         city.CityStats.Update();
 
