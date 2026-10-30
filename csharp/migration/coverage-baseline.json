@@ -619,7 +619,7 @@
     "Unciv.Core/Net/Identity/LobbyAdmission.cs": {"branch": 95.45, "line": 100.0},
     "Unciv.Core/Net/Identity/SecureRandom.cs": {"branch": 87.5, "line": 95.0},
     "Unciv.Core/Net/InMemoryTransport.cs": {"branch": 90.0, "line": 96.67},
-    "Unciv.Core/Net/Lobby/LobbyHost.cs": {"branch": 87.77, "line": 94.88},
+    "Unciv.Core/Net/Lobby/LobbyHost.cs": {"branch": 87.98, "line": 94.99},
     "Unciv.Core/Net/Lobby/LobbySettings.cs": {"branch": 50.0, "line": 100.0},
     "Unciv.Core/Net/Lobby/Slot.cs": {"branch": 100.0, "line": 100.0},
     "Unciv.Core/Net/Messages.cs": {"branch": 100.0, "line": 100.0},
@@ -777,9 +777,9 @@
     "Unciv.Server/ServerRunner.cs": {"branch": 86.81, "line": 96.49},
     "Unciv.Server/Transport/BoundedSendTransport.cs": {"branch": 100.0, "line": 98.78},
     "Unciv.Server/Transport/HostCertificate.cs": {"branch": 66.67, "line": 86.36},
-    "Unciv.Server/Transport/StandbyListener.cs": {"branch": 80.0, "line": 97.26},
+    "Unciv.Server/Transport/StandbyListener.cs": {"branch": 83.33, "line": 98.61},
     "Unciv.Server/Transport/TcpTlsListener.cs": {"branch": 75.0, "line": 100.0},
-    "Unciv.Server/Transport/TcpTlsTransport.cs": {"branch": 90.0, "line": 96.67},
+    "Unciv.Server/Transport/TcpTlsTransport.cs": {"branch": 90.0, "line": 96.77},
     "Unciv.Server/Transport/TlsEndpointProber.cs": {"branch": 85.71, "line": 95.45}
   },
   "excused": {

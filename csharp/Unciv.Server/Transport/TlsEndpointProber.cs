@@ -36,7 +36,7 @@ public sealed class TlsEndpointProber : IEndpointProber
             var answer = await LengthPrefixedFraming.ReadFrameAsync(ssl, limit.Token, StandbyListener.MaxFrameBytes).ConfigureAwait(false);
             return answer != null && ProtocolCodec.Decode(answer, StandbyListener.MaxFrameBytes) is Welcome { Standby: true } ? presented : null;
         }
-        catch (Exception e) when (e is SocketException or IOException or AuthenticationException or OperationCanceledException or ObjectDisposedException)
+        catch (Exception e) when (e is SocketException or IOException or AuthenticationException or OperationCanceledException or ObjectDisposedException or InvalidOperationException)
         {
             return null;
         }

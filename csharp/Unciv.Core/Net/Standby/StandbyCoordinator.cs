@@ -195,6 +195,11 @@ public sealed class StandbyCoordinator
             before = StateLocked();
         }
         var code = await ProbeCoreAsync(gen, cancellationToken).ConfigureAwait(false);
+        int count;
+        lock (gate) count = endpoints.Count;
+        // The probe tries one endpoint per call: with several announced (a LAN and a public address) one dead one would flip ready/unreachable every interval. The periodic path tries the others before giving up.
+        for (var extra = 1; extra < count && code is ErrorCodes.ProbeFailed or ErrorCodes.ProbeFingerprint; extra++)
+            code = await ProbeCoreAsync(gen, cancellationToken, followUp: true).ConfigureAwait(false);
         if (code is ErrorCodes.NotDesignated or ErrorCodes.ProbeRateLimited) return false;
         lock (gate)
         {
@@ -202,7 +207,7 @@ public sealed class StandbyCoordinator
         }
     }
 
-    private async Task<string?> ProbeCoreAsync(int gen, CancellationToken cancellationToken)
+    private async Task<string?> ProbeCoreAsync(int gen, CancellationToken cancellationToken, bool followUp = false)
     {
         string endpoint;
         string expected;
@@ -210,7 +215,7 @@ public sealed class StandbyCoordinator
         {
             if (gen != generation || keyId == null || !accepted) return ErrorCodes.NotDesignated;
             var now = clock.NowMillis;
-            if (lastProbeMillis != long.MinValue && now - lastProbeMillis < limits.ProbeMinIntervalMillis)
+            if (!followUp && lastProbeMillis != long.MinValue && now - lastProbeMillis < limits.ProbeMinIntervalMillis)
                 return ErrorCodes.ProbeRateLimited; // never downgrades a ready standby: a refused probe says nothing about reachability
             lastProbeMillis = now;
             endpoint = endpoints[probeCursor % endpoints.Count];

@@ -31,12 +31,15 @@ public sealed class TcpTlsTransport : ITransport
         return LengthPrefixedFraming.WriteFrameAsync(stream, frame, cancellationToken);
     }
 
-    public async ValueTask<string?> ReceiveAsync(CancellationToken cancellationToken = default)
+    public ValueTask<string?> ReceiveAsync(CancellationToken cancellationToken = default) => ReceiveAsync(ProtocolVersion.MaxFrameBytes, cancellationToken);
+
+    /// <summary>T282: like <see cref="ReceiveAsync(CancellationToken)"/> with a smaller cap, so an unauthenticated peer cannot make this end buffer more than <paramref name="maxMessageBytes"/> (an oversized frame throws <see cref="InvalidOperationException"/>).</summary>
+    public async ValueTask<string?> ReceiveAsync(int maxMessageBytes, CancellationToken cancellationToken = default)
     {
         if (!IsOpen) return null;
         try
         {
-            return await LengthPrefixedFraming.ReadFrameAsync(stream, cancellationToken, ProtocolVersion.MaxFrameBytes).ConfigureAwait(false);
+            return await LengthPrefixedFraming.ReadFrameAsync(stream, cancellationToken, maxMessageBytes).ConfigureAwait(false);
         }
         catch (Exception ex) when (ex is EndOfStreamException or IOException)
         {

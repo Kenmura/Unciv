@@ -135,6 +135,32 @@ public sealed class StandbyCoordinatorTests
     }
 
     [Fact]
+    public async Task Reprobe_WithSeveralEndpoints_TriesTheOthersBeforeDeclaringTheStandbyLost()
+    {
+        var (c, prober, clock) = Make();
+        c.Designate("candidate", out _);
+        prober.Answer = (host, _) => host == "lan.example" ? null : Fp; // the LAN address is dead, the public one answers
+        Assert.Equal(ErrorCodes.ProbeFailed, await c.AcceptAsync("candidate", Accept(Fp, 47821, "lan.example", "wan.example")));
+        clock.AdvanceSeconds(61);
+        Assert.Null(await c.AcceptAsync("candidate", Accept(Fp, 47821, "lan.example", "wan.example"))); // the repeat tries the next one in rotation
+        Assert.Equal(StandbyStates.Ready, c.State);
+
+        for (var round = 0; round < 4; round++)
+        {
+            clock.AdvanceSeconds(121);
+            Assert.False(await c.ReprobeIfDueAsync()); // whichever endpoint comes first, the state never flaps
+            Assert.Equal(StandbyStates.Ready, c.State);
+        }
+
+        prober.Answer = (_, _) => null; // now everything is dead: one re-probe tries every endpoint, then reports the loss
+        var dialled = prober.Dialled.Count;
+        clock.AdvanceSeconds(121);
+        Assert.True(await c.ReprobeIfDueAsync());
+        Assert.Equal(2, prober.Dialled.Count - dialled);
+        Assert.Equal(StandbyStates.Unreachable, c.State);
+    }
+
+    [Fact]
     public async Task Reprobe_AfterARestart_ProbesOnceAndKeepsTheDesignationOnAFingerprintChange()
     {
         var (c, prober, clock) = Make();
@@ -409,7 +435,25 @@ public sealed class TlsEndpointProberTests
             catch (Exception) { }
         });
         Assert.Null(await ProbeAsync(host.Port, 2000));
+
+        // A hostile endpoint that answers with a frame over the probe's cap is "nothing usable", not an exception.
+        await using var hostile = new TcpTlsListener(cert, 0);
+        hostile.Start();
+        var flooded = Task.Run(async () =>
+        {
+            try
+            {
+                await using var transport = await hostile.AcceptTransportAsync(stop.Token);
+                await transport.ReceiveAsync(stop.Token);
+                await transport.SendAsync(new string('x', StandbyListener.MaxFrameBytes * 2), stop.Token);
+                await Task.Delay(200, stop.Token);
+            }
+            catch (Exception) { }
+        });
+        Assert.Null(await ProbeAsync(hostile.Port, 2000));
         stop.Cancel();
+        hostile.Stop();
+        await flooded;
         plain.Stop();
         host.Stop();
         await accepted;
@@ -464,6 +508,20 @@ public sealed class StandbyListenerTests
         {
             await third.SendAsync("{not json");
             Assert.Equal(ErrorCodes.NotHostYet, Assert.IsType<Error>(await ReadAsync(third)).Code);
+        }
+    }
+
+    [Fact]
+    public async Task AnOversizedFrame_IsNeverBuffered_TheConnectionJustCloses()
+    {
+        using var cert = HostCertificate.Generate();
+        await using var listener = new StandbyListener(cert, 0);
+        listener.Start();
+        var (transport, _) = await ConnectAsync(listener, cert);
+        await using (transport)
+        {
+            await transport.SendAsync(new string('x', StandbyListener.MaxFrameBytes * 2));
+            Assert.Null(await ReadAsync(transport));
         }
     }
 

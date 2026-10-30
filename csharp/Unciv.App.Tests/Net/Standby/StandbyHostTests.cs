@@ -503,6 +503,51 @@ public sealed class GameStandbyTests : IDisposable
         await bobWire.WaitAsync<StandbyStatus>(it => it.State == StandbyStates.Unreachable); // found by the timer, nobody asked
     }
 
+    /// <summary>Delegates to a real transport; while <see cref="Broken"/> every send fails like a dead socket.</summary>
+    private sealed class FlakyTransport(ITransport inner) : ITransport
+    {
+        public volatile bool Broken;
+        public bool IsOpen => inner.IsOpen;
+        public ValueTask SendAsync(string frame, CancellationToken cancellationToken = default) => Broken ? throw new IOException("peer is gone") : inner.SendAsync(frame, cancellationToken);
+        public ValueTask<string?> ReceiveAsync(CancellationToken cancellationToken = default) => inner.ReceiveAsync(cancellationToken);
+        public ValueTask CloseAsync() => inner.CloseAsync();
+        public ValueTask DisposeAsync() => inner.DisposeAsync();
+    }
+
+    [Fact]
+    public async Task ServerLobby_ATimerRoundThatFailsToTellTheCandidate_DoesNotEndTheReprobing()
+    {
+        var prober = new FakeProber { Answer = (_, _) => Fp };
+        await using var lobby = new ServerLobby(new LobbySettings { BackupHost = 0 }, reprobeCheck: TimeSpan.FromMilliseconds(30));
+        lobby.Lobby.Standby.Prober = prober;
+        lobby.Lobby.Standby.Limits = new StandbyLimits { ProbeMinIntervalMillis = 0, ReprobeIntervalMillis = 0 };
+        using var bob = ClientIdentity.Generate();
+        var (client, serverEnd) = InMemoryTransport.CreatePair();
+        var flaky = new FlakyTransport(serverEnd);
+        _ = lobby.AttachConnectionAsync(flaky);
+        await using var wire = new Wire(client);
+        await wire.SendAsync(new Hello { Protocol = ProtocolVersion.Current, ClientVersion = "1", RulesetHash = lobby.Lobby.Settings.ComputeRulesetHash(), ModList = [] });
+        var welcome = await wire.WaitAsync<Welcome>();
+        await wire.SendAsync(new Join { PlayerKey = bob.PlayerKey, DisplayName = "Bob" });
+        await wire.SendAsync(new Auth { Proof = bob.Sign(lobby.Lobby.HostFingerprint, welcome.SessionId, welcome.Challenge) });
+        await wire.WaitAsync<JoinOk>();
+        await wire.SendAsync(new StandbyAccept { Endpoints = ["friend.example"], Port = 47821, Fingerprint = Fp });
+        await wire.WaitAsync<StandbyStatus>(it => it.State == StandbyStates.Ready);
+
+        flaky.Broken = true;
+        prober.Answer = (_, _) => null;
+        await WaitForAsync(() => lobby.Lobby.Standby.State == StandbyStates.Unreachable); // the probe ran, telling the candidate threw
+        flaky.Broken = false;
+        prober.Answer = (_, _) => Fp;
+        await WaitForAsync(() => lobby.Lobby.Standby.State == StandbyStates.Ready); // and the timer is still running
+    }
+
+    private static async Task WaitForAsync(Func<bool> condition)
+    {
+        for (var i = 0; i < 500 && !condition(); i++) await Task.Delay(20);
+        Assert.True(condition());
+    }
+
     [Fact]
     public async Task DeclineAndRevoke_ClearTheDesignation_AndAKickedSeatEndsIt()
     {

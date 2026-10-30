@@ -6,13 +6,12 @@ namespace Unciv.Server.Transport;
 /// <summary>
 /// T282: the listener a backup host (the successor) keeps open on its announced port while it is only a standby (design/HOST-MIGRATION.md section 3). It terminates TLS with the successor's certificate and
 /// answers one thing: <c>Hello</c> gets <c>Welcome{standby: true}</c> (so the host's reachability probe can tell a standby from a closed port or an unrelated TLS service), everything else is refused with
-/// <c>not-host-yet</c>. It holds no game state and never touches a store. Each connection lives at most <see cref="ConnectionLifetime"/> and answers at most <see cref="MaxFramesPerConnection"/> frames, and at
+/// <c>not-host-yet</c>. It holds no game state and never touches a store. Each connection lives at most <see cref="ConnectionLifetime"/> and answers at most two frames (a Hello, then a refusal), and at
 /// most <see cref="MaxConnections"/> run at once, so it is no resource sink. It must be stopped (<see cref="Stop"/>) before the same port is opened by the promoted host.
 /// </summary>
 public sealed class StandbyListener : IAsyncDisposable
 {
     public const int MaxConnections = 16;
-    public const int MaxFramesPerConnection = 4;
     public const int MaxFrameBytes = 64 * 1024;
 
     private readonly TcpTlsListener tcp;
@@ -57,8 +56,7 @@ public sealed class StandbyListener : IAsyncDisposable
             }
             catch (Exception e) when (e is OperationCanceledException or ObjectDisposedException or System.Net.Sockets.SocketException or InvalidOperationException)
             {
-                if (token.IsCancellationRequested || e is ObjectDisposedException) return;
-                continue;
+                if (token.IsCancellationRequested || e is ObjectDisposedException) return; await Task.Delay(50, token).ConfigureAwait(false); continue; // a persistent accept error (out of descriptors) must not spin
             }
             if (Interlocked.Increment(ref connections) > MaxConnections)
             {
@@ -77,9 +75,9 @@ public sealed class StandbyListener : IAsyncDisposable
             using var limit = CancellationTokenSource.CreateLinkedTokenSource(token);
             limit.CancelAfter(ConnectionLifetime);
             await using var transport = await tcp.HandshakeAsync(client, limit.Token).ConfigureAwait(false);
-            for (var frames = 0; frames < MaxFramesPerConnection; frames++)
+            for (var frames = 0; ; frames++) // ends at the second frame at the latest: only a first Hello is answered, everything else closes
             {
-                var frame = await transport.ReceiveAsync(limit.Token).ConfigureAwait(false);
+                var frame = await ((TcpTlsTransport)transport).ReceiveAsync(MaxFrameBytes, limit.Token).ConfigureAwait(false);
                 if (frame == null) return;
                 if (ProtocolCodec.Decode(frame, MaxFrameBytes) is Hello && frames == 0)
                 {

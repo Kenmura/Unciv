@@ -1224,6 +1224,7 @@ public sealed class LobbyHost : IAsyncDisposable
     /// </summary>
     public async Task ReprobeStandbyAsync(CancellationToken cancellationToken = default)
     {
+        // The lobby loop and the game host's tick can overlap for a moment at the start; the shared probe rate limit makes the second one a no-op.
         if (Status != LobbyStatus.InLobby || !Standby.ReprobeDue) return;
         if (!await Standby.ReprobeIfDueAsync(cancellationToken).ConfigureAwait(false)) return;
         if (Standby.KeyId is { } key) await SendToKeyAsync(key, Standby.Status()).ConfigureAwait(false);

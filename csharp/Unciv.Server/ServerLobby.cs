@@ -41,7 +41,7 @@ public sealed class ServerLobby : IAsyncDisposable
         string? gameDirectory = null,
         TimeSpan? reprobeCheck = null)
     {
-        this.reprobeCheck = reprobeCheck ?? TimeSpan.FromSeconds(5);
+        this.reprobeCheck = reprobeCheck is { } check && check > TimeSpan.Zero ? check : TimeSpan.FromSeconds(5);
         this.gameDirectory = gameDirectory;
         this.clock = clock ?? SystemClock.Instance;
         this.store = store;
@@ -56,11 +56,12 @@ public sealed class ServerLobby : IAsyncDisposable
         );
         lobbyHost.LateSeated = SeatLateAsync;
         lobbyHost.Standby.Prober = new Transport.TlsEndpointProber(); // T281: a backup host's endpoint is probed with a real TLS handshake
-        _ = RunReprobeLoopAsync();
+        reprobeLoop = RunReprobeLoopAsync();
     }
 
     /// <summary>How often the open lobby checks whether the backup host's re-probe is due (the coordinator's own interval decides; <see cref="GameHost.Tick"/> does this once the game runs).</summary>
     private readonly TimeSpan reprobeCheck;
+    private readonly Task reprobeLoop;
 
     private async Task RunReprobeLoopAsync()
     {
@@ -70,7 +71,7 @@ public sealed class ServerLobby : IAsyncDisposable
             while (true) // ends by the cancellation (WaitForNextTickAsync throws it); the timer is never stopped otherwise
             {
                 await timer.WaitForNextTickAsync(disposed.Token).ConfigureAwait(false);
-                await lobbyHost.ReprobeStandbyAsync(disposed.Token).ConfigureAwait(false);
+                await lobbyHost.ReprobeStandbyAsync(disposed.Token).ConfigureAwait(false); // sends to a dead connection are swallowed by the lobby itself
             }
         }
         catch (Exception e) when (e is OperationCanceledException or ObjectDisposedException or InvalidOperationException) { /* disposed */ }
@@ -299,6 +300,7 @@ public sealed class ServerLobby : IAsyncDisposable
     {
         if (Interlocked.Exchange(ref disposeStarted, 1) != 0) return; // the runner disposes early to report the saved state, then the scope ends
         await disposed.CancelAsync().ConfigureAwait(false);
+        await reprobeLoop.ConfigureAwait(false); // never faults: it ends on the cancellation
         try
         {
             if (activeGameHost != null)
