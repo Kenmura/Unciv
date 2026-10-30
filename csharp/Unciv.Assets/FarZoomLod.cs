@@ -11,7 +11,7 @@ public static class FarZoomLod
     /// <summary>Camera size (<c>MapView.Zoom</c>, larger = further out) from which the yield icons are hidden: about 45 px per world unit at 1080p, an icon under 11 px.</summary>
     public const float HideYieldsZoom = 24f;
 
-    /// <summary>Camera size from which the per-tile prop models give way to the merged per-chunk meshes (the same look, far fewer draw calls); matches the unit formations' far level.</summary>
+    /// <summary>Camera size from which the per-tile prop models give way to the merged per-chunk meshes (the same look, far fewer draw calls); equals the unit formations' far level at the Low default (22).</summary>
     public const float MergePropsZoom = UnitLod.FarZoom;
 
     /// <summary>Whether a camera of size <paramref name="zoom"/> is too far out for yield icons; NaN counts as near.</summary>

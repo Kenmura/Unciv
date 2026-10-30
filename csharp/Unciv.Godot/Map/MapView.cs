@@ -58,7 +58,7 @@ public partial class MapView : Node3D
     private float yaw;
     private MultiMeshInstance3D? vegetation;
     private TerrainChunkLayer terrain = null!; // JUSTIFY: C031 assigned in _Ready before any use
-    private FarPropLayer farProps = null!; // JUSTIFY: T287 assigned in _Ready before any use
+    private FarPropLayer? farProps; // T287: made in _Ready
     private Vector2 lastViewportSize;
     private Vector2? pressAt;
     private bool dragging;
@@ -230,7 +230,7 @@ public partial class MapView : Node3D
         terrain.Build(chunkTiles);
         TriangleCount += terrain.TriangleCount;
         BuildVegetation(assets, tuftTransforms);
-        farProps.Build(tiles.Values.SelectMany(tile => tile.GetChildren().OfType<Node3D>().Select(prop => (Tile: (Node3D)tile, Prop: prop, Resource: prop.Name == ResourcePropName))));
+        farProps?.Build(tiles.Values.SelectMany(tile => tile.GetChildren().OfType<Node3D>().Select(prop => (Tile: (Node3D)tile, Prop: prop, Resource: prop.Name == ResourcePropName))));
         ApplyResourceVisibility();
         if (tiles.Count > 0 && !keepCamera) FocusOn(Centre());
         UpdateCulling();
@@ -480,17 +480,17 @@ public partial class MapView : Node3D
 
     private void ApplyResourceVisibility()
     {
-        var merged = propsMerged = MergedPropsDrawn;
+        var merged = propsMerged = MergedPropsDrawn && farProps != null;
         foreach (var node in tiles.Values)
         {
             foreach (var prop in node.GetChildren().OfType<Node3D>())
             {
                 var resource = prop.Name == ResourcePropName;
                 var shown = !resource || showResources;
-                prop.Visible = shown && !(merged && farProps.Merged.Contains(prop)); // T287: a merged prop is drawn by the far layer instead
+                prop.Visible = shown && !(merged && farProps!.Merged.Contains(prop)); // T287: a merged prop is drawn by the far layer instead
             }
         }
-        farProps.Apply(merged, showResources);
+        farProps?.Apply(merged, showResources);
     }
 
     /// <summary>T287: whether the camera is far enough out that the merged prop meshes are drawn instead of the prop nodes (<see cref="FarZoomLod.MergeProps"/>).</summary>
@@ -499,15 +499,18 @@ public partial class MapView : Node3D
     private bool propsMerged;
 
     /// <summary>T287: merged prop meshes made (one per terrain chunk and kind).</summary>
-    public int MergedPropMeshCount => farProps.MeshCount;
+    public int MergedPropMeshCount => farProps?.MeshCount ?? 0;
+
+    /// <summary>T287: vertex count and distinct vertex colours of the merged feature (or resource) meshes.</summary>
+    public (int Vertices, IReadOnlySet<Color> Colours) MergedPropBake(bool resource) => farProps?.Baked(resource) ?? (0, new HashSet<Color>());
 
     /// <summary>T287: props whose model is drawn by the merged meshes when far.</summary>
-    public int MergedPropCount => farProps.Merged.Count;
+    public int MergedPropCount => farProps?.Merged.Count ?? 0;
 
     private const string ResourcePropName = "Resource";
 
     /// <summary>Resource props that are drawn right now (all of them, or none when the resource toggle is off).</summary>
-    public int VisibleResourcePropCount => showResources ? tiles.Values.Count(it => it.GetNodeOrNull<Node3D>(ResourcePropName) != null) : 0;
+    public int VisibleResourcePropCount => tiles.Values.Count(it => it.GetNodeOrNull<Node3D>(ResourcePropName) is { } prop && (prop.Visible || (propsMerged && farProps is { ResourcesDrawn: true } far && far.Merged.Contains(prop))));
 
     public override void _Process(double delta)
     {

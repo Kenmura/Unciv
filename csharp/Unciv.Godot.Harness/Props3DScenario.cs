@@ -92,6 +92,16 @@ public sealed class Props3DScenario : Scenario
             new AssertQuery("far out every prop is drawn by merged chunk meshes instead of its node", () =>
                 view.MergedPropsDrawn && view.MergedPropCount == expectedProps && view.MergedPropMeshCount is > 0 and <= 2 * 4
                 && view.PropsAt(At(0, 0)).All(it => !it.Visible) && view.PropsAt(At(1, 0)).All(it => !it.Visible)),
+            new AssertQuery("the merged meshes hold exactly the vertices and colours of the nodes they replace, fog dimming included", () =>
+            {
+                var features = view.PropsAt(At(1, 0)).Concat(view.PropsAt(At(1, -1))).Concat(view.PropsAt(At(0, 1))).Concat(view.PropsAt(At(fogged.X, fogged.Y))).Where(it => it.Name != "Resource").ToList();
+                var nodeColours = features.SelectMany(it => it.GetChildren().OfType<MeshInstance3D>()).Select(it => ((StandardMaterial3D)it.MaterialOverride).AlbedoColor.SrgbToLinear()).ToList();
+                var (vertices, colours) = view.MergedPropBake(resource: false);
+                bool Baked(Color c) => colours.Any(b => MathF.Abs(b.R - c.R) < 0.01f && MathF.Abs(b.G - c.G) < 0.01f && MathF.Abs(b.B - c.B) < 0.01f); // vertex colours are stored as 8 bits
+                var fogColour = Prop(view, fogged.X, fogged.Y, "Feature_Forest").GetChildren().OfType<MeshInstance3D>().Select(it => ((StandardMaterial3D)it.MaterialOverride).AlbedoColor.SrgbToLinear()).First();
+                return features.Count > 3 && vertices >= features.Sum(it => it.GetChildren().OfType<MeshInstance3D>().Sum(m => m.Mesh.SurfaceGetArrays(0)[(int)Mesh.ArrayType.Vertex].AsVector3Array().Length))
+                    && nodeColours.All(Baked) && Baked(fogColour);
+            }),
             new Act("T287: resources off while far", () => view.ShowResources = false),
             new AssertQuery("the resource toggle still works on the merged meshes", () => view.VisibleResourcePropCount == 0),
             new Act("T287: resources back on, zoom in", () =>

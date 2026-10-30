@@ -16,10 +16,42 @@ public partial class FarPropLayer : Node3D
     private StandardMaterial3D? material;
 
     /// <summary>Props whose model was merged (their nodes are hidden while the merged meshes are drawn).</summary>
-    public IReadOnlySet<Node3D> Merged { get; private set; } = new HashSet<Node3D>();
+    public IReadOnlySet<Node3D> Merged
+    {
+        get
+        {
+            EnsureBuilt();
+            return merged;
+        }
+    }
+
+    private IReadOnlySet<Node3D> merged = new HashSet<Node3D>();
+    private List<(Node3D Tile, Node3D Prop, bool Resource)>? pending;
 
     /// <summary>Merged meshes made (one per chunk and kind).</summary>
-    public int MeshCount => features.GetChildCount() + resources.GetChildCount();
+    public int MeshCount
+    {
+        get
+        {
+            EnsureBuilt();
+            return features.GetChildCount() + resources.GetChildCount();
+        }
+    }
+
+    /// <summary>Vertices of the merged meshes of features (or of resources) and the distinct vertex colours they carry; tests compare them with the prop nodes they replace.</summary>
+    public (int Vertices, IReadOnlySet<Color> Colours) Baked(bool resource)
+    {
+        EnsureBuilt();
+        var vertices = 0;
+        var colours = new HashSet<Color>();
+        foreach (var node in (resource ? resources : features).GetChildren().OfType<MeshInstance3D>())
+        {
+            var data = node.Mesh.SurfaceGetArrays(0);
+            vertices += data[(int)Mesh.ArrayType.Vertex].AsVector3Array().Length;
+            colours.UnionWith(data[(int)Mesh.ArrayType.Color].AsColorArray());
+        }
+        return (vertices, colours);
+    }
 
     /// <summary>Whether the merged meshes of features, and of resources, are currently drawn.</summary>
     public bool FeaturesDrawn => features.Visible;
@@ -35,13 +67,16 @@ public partial class FarPropLayer : Node3D
     /// <summary>Shows the merged meshes (<paramref name="far"/>) or hides them; the resource meshes also follow <paramref name="showResources"/>.</summary>
     public void Apply(bool far, bool showResources)
     {
+        if (far) EnsureBuilt();
         features.Visible = far;
         resources.Visible = far && showResources;
     }
 
-    /// <summary>Replaces the merged meshes with those of <paramref name="props"/> (tile node, prop node, whether it is the tile's resource); props that cannot be merged are left out of <see cref="Merged"/>.</summary>
+    /// <summary>Forgets the merged meshes and remembers <paramref name="props"/> (tile node, prop node, whether it is the tile's resource) to merge on first use: reading a mesh back for every prop is a cost the player only pays once the camera goes far out, not on every refresh after a command.</summary>
     public void Build(IEnumerable<(Node3D Tile, Node3D Prop, bool Resource)> props)
     {
+        pending = [.. props];
+        merged = new HashSet<Node3D>();
         foreach (var root in new[] { features, resources })
         {
             foreach (var child in root.GetChildren())
@@ -50,16 +85,23 @@ public partial class FarPropLayer : Node3D
                 child.QueueFree();
             }
         }
+    }
+
+    private void EnsureBuilt()
+    {
+        if (pending is not { } props) return;
+        pending = null;
         material ??= new StandardMaterial3D { VertexColorUseAsAlbedo = true, Roughness = 1f };
-        var merged = new HashSet<Node3D>();
+        var done = new HashSet<Node3D>();
+        var cache = new Dictionary<(Mesh, int), Godot.Collections.Array>();
         var groups = new Dictionary<(bool Resource, ChunkId Id), Bake>();
         foreach (var (tile, prop, resource) in props)
         {
-            if (!CanMerge(prop)) continue;
+            if (!GodotObject.IsInstanceValid(prop) || !CanMerge(prop)) continue;
             var key = (resource, TerrainChunks.Of(tile.Position.X, tile.Position.Z));
             if (!groups.TryGetValue(key, out var bake)) groups[key] = bake = new Bake();
-            Collect(bake, prop, Transform3D.Identity.Translated(tile.Position));
-            merged.Add(prop);
+            Collect(bake, prop, Transform3D.Identity.Translated(tile.Position), cache);
+            done.Add(prop);
         }
         foreach (var ((resource, id), bake) in groups.OrderBy(it => it.Key.Resource).ThenBy(it => it.Key.Id.X).ThenBy(it => it.Key.Id.Z))
         {
@@ -74,7 +116,7 @@ public partial class FarPropLayer : Node3D
             mesh.AddSurfaceFromArrays(Mesh.PrimitiveType.Triangles, arrays);
             (resource ? resources : features).AddChild(new MeshInstance3D { Name = $"{(resource ? "Resource" : "Feature")}Props_{id.X}_{id.Z}", Mesh = mesh, MaterialOverride = material });
         }
-        Merged = merged;
+        merged = done;
     }
 
     private sealed class Bake
@@ -90,6 +132,7 @@ public partial class FarPropLayer : Node3D
     {
         if (node is MeshInstance3D { Mesh: { } mesh } instance)
         {
+            if (instance.Skeleton != null && !instance.Skeleton.IsEmpty) return false;
             for (var surface = 0; surface < mesh.GetSurfaceCount(); surface++)
             {
                 if (!IsTriangles(mesh, surface) || MaterialOf(instance, surface) is not { } m || !IsFlat(m)) return false;
@@ -109,15 +152,16 @@ public partial class FarPropLayer : Node3D
         && m.ShadingMode == BaseMaterial3D.ShadingModeEnum.PerPixel && m.CullMode == BaseMaterial3D.CullModeEnum.Back
         && m.Metallic == 0f && m.Roughness == 1f && !m.EmissionEnabled && !m.NormalEnabled && !m.Uv1Triplanar;
 
-    private static void Collect(Bake bake, Node3D node, Transform3D parent)
+    private static void Collect(Bake bake, Node3D node, Transform3D parent, Dictionary<(Mesh, int), Godot.Collections.Array> cache)
     {
+        if (!node.Visible) return;
         var transform = parent * node.Transform;
-        if (node is MeshInstance3D { Mesh: { } mesh } instance && node.Visible)
+        if (node is MeshInstance3D { Mesh: { } mesh } instance)
         {
             var normalBasis = transform.Basis.Inverse().Transposed();
             for (var surface = 0; surface < mesh.GetSurfaceCount(); surface++)
             {
-                var data = mesh.SurfaceGetArrays(surface);
+                if (!cache.TryGetValue((mesh, surface), out var data)) cache[(mesh, surface)] = data = mesh.SurfaceGetArrays(surface);
                 var positions = data[(int)Mesh.ArrayType.Vertex].AsVector3Array();
                 var normals = data[(int)Mesh.ArrayType.Normal].VariantType == Variant.Type.Nil ? [] : data[(int)Mesh.ArrayType.Normal].AsVector3Array();
                 var indices = data[(int)Mesh.ArrayType.Index].VariantType == Variant.Type.Nil ? [] : data[(int)Mesh.ArrayType.Index].AsInt32Array();
@@ -130,9 +174,15 @@ public partial class FarPropLayer : Node3D
                     bake.Normals.Add(v < normals.Length ? (normalBasis * normals[v]).Normalized() : Vector3.Up);
                     bake.Colours.Add(colour);
                 }
-                foreach (var i in indices) bake.Indices.Add(offset + i);
+                var mirrored = transform.Basis.Determinant() < 0f; // a mirrored scale flips the winding
+                for (var t = 0; t + 2 < indices.Length; t += 3)
+                {
+                    bake.Indices.Add(offset + indices[t]);
+                    bake.Indices.Add(offset + indices[mirrored ? t + 2 : t + 1]);
+                    bake.Indices.Add(offset + indices[mirrored ? t + 1 : t + 2]);
+                }
             }
         }
-        foreach (var child in node.GetChildren()) Collect(bake, (Node3D)child, transform);
+        foreach (var child in node.GetChildren()) Collect(bake, (Node3D)child, transform, cache);
     }
 }
