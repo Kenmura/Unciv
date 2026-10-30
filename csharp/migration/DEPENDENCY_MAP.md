@@ -147,7 +147,7 @@ flowchart TD
   class T333 waiting
   class T334 prog
   class T335 waiting
-  class T336 prog
+  class T336 review
   class T337 ondeck
   class T338 waiting
   class T339 waiting
@@ -221,7 +221,7 @@ xychart-beta
 | T337 | **On deck** (after T336) | T336 | 6 | Relay server: Unciv.Relay executable (room registry, byte splicing, lobby directory API, limits), tests, Docker and nginx example |
 | T275 | **On deck** (after T274) | T274, C034, C035 | 0 | Host migration 5/5: client UI and docs (backup-host picker, trust notice, standby status, rollback and host-changed notices, superseded-host screen) |
 | T340 | **On deck** (after T274) | T274 | 0 | Two-human split-brain: playtest scenario and in-game warning when a partition could give each machine a host |
-| T336 | In-Progress [Claude] | none | 7 | Relay and lobby browser: design (no port forwarding for hosts, public game list), threat model, nginx deployment, protocol |
+| T336 | Needs-Review [Claude] | none | 7 | Relay and lobby browser: design (no port forwarding for hosts, public game list), threat model, nginx deployment, protocol |
 | T334 | In-Progress [Claude] | none | 6 | Two client instances on one machine become the same player: give each instance its own identity (profile) so multiplayer can be tested locally |
 | T338 | Available (waiting on T336, T337, T334) | T336, T337, T334 | 5 | Relay client: in-process host and dedicated server register with the relay; joiners connect through it by room code (no open ports) |
 | T274 | In-Progress [Claude-T274] | T273 | 2 | Host migration 4/5: crash election (loss detection, signed HostLossVote quorum, split-brain refusal, superseded-host mode, forced take-over, kill-the-host scenarios) |
