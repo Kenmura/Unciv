@@ -214,7 +214,7 @@ python3 -I tools/reap.py --kill     # kill only the processes marked KILL, then 
 free -m                             # system view
 ```
 
-Safety rule (details in the `reap.py` docstring): only MSBuild nodes, VBCSCompiler, test hosts, datacollector, vstest and `dotnet build|test|format` processes are ever killed, never `gate.py`/`ptest.py`. A process dies when its worktree directory is gone, or when it is older than `--min-age` (30 min) and used no CPU in the sampling window and its worktree has no young or running process (a live gate keeps its worktree busy), or when it is older than `--max-age` (6 h, a hung test spinning for days). Run list mode before dispatching a new agent and `--kill` when available memory is low.
+Safety rule (details in the `reap.py` docstring): only MSBuild nodes, VBCSCompiler, test hosts, datacollector, vstest and `dotnet build|test|format|publish|restore|pack` processes are ever killed, never `gate.py`/`ptest.py`. A process dies when its worktree directory is gone, or when it is older than `--min-age` (30 min) and used no CPU in the sampling window and its worktree has no young or running process (a live gate keeps its worktree busy), or when it is older than `--max-age` (6 h, a hung test spinning for days). Run list mode before dispatching a new agent and `--kill` when available memory is low.
 
 ## Rules
 

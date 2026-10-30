@@ -14,6 +14,7 @@ Format of the unchanged files is skipped because the base tip already passed it;
 """
 import argparse
 import os
+import signal
 import subprocess
 import sys
 import time
@@ -61,6 +62,7 @@ def format_args(changed):
 
 
 def main():
+    signal.signal(signal.SIGTERM, lambda *_: sys.exit(143))
     try:
         return run_main()
     finally:

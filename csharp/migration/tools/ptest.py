@@ -27,6 +27,7 @@ import os
 import re
 import shlex
 import shutil
+import signal
 import subprocess
 import sys
 import time
@@ -100,7 +101,8 @@ _children = []  # shard processes this run started; stopped when the run ends ab
 
 
 def stop_children():
-    """Terminate shard processes still running (T360); best effort, a normal run has none left."""
+    """Terminate shard processes still running (T360); best effort, a normal run has none left. This stops the host-side
+    distrobox/podman client; a container-side test host may outlive it, tools/reap.py is the backstop."""
     for proc in _children:
         if proc.poll() is None:
             proc.terminate()
@@ -302,6 +304,8 @@ def run_shard(index, project, flt, results, coverage):
 
 
 def main():
+    # a SIGTERM (harness timeout, kill) must run the finally below like Ctrl-C does
+    signal.signal(signal.SIGTERM, lambda *_: sys.exit(143))
     try:
         return run_main()
     finally:
