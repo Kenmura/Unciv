@@ -19,7 +19,10 @@ public sealed partial class GameHost
     /// <summary>How many command rounds were built with tasks (a test and diagnostics counter; stays 0 while the option is off or below two recipients).</summary>
     public int ParallelViewRounds { get; private set; }
 
-    private bool UseParallelViews(int recipients) => limits.ParallelViewBuilding && limits.MaxViewParallelism >= 2 && recipients >= 2;
+    // T296 rule: the first view round of a host runs sequentially (the warm-up that fills cold-load lazy caches before several threads can race on them).
+    private bool viewsWarm;
+
+    private bool UseParallelViews(int recipients) => viewsWarm && limits.ParallelViewBuilding && limits.MaxViewParallelism >= 2 && recipients >= 2;
 
     /// <summary>Runs <paramref name="work"/>(0..count-1) on at most <see cref="HostLimits.MaxViewParallelism"/> tasks and returns the results by index. Blocks until all tasks ended.</summary>
     private T[] BuildPerRecipient<T>(int count, Func<int, T> work)
@@ -64,17 +67,28 @@ public sealed partial class GameHost
     {
         var game = session.Game;
         var events = result.Events.OfType<EngineEvent>().ToList(); // enumerated once, then only read by the tasks
-        var built = BuildPerRecipient(targets.Count, i =>
+        // A failing recipient must not stop the others (as in the sequential loop, where earlier recipients were already sent): capture it per index.
+        var built = BuildPerRecipient<(ClientSnapshot? After, string? Frame, Exception? Error)>(targets.Count, i =>
         {
-            var (s, civ, mark) = targets[i];
-            var (delta, after) = ViewDeltaBuilder.BuildWithDiff(game, civ, s.PreviousSnapshot!, mark, events, result.Seq, status);
-            return (After: after, Frame: ProtocolCodec.Encode(delta));
+            try
+            {
+                var (s, civ, mark) = targets[i];
+                var (delta, after) = ViewDeltaBuilder.BuildWithDiff(game, civ, s.PreviousSnapshot!, mark, events, result.Seq, status);
+                return (After: after, Frame: ProtocolCodec.Encode(delta), Error: null);
+            }
+            catch (Exception ex)
+            {
+                return (After: null, Frame: null, Error: ex); // JUSTIFY: T297 rethrown on the actor below, after the healthy recipients were served
+            }
         });
+        Exception? first = null;
         for (var i = 0; i < targets.Count; i++)
         {
+            if (built[i].Error != null) { first ??= built[i].Error; continue; }
             var s = targets[i].Session;
             s.PreviousSnapshot = built[i].After;
-            _ = SendFrameAsync(s, built[i].Frame);
+            _ = SendFrameAsync(s, built[i].Frame!);
         }
+        if (first != null) ExceptionDispatchInfo.Capture(first).Throw();
     }
 }

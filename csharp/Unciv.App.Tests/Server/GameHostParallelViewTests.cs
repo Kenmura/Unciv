@@ -142,6 +142,38 @@ public sealed class GameHostParallelViewTests : IDisposable
     }
 
     [Fact]
+    public async Task ClosedSession_AmongRecipients_IsSkippedLikeInTheSequentialPath()
+    {
+        async Task<(List<string> A, List<string> C, int Rounds)> Run(HostLimits limits)
+        {
+            var game = NewGame();
+            var clock = new ManualClock(1000L);
+            await using var host = new GameHost(new GameSession(game) { Clock = () => clock.NowMillis }, clock: clock, limits: limits);
+            List<string> a = [], b = [], c = [];
+            var (_, ha) = InMemoryTransport.CreatePair();
+            var (_, hb) = InMemoryTransport.CreatePair();
+            var (_, hc) = InMemoryTransport.CreatePair();
+            await host.AttachSessionAsync("s-a", "Babylon", new RecordingTransport(ha, a));
+            await host.AttachSessionAsync("s-b", "Greece", new RecordingTransport(hb, b));
+            await host.AttachSessionAsync("s-c", "Egypt", new RecordingTransport(hc, c));
+            await hb.CloseAsync();
+            for (var i = 0; i < 3; i++)
+                await host.EnqueueAsync(() =>
+                {
+                    host.ApplyServerCommand(new ForceEndTurn { CivId = Humans[i % 3] });
+                    return Task.CompletedTask;
+                });
+            return (a, c, host.ParallelViewRounds);
+        }
+
+        var seq = await Run(new HostLimits());
+        var par = await Run(new HostLimits { ParallelViewBuilding = true });
+        Assert.True(par.Rounds > 0);
+        Assert.Equal(seq.A, par.A);
+        Assert.Equal(seq.C, par.C);
+    }
+
+    [Fact]
     public async Task SingleRecipient_NeverUsesTasks_EvenWhenOn()
     {
         var (frames, rounds) = await PlayAsync(new HostLimits { ParallelViewBuilding = true }, ["Babylon"], 2);

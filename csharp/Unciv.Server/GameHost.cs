@@ -853,6 +853,7 @@ public sealed partial class GameHost : IAsyncDisposable
 
             s.PreviousSnapshot = after;
             _ = SafeSendAsync(s, delta);
+            viewsWarm = true; // T297: one full sequential round has run on this game
         }
     }
 
