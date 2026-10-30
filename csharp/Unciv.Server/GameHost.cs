@@ -4,6 +4,7 @@ using Unciv.Commands.Events;
 using Unciv.Commands.Log;
 using Unciv.Commands.Turn;
 using Unciv.Logic;
+using Unciv.Logic.Civilization;
 using Unciv.Net;
 using Unciv.Net.Identity;
 using Unciv.Net.Persistence;
@@ -83,6 +84,12 @@ public sealed record HostLimits
 
     /// <summary>Outbound bytes (approximate) queued per session before a slow reader is disconnected.</summary>
     public long MaxQueuedBytes { get; init; } = 64L * 1024 * 1024;
+
+    /// <summary>T297: build the per-recipient views (capture, diff, encode) on tasks while the actor waits. Off by default; ignored below two recipients. Frames are byte-identical either way.</summary>
+    public bool ParallelViewBuilding { get; init; }
+
+    /// <summary>T297: most tasks used for one view-building round (below 2 turns the option off); keep it under the cores the host can spare.</summary>
+    public int MaxViewParallelism { get; init; } = 4;
 }
 
 /// <summary>
@@ -800,33 +807,44 @@ public sealed partial class GameHost : IAsyncDisposable
 
     private Dictionary<string, ViewDeltaBuilder.ViewMark> CaptureViewMarks()
     {
-        var marks = new Dictionary<string, ViewDeltaBuilder.ViewMark>(StringComparer.Ordinal);
+        var targets = new List<(HostSession Session, Civilization Civ)>();
         foreach (var s in sessions.Values)
         {
             if (!s.IsOpen) continue;
             var civ = session.Game.GetCivilizationOrNull(s.BoundCivId);
-            if (civ != null)
-            {
-                marks[s.SessionId] = ViewDeltaBuilder.Capture(session.Game, civ);
-            }
+            if (civ != null) targets.Add((s, civ));
         }
+        if (UseParallelViews(targets.Count)) return CaptureParallel(targets);
+
+        var marks = new Dictionary<string, ViewDeltaBuilder.ViewMark>(StringComparer.Ordinal);
+        foreach (var (s, civ) in targets) marks[s.SessionId] = ViewDeltaBuilder.Capture(session.Game, civ);
         return marks;
     }
 
     private void BroadcastDelta(Dictionary<string, ViewDeltaBuilder.ViewMark> marks, Unciv.Commands.CommandResult result)
     {
         var turnStatusDto = CreateTurnStatusDto();
+        var targets = new List<(HostSession Session, Civilization Civ, ViewDeltaBuilder.ViewMark Mark)>();
         foreach (var s in sessions.Values)
         {
             if (!s.IsOpen || s.PreviousSnapshot == null) continue;
             if (!marks.TryGetValue(s.SessionId, out var mark)) continue;
             var civ = session.Game.GetCivilizationOrNull(s.BoundCivId);
             if (civ == null) continue;
+            targets.Add((s, civ, mark));
+        }
+        if (UseParallelViews(targets.Count))
+        {
+            BroadcastParallel(targets, result, turnStatusDto);
+            return;
+        }
 
+        foreach (var (s, civ, mark) in targets)
+        {
             var (delta, after) = ViewDeltaBuilder.BuildWithDiff(
                 session.Game,
                 civ,
-                s.PreviousSnapshot,
+                s.PreviousSnapshot!,
                 mark,
                 result.Events.OfType<EngineEvent>(),
                 result.Seq,
@@ -851,9 +869,14 @@ public sealed partial class GameHost : IAsyncDisposable
     private static async Task SafeSendAsync(HostSession hostSession, Message message)
     {
         if (!hostSession.IsOpen) return;
+        await SendFrameAsync(hostSession, ProtocolCodec.Encode(message));
+    }
+
+    private static async Task SendFrameAsync(HostSession hostSession, string frame)
+    {
+        if (!hostSession.IsOpen) return;
         try
         {
-            string frame = ProtocolCodec.Encode(message);
             await hostSession.Transport.SendAsync(frame);
         }
         catch (InvalidOperationException)

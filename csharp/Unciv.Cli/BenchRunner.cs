@@ -24,11 +24,13 @@ namespace Unciv.Cli;
 public static class BenchRunner
 {
     public const string Usage = """
-        bench [--scenario small|medium|all] [--turns N] [--json FILE|-] [--ruleset NAME] [--host-turns K] [--recipients R] [--no-probe] [--golden FILE]
+        bench [--scenario small|medium|all] [--turns N] [--json FILE|-] [--ruleset NAME] [--host-turns K] [--recipients R] [--host-parallel N] [--no-probe] [--golden FILE]
               Profile end-turn time. small: 4 civs + 2 city states, Small map, 50 turns. medium: 8 civs + 8 city states, Medium map, 200 turns.
               Per turn: wall time of the whole turn (the human's turn, every AI civ, the checkpoint hash), split by phase; at the end the top 20 phases by
               inclusive time, the time per civ and per command type, and (medium, the last K turns, default 3) the host-side ViewDelta cost per recipient
               (R recipients, default 3) measured around every command. --json writes the report ('-' = standard output). --turns replaces the turn count.
+              --host-parallel N (T297, 2-64) builds the recipients' views on up to N tasks the way GameHost does with HostLimits.ParallelViewBuilding: capture and
+              build+encode become one timed step each (per-recipient phases are not attributed), so compare the host section with a run without the flag.
               --no-probe runs without the phase probe (wall time and hashes only; the per-turn state hashes must be equal to a probed run).
               --golden FILE compares every turn's state hash with migration/design/perf-golden.json (exit 1 on a difference).
               Use a Release build for numbers: dotnet run -c Release --project Unciv.Cli -- bench --scenario small --turns 10
@@ -44,7 +46,7 @@ public static class BenchRunner
     public static readonly Scenario Medium = new("medium", 8, 8, "Medium", MapType.ContinentAndIslands, 23L, 9L, 200, 3);
 
     /// <summary>What a scenario run is told besides the scenario.</summary>
-    public sealed record Options(bool Probe = true, int? Turns = null, int? HostTurns = null, int Recipients = 3, string? Ruleset = null);
+    public sealed record Options(bool Probe = true, int? Turns = null, int? HostTurns = null, int Recipients = 3, string? Ruleset = null, int HostParallel = 0);
 
     // The phases that make up a turn, in the order the report lists them per turn.
     private static readonly string[] TurnColumns =
@@ -64,6 +66,7 @@ public static class BenchRunner
         var turns = cli.Get("turns") == null ? (int?)null : cli.GetInt("turns", 0, 1, 10_000);
         var hostTurns = cli.Get("host-turns") == null ? (int?)null : cli.GetInt("host-turns", 0, 0, 1000);
         var recipients = cli.GetInt("recipients", 3, 1, 8);
+        var hostParallel = cli.GetInt("host-parallel", 0, 2, 64);
         var jsonPath = cli.Get("json");
         var noProbe = cli.Flag("no-probe");
         var goldenPath = cli.Get("golden");
@@ -77,7 +80,7 @@ public static class BenchRunner
             "all" => new[] { Small, Medium },
             _ => throw new UsageException($"--scenario '{scenarioName}' is not one of: small, medium, all"),
         };
-        var options = new Options(!noProbe, turns, hostTurns, recipients, ruleset);
+        var options = new Options(!noProbe, turns, hostTurns, recipients, ruleset, hostParallel);
         var results = scenarios.Select(it => RunAndPrint(it, options, output)).ToList();
         var report = new JsonObject
         {
@@ -164,6 +167,7 @@ public static class BenchRunner
         public int HostRecipients { get; set; }
         public int HostCommands { get; set; }
         public int HostFromTurn { get; set; }
+        public int HostParallel { get; set; }
         public double TotalSeconds { get; set; }
         public string Summary { get; set; } = "";
         public int HumanAliveUntilTurn { get; set; }
@@ -353,7 +357,7 @@ public static class BenchRunner
         var probe = new BenchProbe(engine);
         var hostFrom = turns - hostTurns + 1;
         result.HostFromTurn = hostTurns > 0 ? hostFrom : 0;
-        var host = hostTurns > 0 ? new HostMeasurement(game, probe, options.Recipients, result) : null;
+        var host = hostTurns > 0 ? new HostMeasurement(game, probe, options.Recipients, result, options.HostParallel) : null;
         var total = Timestamp();
         TurnProbe.Current = options.Probe ? probe : null;
         try
@@ -444,7 +448,7 @@ public static class BenchRunner
     /// view before, build the snapshot diff and delta after, encode it. Measured on its own recorder around each command; the time it takes is added to the
     /// engine recorder's skew, so the engine numbers are those of a game without recipients. Events are not passed (the filtered-event part is small).
     /// </summary>
-    private sealed class HostMeasurement(GameInfo game, BenchProbe probe, int recipientCount, ScenarioResult result)
+    private sealed class HostMeasurement(GameInfo game, BenchProbe probe, int recipientCount, ScenarioResult result, int parallel)
     {
         private readonly Recorder recorder = new();
         private List<(Civilization Civ, ClientSnapshot Snapshot)> recipients = [];
@@ -458,12 +462,35 @@ public static class BenchRunner
             recipients = game.Civilizations.Where(it => it.IsMajorCiv() && it.IsAlive()).Take(recipientCount)
                 .Select(it => (it, SnapshotBuilder.Build(game, it, 0, status))).ToList();
             result.HostRecipients = recipients.Count;
+            result.HostParallel = parallel >= 2 && recipients.Count >= 2 ? parallel : 0;
             probe.BeforeCommand = Before;
             probe.AfterCommand = After;
         }
 
+        /// <summary>Runs work(0..recipients-1) like GameHost.BuildPerRecipient (strided over at most <c>parallel</c> tasks, the caller blocks until all end).</summary>
+        private T[] Fan<T>(Func<int, T> work)
+        {
+            var results = new T[recipients.Count];
+            var workers = Math.Min(parallel, recipients.Count);
+            // JUSTIFY: T297 bench of the host's optional parallel view building; read-only on the game, one recipient per index, the engine is idle meanwhile.
+            var tasks = Enumerable.Range(0, workers).Select(w => Task.Run(() =>
+            {
+                for (var i = w; i < results.Length; i += workers) results[i] = work(i);
+                return 0;
+            })).ToArray();
+            Task.WaitAll(tasks);
+            return results;
+        }
+
         private void Before() => Measure(() =>
         {
+            if (parallel >= 2 && recipients.Count >= 2)
+            {
+                recorder.Enter("Host.Capture", null);
+                marks = Fan(i => ViewDeltaBuilder.Capture(game, recipients[i].Civ)).ToList();
+                recorder.Exit("Host.Capture", null);
+                return;
+            }
             marks = [];
             foreach (var (civ, _) in recipients)
             {
@@ -478,6 +505,18 @@ public static class BenchRunner
             var status = new TurnStatusDto { Ended = [], Deadline = null, Phase = "Playing" };
             seq++;
             result.HostCommands++;
+            if (parallel >= 2 && recipients.Count >= 2)
+            {
+                recorder.Enter("Host.BuildDelta", null);
+                var built = Fan(i =>
+                {
+                    var (delta, after) = ViewDeltaBuilder.BuildWithDiff(game, recipients[i].Civ, recipients[i].Snapshot, marks[i], [], seq, status);
+                    return (After: after, Frame: ProtocolCodec.Encode(delta));
+                });
+                recorder.Exit("Host.BuildDelta", null);
+                for (var i = 0; i < built.Length; i++) recipients[i] = (recipients[i].Civ, built[i].After);
+                return;
+            }
             for (var i = 0; i < recipients.Count; i++)
             {
                 var (civ, before) = recipients[i];
@@ -644,6 +683,7 @@ public static class BenchRunner
                 ["fromTurn"] = result.HostFromTurn,
                 ["recipients"] = result.HostRecipients,
                 ["commands"] = result.HostCommands,
+                ["parallelTasks"] = result.HostParallel,
                 ["note"] = "ViewDeltaBuilder.Capture before and BuildWithDiff plus ProtocolCodec.Encode after every command, per recipient, without engine events; engine times above exclude this",
             };
             foreach (var (name, agg) in result.Host.Total.OrderBy(it => it.Key, StringComparer.Ordinal))

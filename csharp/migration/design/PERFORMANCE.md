@@ -18,6 +18,7 @@
   - [Candidates](#candidates)
   - [Ordered list of safe candidates and the risks](#ordered-list-of-safe-candidates-and-the-risks)
   - [Cache-write audit of host view building (T296)](#cache-write-audit-of-host-view-building-t296)
+  - [Result of T297 (the go, implemented)](#result-of-t297-the-go-implemented)
 - [Follow-ups](#follow-ups)
 <!-- /toc -->
 
@@ -261,6 +262,22 @@ What the warm-up round does write (the only writes observed, all in cold-loaded 
 | `CivView.TryUpdateAllCityStats`, `CityView.UpdateCityStats`, `TradeView.UpdateCivResources` | Not called by the builders | Leave, but a parallel view builder must never call these mutating View members. |
 
 Residual risk and rule for T263: the guard proves the exercised paths only. Any new lazy cache that view building can reach must either be filled at `SetTransients` (so the warm-up round finds it filled) or be safe for concurrent writers; the test turns a violation into a failure with the owning type and field named. The parallel build must also run after the command is applied and the game thread is idle (no engine writes during the fan-out), and the warm-up round must have run once on the game since load.
+
+### Result of T297 (the go, implemented)
+
+`HostLimits.ParallelViewBuilding` (default **off**) and `MaxViewParallelism` (default 4; below 2 the option is off). `GameHost.CaptureViewMarks` and `BroadcastDelta` collect the open recipients in `sessions.Values` order; with the option on and at least 2 recipients the capture, and the `BuildWithDiff` plus `ProtocolCodec.Encode`, run as strided tasks (`Task.Run(Func<int>)`, JUSTIFY comment) over at most `MaxViewParallelism` workers, the actor blocks in `Task.WaitAll` until all ended (the engine is idle), a fault is rethrown after every task finished, and the results are applied (`PreviousSnapshot`) and sent in the original order through the same send path (`SendFrameAsync`). The sequential path is unchanged. The engine is untouched. Not wired into `ServerOptions`/lobby yet (follow-up ticket): today a host embedder sets it through `HostLimits`.
+
+Proof of equal frames: `GameHostParallelViewTests` plays a scripted game with 2 to 4 human recipients (client commands, server `ForceEndTurn`, turn resolution; caps 2 and 4) once sequentially and once in parallel and requires every frame of every recipient to be byte-equal; one test repeats the parallel run 20x. `bench --golden design/perf-golden.json` with `--host-parallel 4`: "200 turn hashes identical" in all 3 runs. The cold-start lazy-cache rule of T296 applies unchanged (`ViewBuildingReadOnlyTests` guard); no new lazy cache was added.
+
+Measured speed-up (`bench --scenario medium --host-turns 5 --recipients 6 [--host-parallel 4]`, Release, 90 commands x 6 recipients, ms per command for capture + build + encode, alternating sequential/parallel; load average 1 min at the start of each run in brackets):
+
+| Pair | Sequential | Parallel (4 tasks) | Speed-up |
+|---|---|---|---|
+| 1 | 19.6 (load 36) | 16.9 (load 19) | 1.16x |
+| 2 | 13.5 (load 12) | 25.9 (load 7) | 0.52x |
+| 3 | 44.7 (load 16) | 24.9 (load 54) | 1.80x |
+
+Honest reading: the machine was shared and loaded (load average 7 to 54 on 20 logical cores) and the sequential time itself varies 3x between runs, so this bench cannot show a reliable gain; the median ratio is 1.16x and one pair is slower. The T263 prototype measured 1.3-2.2x with 6 recipients under similar load, from an in-run A/B on identical inputs, which is the better method; this run compares separate runs. Per-recipient phases (`View.*`) are not attributed in parallel mode. A real gain needs an idle machine or a dedicated host; leave the option off until measured there.
 
 ## Follow-ups
 
