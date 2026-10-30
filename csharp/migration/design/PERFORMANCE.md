@@ -17,6 +17,7 @@
   - [Method and prototype](#method-and-prototype)
   - [Candidates](#candidates)
   - [Ordered list of safe candidates and the risks](#ordered-list-of-safe-candidates-and-the-risks)
+  - [Cache-write audit of host view building (T296)](#cache-write-audit-of-host-view-building-t296)
 - [Follow-ups](#follow-ups)
 <!-- /toc -->
 
@@ -234,6 +235,31 @@ Verdict: no-go.
 
 1. Cache-write audit plus a read-only guard for host view building (precondition). 2. Parallel per-recipient view building behind a default-off host option. Nothing else is safe today.
 Risks: lazy `??=` caches read from several threads (audit), allocation pressure making the gain smaller than the core count suggests (GC settings, such as concurrent GC or server GC, are a host decision to measure with it), thread-pool starvation of the host's network tasks on a small server (cap the degree of parallelism), and the temptation to extend the pattern into the engine turn (excluded above).
+
+### Cache-write audit of host view building (T296)
+
+Question: does `ViewDeltaBuilder.Capture`, `ViewDeltaBuilder.BuildWithDiff` (which runs `SnapshotBuilder.Build`, `SnapshotDiff.Compute` and `BuildEvents`) or `SnapshotBuilder.Build` write any shared state? If several recipients are built on several threads, every lazy cache they fill is a data race. The 104 `??=` sites and every `KotlinLazy`, `Lazy` and `*Cache` field of `Unciv.Core` were triaged, and the reachable ones were then checked empirically.
+
+**Empirical guard.** `ViewBuildingReadOnlyTests` fingerprints by reflection every instance field of every object reachable from the `GameInfo` (private, transient and lazy fields included, collections by content) plus every static collection count, primitive and `KotlinLazy` state of the engine assembly. It builds the views of every civ (Capture, Build, BuildWithDiff) once as the warm-up, builds them twice more, and requires the fingerprints and `ReplayVerifier.FullHash` to be identical. Scenarios: default, crowd, trade, espionage, alerts, rich, policies, victory, decisions (G&K), religion (G&K), skirmish, and five of them again from a save/load round trip (the coldest state a restarted host has). A companion test proves the fingerprint notices a single cache field being written. A failure names the first object that changed, which is the lazy site to fix.
+
+What the warm-up round does write (the only writes observed, all in cold-loaded games): `KotlinLazy` unique maps and unique lists of ruleset objects (`Promotion`, `ModOptions`), and the cached `Values` wrapper of the `OrderedDictionary` inside `Counter<K>`. Nothing in the game state, no `FullHash` change.
+
+| Site | Reached from view building | Verdict |
+|---|---|---|
+| `KotlinLazy<T>` (`RulesetObject`/`ModOptions` uniques and `UniqueMap`, `Terrain.IsCoast` and friends, `Policy`, `Victory`, `Speed`, `Quest`, `GameInfo.civMap`) | Yes (unique lookups on every view) | Leave: `KotlinLazy` is double-checked under a lock with a volatile publish. The initialisers only read the ruleset. |
+| `Counter<K>.Values`/`SumValues` (BCL `OrderedDictionary.Values` creates its wrapper on first use) | Yes (observed) | Leave: the wrapper is a stateless view over the same dictionary, two racing creators both produce a valid object, a reference write is atomic. |
+| `Terrain`, `Building`, `BaseUnit` `cachedMatchesFilterResult`, `CityConstructions.containedBuildingFiltersCache` (plain `Dictionary<string,bool>`, filled with any filter string the first time it is evaluated) | `BaseUnit` observed (invisibility checks); the others through unique conditionals, depending on the game state | **Fixed**: now `ConcurrentDictionary`. A warm-up cannot cover them (a filter string can first occur in a much later state), and an unlocked `Dictionary` written by two threads can corrupt. `LazilyKeyedFilterCaches_AreConcurrentDictionaries` pins the type. |
+| `TileMap.TileUniqueMapCache`, `Countables` caches, `Expressions.Cache` | Possible | Leave: already `ConcurrentDictionary`. |
+| `CityFocus.StatValuesCache` (static `Dictionary`) | Not by the builders (focus setting only) | Leave: already guarded by `lock`. |
+| `City.CityStats` (`cityStats ??=`) | Yes (`GetStatMapForNextTurn` reads `FinalStatList`) | Leave: created and updated at load and at founding, never first-created by a builder (no write seen in any cold-load scenario). The guard fails if that changes. |
+| `DiplomacyManager.otherCivCache` | Yes | Leave: set by `SetTransients`. |
+| `DiplomacyManager.context` (`State`) | Possible | Leave: pure construction from two civs; last writer wins with an equivalent object. |
+| `Tile.isAdjacentToCoastCache` (`bool?`), `Tile.tileResourceCache`, `TileStatFunctions.riverTerrainCache`, `Civilization.cachedMilitaryMight`, `BaseUnit.cachedForceEvaluation` | Not reached (probed with counters in all scenarios; `IsAdjacentToCoast` is only used by terrain generation and improvement rules) | Leave. If a builder ever starts to call one, warm it at `SetTransients`: a racing `bool?` read is not guaranteed atomic. |
+| `TemporaryUnique.UniqueObject`, `CityReligionManager.pressureFromAdjacentCitiesCache`, `CityStats` inner `??=` | Not reached by view building (turn processing and city updates only) | Leave. |
+| Automation (`WorkerAutomation`, `RoadBetweenCitiesAutomation`, `UnitAutomation` caches, `Civ5AiState` `??=`), command `??=` sites (`GreatWorks`, `Archaeology`), `GameInfo.PlayerSettingsByCiv ??=`, `IdChecker`, `FileGameStore`, validators | No (engine turn, commands and persistence run on the one engine thread and never inside a view builder) | Leave. |
+| `CivView.TryUpdateAllCityStats`, `CityView.UpdateCityStats`, `TradeView.UpdateCivResources` | Not called by the builders | Leave, but a parallel view builder must never call these mutating View members. |
+
+Residual risk and rule for T263: the guard proves the exercised paths only. Any new lazy cache that view building can reach must either be filled at `SetTransients` (so the warm-up round finds it filled) or be safe for concurrent writers; the test turns a violation into a failure with the owning type and field named. The parallel build must also run after the command is applied and the game thread is idle (no engine writes during the fan-out), and the warm-up round must have run once on the game since load.
 
 ## Follow-ups
 

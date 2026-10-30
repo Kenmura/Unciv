@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Text.Json.Serialization;
 using Unciv.Json;
 using Unciv.Logic.Civilization;
@@ -59,7 +60,7 @@ public class CityConstructions : IsPartOfGameInfoSerialization
 
     private List<Building> builtBuildingObjects = [];
 
-    private readonly Dictionary<string, bool> containedBuildingFiltersCache = new(StringComparer.Ordinal);
+    private readonly ConcurrentDictionary<string, bool> containedBuildingFiltersCache = new(StringComparer.Ordinal); // T296: written lazily from host view building threads
 
     [JsonIgnore]
     public UniqueMap BuiltBuildingUniqueMap { get; } = new();

@@ -82,7 +82,7 @@ flowchart TD
   class T292 review
   class T294 prog
   class T295 blocked
-  class T296 prog
+  class T296 review
   class T297 ondeck
 ```
 
@@ -136,7 +136,7 @@ xychart-beta
 | T273 | In-Progress [Claude-T273] | T272, T267 | 2 | Host migration 3/5: graceful hand-off and promotion (HostHandoff, promote from standby store, client redirect, rolledBack resync) |
 | T277 | Available (waiting on T260) | T260, T276 | 1 | Android CI: build the APK (arm64 plus x86_64) as an artifact and smoke it on an emulator |
 | T294 | In-Progress [Claude-warrior] | none | 1 | Gritty realistic unit look: Warrior design options for owner choice |
-| T296 | In-Progress [Claude] | T263 | 1 | Audit lazy engine caches reachable from host view building and add a read-only guard test (T263 precondition) |
+| T296 | Needs-Review [Claude] | T263 | 1 | Audit lazy engine caches reachable from host view building and add a read-only guard test (T263 precondition) |
 | C099 | Available (waiting on T260) | T260, C096 | 0 | Android shell behaviour: back button, safe area, orientation, lifecycle autosave, virtual keyboard, hide Host, permissions |
 | T275 | Available (waiting on T274) | T274, C034, C035 | 0 | Host migration 5/5: client UI and docs (backup-host picker, trust notice, standby status, rollback and host-changed notices, superseded-host screen) |
 | T278 | Available (waiting on T260) | T260, T276 | 0 | Android on-device verification: TLS join, lifecycle reconnect, frame time and APK size on a mid-range phone |

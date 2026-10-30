@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Text.Json.Serialization;
 using Unciv.Logic;
 using Unciv.Logic.City;
@@ -53,7 +54,7 @@ public class BaseUnit : RulesetObject, ICivilopediaText, INonPerpetualConstructi
     private bool? isWaterUnit;
     private IRulesetConstructionView? ruleset;
     private int cachedForceEvaluation = -1;
-    private readonly Dictionary<string, bool> cachedMatchesFilterResult = new(StringComparer.Ordinal);
+    private readonly ConcurrentDictionary<string, bool> cachedMatchesFilterResult = new(StringComparer.Ordinal); // T296: written lazily from host view building threads
 
     public BaseUnit()
     {
