@@ -15,10 +15,10 @@ public readonly record struct RoadLink(int X, int Y, int Dx, int Dy, bool Railro
 /// </summary>
 public sealed class TileOwnerMemory
 {
-    /// <summary>A memory that knows nothing: every fogged tile's owner is unknown.</summary>
-    public static readonly TileOwnerMemory Empty = new();
-
     private readonly Dictionary<HexCoord, string?> owners = [];
+
+    /// <summary>Forgets everything: for a different game or a different viewer, whose fog must not borrow what another saw.</summary>
+    public void Clear() => owners.Clear();
 
     /// <summary>Records the owner (or its absence) of every visible tile; fogged tiles leave their remembered owner untouched.</summary>
     public void Remember(IReadOnlyList<TileDto> tiles)
@@ -61,17 +61,18 @@ public static class MapOverlays
     /// </summary>
     public static IReadOnlyList<BorderEdge> BorderEdges(IReadOnlyList<TileDto> tiles, TileOwnerMemory? memory = null)
     {
+        memory ??= new TileOwnerMemory(); // knows nothing: every fogged tile's owner is unknown
         var byCoord = Index(tiles);
         var edges = new List<BorderEdge>();
         foreach (var tile in tiles)
         {
-            if (!(memory ?? TileOwnerMemory.Empty).TryOwner(tile, out var owner) || owner == null) continue;
+            if (!memory.TryOwner(tile, out var owner) || owner == null) continue;
             foreach (var (dx, dy) in Neighbours)
             {
                 var other = byCoord.GetValueOrDefault(new HexCoord(tile.X + dx, tile.Y + dy));
                 if (other != null)
                 {
-                    if (!(memory ?? TileOwnerMemory.Empty).TryOwner(other, out var otherOwner)) continue; // fogged and never seen: not a border, just the edge of what we know
+                    if (!memory.TryOwner(other, out var otherOwner)) continue; // fogged and never seen: not a border, just the edge of what we know
                     if (otherOwner == owner) continue;
                 }
                 edges.Add(new BorderEdge(tile.X, tile.Y, dx, dy, owner));

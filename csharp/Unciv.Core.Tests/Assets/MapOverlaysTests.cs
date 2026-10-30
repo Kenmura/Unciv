@@ -111,6 +111,17 @@ public class MapOverlaysTests
     }
 
     [Fact]
+    public void ClearingTheMemoryMakesFoggedTilesUnknownAgain()
+    {
+        var memory = new TileOwnerMemory();
+        memory.Remember([Tile(0, 0, "Japan")]);
+        memory.Clear();
+        Assert.False(memory.TryOwner(Tile(0, 0, owner: null, visible: false), out _));
+        // A visible tile facing a never-seen fogged one is not outlined against it (a load leaves the outline open there until the tile is seen)
+        Assert.Equal(5, MapOverlays.BorderEdges([Tile(0, 0, "Japan"), Tile(1, 0, owner: null, visible: false)], memory).Count);
+    }
+
+    [Fact]
     public void FoggedNeighbourOfAnotherOwnerStillClosesTheOutlineWhenItsOwnerIsRemembered()
     {
         var memory = new TileOwnerMemory();
