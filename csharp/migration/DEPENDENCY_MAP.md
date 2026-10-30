@@ -168,7 +168,7 @@ flowchart TD
   class T357 waiting
   class T358 ready
   class T359 prog
-  class T360 prog
+  class T360 review
   class T361 ondeck
 ```
 
@@ -227,7 +227,7 @@ xychart-beta
 | T309 | Available (waiting on ) | T295 | 1 | Harden the unit sheet and silhouette test: single-figure pages, tight layout, every unit has a style |
 | T319 | Available (waiting on ) | none | 1 | Client scenario goldens phone-menus and flat-city fail locally at the base commit: find out whether stale or machine-dependent, then fix |
 | T339 | Available (waiting on T337, T338) | T336, T337, T338 | 1 | Lobby browser screen: list public games from the relay directory, filter, join, password prompt, host a listed game |
-| T360 | In-Progress [Claude] | none | 1 | Gate and test tools leave ~90 idle MSBuild worker nodes (~12 GB): disable node reuse, cap nodes, shut down build servers |
+| T360 | Needs-Review [Claude] | none | 1 | Gate and test tools leave ~90 idle MSBuild worker nodes (~12 GB): disable node reuse, cap nodes, shut down build servers |
 | T290 | Blocked | T271 | 0 | Real-device frame-time pass: Windows, macOS, Android phone |
 | T300 | In-Progress [Claude] | none | 0 | Replace text-letter placeholder icons (resource chips etc.) with real pictorial icons |
 | T301 | In-Progress [Claude] | none | 0 | Maximizing a windowed game freaks out and may crash |
