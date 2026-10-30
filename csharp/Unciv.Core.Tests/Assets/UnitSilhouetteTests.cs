@@ -16,11 +16,11 @@ public sealed class UnitSilhouetteTests
     private const int W = 40, H = 56;
     private const float Pitch = 50f * MathF.PI / 180f;
     /// <summary>Two foot units of different classes: at least this far apart (1 - intersection over union), averaged over the four sides.</summary>
-    private const float MinDistance = 0.10f;
+    private const float MinDistance = 0.18f;
     /// <summary>Two riders of different classes: the mount fills most of the outline, so the rider's gear decides a smaller part.</summary>
-    private const float MinRiderDistance = 0.06f;
+    private const float MinRiderDistance = 0.13f;
     /// <summary>A civilian (Settler, Worker, great person) against a soldier: the confusion the owner named as unacceptable.</summary>
-    private const float MinCivilianDistance = 0.16f;
+    private const float MinCivilianDistance = 0.30f;
 
     private static readonly string Pack = FindPack();
 
@@ -41,8 +41,16 @@ public sealed class UnitSilhouetteTests
     {
         using var data = JsonDocument.Parse(File.ReadAllText(Path.Combine(Pack, "attachments.json")));
         var root = data.RootElement;
-        Dictionary<string, string> Of(JsonElement units) => units.EnumerateObject().Where(it => it.Value.TryGetProperty("style", out _)).ToDictionary(it => it.Name, it => it.Value.GetProperty("style").GetString()!);
-        return (Of(root.GetProperty("units")), Of(root.GetProperty("mounted").GetProperty("units")));
+        // T308: a rider's class is his style on his mount (a horse, a chariot, each kind and variant of elephant), since the mount fills most of the outline
+        static string Class(JsonElement unit)
+        {
+            var style = unit.GetProperty("style").GetString()!;
+            if (!unit.TryGetProperty("mount", out var mount)) return style + "/horse";
+            var kind = mount.TryGetProperty("kind", out var k) ? k.GetString() : "horse";
+            return mount.TryGetProperty("variant", out var v) ? $"{style}/{kind}/{v.GetString()}" : $"{style}/{kind}";
+        }
+        Dictionary<string, string> Of(JsonElement units, bool mounted) => units.EnumerateObject().Where(it => it.Value.TryGetProperty("style", out _)).ToDictionary(it => it.Name, it => mounted ? Class(it.Value) : it.Value.GetProperty("style").GetString()!);
+        return (Of(root.GetProperty("units"), false), Of(root.GetProperty("mounted").GetProperty("units"), true));
     }
 
     private static bool[][] Masks(string unit)
@@ -202,6 +210,7 @@ public sealed class UnitSilhouetteTests
     {
         var (_, mounted) = Styles();
         Assert.True(mounted.Count >= 15, "the styled riders");
+        Assert.True(mounted.Values.Distinct().Count() >= 9, "each kind of mount is a class of its own");
         var failures = Failures(mounted, civilianRule: false, MinRiderDistance);
         Assert.True(failures.Count == 0, "rider silhouettes too alike:\n" + string.Join("\n", failures));
     }

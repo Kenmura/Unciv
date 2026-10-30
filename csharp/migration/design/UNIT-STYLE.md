@@ -17,6 +17,7 @@
 - [6. Cross-cutting findings and risks](#6-cross-cutting-findings-and-risks)
 - [7. How it was built and licences](#7-how-it-was-built-and-licences)
 - [8. What was not verified](#8-what-was-not-verified)
+- [9. Roll-out (T295)](#9-roll-out-t295)
 <!-- /toc -->
 
 The owner asked for units that look more gritty and real and less chibi. This page shows six clearly different Warrior designs next to the current one so the owner can pick one or two baselines. The roll-out to the other ~40 units is ticket T295 and is blocked on that choice. Nothing here changes the shipped game: the current `unit/Warrior` and every CI golden are untouched.

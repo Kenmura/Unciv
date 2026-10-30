@@ -235,20 +235,28 @@ ELEPHANT_JOINTS = [
     ("leg_br", "body", (-0.09, 0.28, -0.17)),
 ]
 ELEPHANT_PARTS = [
-    ("body", (0.0, 0.35, 0.0), (0.27, 0.24, 0.50)),
-    ("neck", (0.0, 0.42, 0.28), (0.14, 0.18, 0.10)),
-    ("head", (0.0, 0.43, 0.38), (0.14, 0.16, 0.14)),
-    ("head", (0.05, 0.34, 0.48), (0.025, 0.025, 0.14)),
-    ("head", (-0.05, 0.34, 0.48), (0.025, 0.025, 0.14)),
-    ("trunk", (0.0, 0.29, 0.46), (0.055, 0.26, 0.055)),
-    ("ear_l", (0.12, 0.45, 0.33), (0.02, 0.16, 0.12)),
-    ("ear_r", (-0.12, 0.45, 0.33), (0.02, 0.16, 0.12)),
+    ("body", (0.0, 0.35, 0.0), (0.30, 0.26, 0.52)),
+    ("neck", (0.0, 0.42, 0.28), (0.18, 0.20, 0.10)),
+    ("head", (0.0, 0.43, 0.38), (0.18, 0.20, 0.16)),
+    ("head", (0.075, 0.30, 0.50), (0.03, 0.03, 0.26)),  # T308: long tusks, ears spread wide, a long trunk and a howdah: an elephant at any zoom
+    ("head", (-0.075, 0.30, 0.50), (0.03, 0.03, 0.26)),
+    ("trunk", (0.0, 0.27, 0.48), (0.07, 0.34, 0.07)),
+    ("ear_l", (0.19, 0.45, 0.31), (0.03, 0.26, 0.22)),
+    ("ear_r", (-0.19, 0.45, 0.31), (0.03, 0.26, 0.22)),
     ("tail", (0.0, 0.36, -0.28), (0.03, 0.16, 0.03)),
-    ("leg_fl", (0.09, 0.14, 0.17), (0.09, 0.28, 0.09)),
-    ("leg_fr", (-0.09, 0.14, 0.17), (0.09, 0.28, 0.09)),
-    ("leg_bl", (0.09, 0.14, -0.17), (0.09, 0.28, 0.09)),
-    ("leg_br", (-0.09, 0.14, -0.17), (0.09, 0.28, 0.09)),
+    ("leg_fl", (0.10, 0.14, 0.17), (0.10, 0.28, 0.10)),
+    ("leg_fr", (-0.10, 0.14, 0.17), (0.10, 0.28, 0.10)),
+    ("leg_bl", (0.10, 0.14, -0.17), (0.10, 0.28, 0.10)),
+    ("leg_br", (-0.10, 0.14, -0.17), (0.10, 0.28, 0.10)),
+    ("body", (0.0, 0.49, 0.0), (0.38, 0.03, 0.42)),  # the seat platform, wider than the animal
 ]
+# T308: the three war elephants differ by what they carry, so they are told apart at the default zoom: "rails" (a low wall all round), "tower" (tall front and back screens and a standard
+# pole) and "blanket" (an open, hanging blanket and a broad chest strap)
+ELEPHANT_VARIANTS = {
+    "rails": [("body", (0.18, 0.55, 0.0), (0.03, 0.11, 0.42)), ("body", (-0.18, 0.55, 0.0), (0.03, 0.11, 0.42)), ("body", (0.0, 0.55, 0.20), (0.38, 0.11, 0.03)), ("body", (0.0, 0.55, -0.20), (0.38, 0.11, 0.03))],
+    "tower": [("body", (0.0, 0.66, 0.21), (0.40, 0.32, 0.03)), ("body", (0.0, 0.66, -0.21), (0.40, 0.32, 0.03)), ("body", (0.0, 0.89, -0.21), (0.06, 0.12, 0.06))],
+    "blanket": [("body", (0.23, 0.34, 0.0), (0.05, 0.32, 0.50)), ("body", (-0.23, 0.34, 0.0), (0.05, 0.32, 0.50)), ("body", (0.0, 0.52, 0.0), (0.46, 0.03, 0.50))],
+}
 ELEPHANT_COLOUR = [0.36, 0.34, 0.33, 1.0]
 
 # C095: the chariot is the horse rig scaled to 0.8 and moved forward, drawing a two-wheeled cart (floor, rails, axle, yoke pole, spoked wheels on the joints wheel_l and wheel_r) that the rider stands on
@@ -322,9 +330,11 @@ def box(centre, size):
 CHARIOT_PARTS += wheel_parts("wheel_l", (WHEEL_X, WHEEL_Y, CART_Z)) + wheel_parts("wheel_r", (-WHEEL_X, WHEEL_Y, CART_Z))
 
 
-def build_horse(scale=1.0, colour=None, kind="horse"):
+def build_horse(scale=1.0, colour=None, kind="horse", variant=None):
     """The generated mount: the horse of the mounted units, or (`kind`) the elephant or the chariot with its horses (C095); `scale` and `colour` still scale and tint any of them."""
     joints_def, parts_def = MOUNTS[kind][0], MOUNTS[kind][1]
+    if kind == "elephant":
+        parts_def = parts_def + ELEPHANT_VARIANTS[variant or "rails"]
     b = Builder()
     doc = b.doc
     world = {name: tuple(c * scale for c in pos) for name, _, pos in joints_def}
@@ -612,7 +622,7 @@ def main(source, pack):
         scale = mount.get("scale", 1.0)
         kind = mount.get("kind", "horse")
         _, _, _, body_y, feet, follows_body = MOUNTS[kind]
-        horse, horse_bin, tracks = build_horse(scale, mount.get("colour"), kind)
+        horse, horse_bin, tracks = build_horse(scale, mount.get("colour"), kind, mount.get("variant"))
         if not follows_body:  # a chariot's rider stands on the cart and ignores the horse's body motion
             tracks = {clip_name: [t for t in clip_tracks if t[0] != "body"] for clip_name, clip_tracks in tracks.items()}
         saddle, saddle_z = feet if feet else (mounted["saddleHeight"], 0.0)

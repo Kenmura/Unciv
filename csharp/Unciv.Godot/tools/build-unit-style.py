@@ -172,7 +172,7 @@ def long_gun(node="Musket", length=1.7, stock=True):
 def javelins(node="Javelins"):
     """Three short darts held in a fan, points up (the sword frame)."""
     out = []
-    for k, (x, z) in enumerate(((0.0, 0.0), (0.07, 0.03), (-0.07, 0.03))):
+    for k, (x, z) in enumerate(((0.0, 0.0), (0.16, 0.03), (-0.16, 0.03), (0.32, 0.06), (-0.32, 0.06))):
         out.append(tube([[x, -0.2, z], [x, 0.4, z], [x, 0.95, z]], [0.011, 0.011, 0.008], 6, "wood", PAL["wood"], JW_NONE, node=node))
         out += spear_head(node, 0.95, 0.5) if False else [tube([[x, 0.93, z], [x, 1.0, z], [x, 1.13, z]], [0.008, 0.026, 0.002], 6, "iron", PAL["metal"], JW_NONE, node=node)]
     return out
@@ -191,6 +191,21 @@ def sack(node, centre, r=0.17):
 
 def book(node, size=0.4):
     return [box_prim([0, 0.22, 0], [size * 0.55, size * 0.7, size * 0.1], "leather", (0.3, 0.12, 0.1), JW_NONE, node=node), box_prim([0, 0.22, size * 0.1], [size * 0.5, size * 0.65, size * 0.01], "bone", PAL["bone"], JW_NONE, node=node)]
+
+
+def banner_staff(node="Prop", height=1.7, wide=0.75):
+    """T308: the general's standard: a tall pole with a big square banner in the civ's colour."""
+    return wood_staff(node, height, offset=-0.5) + [box_prim([wide / 2 + 0.03, height - 0.7, 0.0], [wide, 0.55, 0.025], "team", PAL["team"], JW_NONE, node=node)]
+
+
+def cross_staff(node="Prop", height=1.4, arm=0.5):
+    """T308: the inquisitor's staff topped by a wide cross."""
+    return wood_staff(node, height, offset=-0.5) + [box_prim([0, height - 0.55, 0], [arm, 0.07, 0.07], "bone", PAL["bone"], JW_NONE, node=node)]
+
+
+def easel(node="Prop"):
+    """T308: the artist's big canvas on a pole: a broad flat board."""
+    return wood_staff(node, 1.0, offset=-0.4) + [box_prim([0.0, 0.85, 0.0], [0.7, 0.62, 0.03], "bone", PAL["bone"], JW_NONE, node=node), box_prim([0.0, 0.85, 0.02], [0.5, 0.42, 0.01], "team", PAL["team"], JW_NONE, node=node)]
 
 
 def hammer(node="Hammer"):
@@ -445,8 +460,19 @@ def make_classify(body, bare=True, cloth_team=False):
     return classify
 
 
+def big(att, **scales):
+    """T308: the same attachments, the named ones scaled up (a class is told apart by its biggest prop, so the prop is oversized)."""
+    out = dict(att)
+    for k, f in scales.items():
+        out[k] = tuple(v * f for v in att[k])
+    return out
+
+
 SWORD_FRAME = ([0, 0.033, 0], [0, -1, 0, 0])
 XBOW_FRAME = ([-0.105, -0.01, 0], [0, 0.7071068, 0, 0.7071068])
+
+
+RIDER = [False]  # T308: set by build() while a mounted unit is built; a rider's gear is drawn larger so the class still reads on top of the mount
 
 
 class H:  # a tiny holder passed to node callbacks
@@ -461,32 +487,33 @@ def hold(h, slot, name, frame):
 
 def style_axe():
     def extras(c):
-        return fur_mantle(c) + fur_kilt(c) + leg_wraps(c) + [bwo.beard(c, "hair", (0.27, 0.22, 0.17), (0.42, 0.36, 0.3))]
-    return Style(P_BRUTE, att=ATT_BRUTE, extras=extras, cls=make_classify("Barbarian"))
+        return fur_mantle(c, 1.7 if RIDER[0] else 1.0) + fur_kilt(c) + leg_wraps(c) + [bwo.beard(c, "hair", (0.27, 0.22, 0.17), (0.42, 0.36, 0.3))]
+    return Style(P_BRUTE, att=big(ATT_BRUTE, **{"1H_Axe": 1.5, "2H_Axe": 1.4, "1H_Axe_Offhand": 1.5, "Barbarian_Round_Shield": 1.3}), extras=extras, cls=make_classify("Barbarian"))
 
 
 def style_sword(plume=0.2):
-    return Style(P_BRUTE, att=ATT_KNIGHT, extras=lambda c: crest_plume(c, height=plume) + pauldrons(c, "metal") + tabard(c, width=0.55) + leg_wraps(c), cls=make_classify("Knight"))
+    return Style(P_BRUTE, att=big(ATT_KNIGHT, **{"Rectangle_Shield": 1.45, "Round_Shield": 1.2, "Badge_Shield": 1.3, "Spike_Shield": 1.3, "1H_Sword": 1.25, "2H_Sword": 1.2, "1H_Sword_Offhand": 1.25, "Knight_Helmet": 1.25}),
+                 extras=lambda c: crest_plume(c, height=plume + (0.18 if RIDER[0] else 0.15)) + pauldrons(c, "metal") + tabard(c, width=0.55) + leg_wraps(c), cls=make_classify("Knight"))
 
 
 def style_spear(length=2.0):
-    return Style(P_BRUTE, drop=("1H_Sword",), att=ATT_KNIGHT, nodes=lambda c, h: hold(h, "handslot.r", "Spear", SWORD_FRAME),
-                 extras=lambda c: spear_node(length, "Spear") + tabard(c, width=0.5) + leg_wraps(c) + crest_plume(c, height=0.1), cls=make_classify("Knight"))
+    return Style(P_BRUTE, drop=("1H_Sword",), att=big(ATT_KNIGHT, **{"Round_Shield": 1.3, "Spike_Shield": 1.2, "Knight_Helmet": 1.1}), nodes=lambda c, h: hold(h, "handslot.r", "Spear", SWORD_FRAME),
+                 extras=lambda c: spear_node(length, "Spear") + tabard(c, width=0.5) + leg_wraps(c) + hat_tall(c, "iron", 0.22, 0.0), cls=make_classify("Knight"))
 
 
 def style_bow():
     return Style(P_LEAN, drop=("1H_Crossbow", "2H_Crossbow"), att=ATT_ROGUE, nodes=lambda c, h: hold(h, "handslot.r", "Bow", XBOW_FRAME),
-                 extras=lambda c: bow_parts("Bow", 1.0) + quiver(c) + hat_hood(c) + tabard(c, top=c.pos["chest"][1] + 0.1, bottom=c.pos["hips"][1] - 0.05, width=0.5) + leg_wraps(c),
+                 extras=lambda c: bow_parts("Bow", 1.9 if RIDER[0] else 1.35) + quiver(c) + hat_hood(c) + tabard(c, top=c.pos["chest"][1] + 0.1, bottom=c.pos["hips"][1] - 0.05, width=0.5) + leg_wraps(c),
                  cls=make_classify("Rogue", bare=False))
 
 
 def style_crossbow():
-    return Style(P_LEAN, att=ATT_ROGUE, extras=lambda c: hat_helm(c, "iron", brim=False) + tabard(c, width=0.5) + leg_wraps(c) + bandolier(c) + quiver(c), cls=make_classify("Rogue", bare=False))
+    return Style(P_LEAN, att={**ATT_ROGUE, "2H_Crossbow": (1.0, 1.0, 1.0), "1H_Crossbow": (1.0, 1.0, 1.0)}, extras=lambda c: hat_helm(c, "iron", brim=False) + tabard(c, width=0.5) + leg_wraps(c) + bandolier(c) + quiver(c), cls=make_classify("Rogue", bare=False))
 
 
 def style_javelin():
     return Style(P_LEAN, drop=("Throwable",), att=ATT_ROGUE, nodes=lambda c, h: hold(h, "handslot.r", "Javelins", SWORD_FRAME),
-                 extras=lambda c: javelins("Javelins") + hat_hood(c) + tabard(c, top=c.pos["chest"][1] + 0.1, bottom=c.pos["hips"][1] - 0.05, width=0.5) + leg_wraps(c) + bandolier(c),
+                 extras=lambda c: javelins("Javelins") + crest_plume(c, "bone", 0.12) + tabard(c, top=c.pos["chest"][1] + 0.1, bottom=c.pos["hips"][1] - 0.05, width=0.5) + leg_wraps(c) + bandolier(c),
                  cls=make_classify("Rogue", bare=False))
 
 
@@ -497,19 +524,19 @@ def style_scout():
 
 def style_musket():
     return Style(P_BRUTE, drop=("2H_Crossbow", "1H_Crossbow"), att=ATT_ROGUE, nodes=lambda c, h: hold(h, "handslot.r", "Musket", XBOW_FRAME),
-                 extras=lambda c: long_gun("Musket", 1.5) + hat_tricorne(c) + tabard(c, width=0.55) + bandolier(c) + leg_wraps(c), cls=make_classify("Rogue", bare=False))
+                 extras=lambda c: long_gun("Musket", 1.05) + hat_tricorne(c) + tabard(c, width=0.55) + bandolier(c) + leg_wraps(c), cls=make_classify("Rogue", bare=False))
 
 
 def style_rifle():
     return Style(P_BRUTE, drop=("2H_Crossbow", "1H_Crossbow"), att=ATT_ROGUE, nodes=lambda c, h: hold(h, "handslot.r", "Rifle", XBOW_FRAME),
-                 extras=lambda c: long_gun("Rifle", 1.3) + hat_helm(c) + tabard(c, width=0.55) + back_pack(c, 0.8, roll=False) + leg_wraps(c), cls=make_classify("Rogue", bare=False))
+                 extras=lambda c: long_gun("Rifle", 0.95) + hat_helm(c) + tabard(c, width=0.55) + back_pack(c, 0.8, roll=False) + leg_wraps(c), cls=make_classify("Rogue", bare=False))
 
 
 def style_crew():
     def gun(node):
-        out = [tube([[0, 0.1, -0.4], [0, 0.1, 0.2], [0, 0.1, 0.65]], [0.07, 0.06, 0.05], 8, "iron", PAL["iron"], JW_NONE, node=node)]
+        out = [tube([[0, 0.1, -0.4], [0, 0.1, 0.1], [0, 0.1, 0.4]], [0.07, 0.06, 0.05], 8, "iron", PAL["iron"], JW_NONE, node=node)]
         out.append(box_prim([0, 0.12, -0.3], [0.16, 0.14, 0.3], "iron", PAL["iron"], JW_NONE, node=node))
-        out.append(tube([[-0.3, -0.5, 0.2], [0, 0.1, 0.5], [0.3, -0.5, 0.2]], [0.02] * 3, 5, "wood", PAL["wood"], JW_NONE, node=node))
+        out.append(tube([[-0.18, -0.5, 0.1], [0, 0.1, 0.3], [0.18, -0.5, 0.1]], [0.02] * 3, 5, "wood", PAL["wood"], JW_NONE, node=node))
         return out
     return Style(P_BRUTE, drop=("2H_Staff", "Mage_Cape", "Mage_Hat"), att=ATT_MAGE, nodes=lambda c, h: hold(h, "handslot.r", "Gun", XBOW_FRAME),
                  extras=lambda c: gun("Gun") + hat_helm(c) + tabard(c, width=0.55) + leg_wraps(c), cls=make_classify("Mage", bare=False))
@@ -535,7 +562,7 @@ def style_great(kind):
         if kind == "scientist":
             out += hat_tall(c, "team", 0.45) + book("Prop")
         elif kind == "artist":
-            out += hat_tall(c, "gold", 0.16, 0.9) + wood_staff("Prop", 1.2, offset=-0.2) + tabard(c, width=0.5)
+            out += hat_wide(c, "gold", 0.5, 0.06) + easel("Prop") + tabard(c, width=0.5)
         elif kind == "merchant":
             out += hat_wide(c, "team", 0.36, 0.2) + sack("Prop", [0, 0.25, 0], 0.3) + back_pack(c, 0.8, roll=False)
         elif kind == "engineer":
@@ -543,11 +570,11 @@ def style_great(kind):
         elif kind == "prophet":
             out += hat_tall(c, "team", 0.34, 0.5) + wood_staff("Prop", 2.1, offset=-0.6) + [bwo.beard(c, "hair", (0.7, 0.68, 0.62), (0.8, 0.78, 0.72), length=0.2)]
         elif kind == "general":
-            out += hat_tricorne(c) + crest_plume(c, height=0.3) + tabard(c, width=0.5) + book("Prop")
+            out += hat_tricorne(c) + crest_plume(c, height=0.3) + tabard(c, width=0.5) + banner_staff("Prop")
         elif kind == "missionary":
-            out += hat_hood(c, "team") + book("Prop") + wood_staff("Prop", 0.0) [:0]
+            out += hat_hood(c, "team") + book("Prop", 0.8) + back_pack(c, 0.9, roll=False)
         else:  # inquisitor
-            out += hat_wide(c, "dark", 0.3, 0.12) + wood_staff("Prop", 1.1, offset=-0.3) + tabard(c, width=0.5)
+            out += hat_tall(c, "dark", 0.5, 0.0) + cross_staff("Prop") + tabard(c, width=0.5)
         return out
     body = {"scientist": "Mage", "artist": "Mage", "merchant": "Barbarian", "engineer": "Barbarian", "prophet": "Mage", "general": "Mage", "missionary": "Mage", "inquisitor": "Mage"}[kind]
     atts = {**ATT_BRUTE, **ATT_MAGE, **ATT_KNIGHT}
@@ -574,6 +601,7 @@ def _body_bounds(m):
 
 def build(folder, body, keep, clips, style_name, seat=None, rider_height=None, height=0.85):
     """The styled model of one unit as (doc, binary): the same contract as `bum.reduce_body` (one skeleton, six clips, TeamColor, feet at y = 0)."""
+    RIDER[0] = bool(seat)
     style = STYLES[style_name]()
     doc, binary = bum.read_glb(os.path.join(folder, body + ".glb"))
     doc, binary = bum.reduce_body(doc, binary, list(keep), clips, rider_height or 0.7, seat)
@@ -581,7 +609,10 @@ def build(folder, body, keep, clips, style_name, seat=None, rider_height=None, h
     rig = next(n for n in m.doc["nodes"] if n.get("name") == "Rig")
     orig_scale = rig.pop("scale")
     newpos, _ = bwo.reproportion(m, **(rider(style.prop) if seat else style.prop))
-    bwo.scale_attachments(m, style.att)
+    att = style.att
+    if seat:  # T308: a rider is drawn at 0.5 of a foot soldier's height, so his gear is oversized to keep the class readable
+        att = {k: tuple(v * 1.45 for v in f) if k.endswith(("Shield", "Sword", "Sword_Offhand", "Axe", "Axe_Offhand", "Crossbow")) else f for k, f in att.items()}
+    bwo.scale_attachments(m, att)
     ctx = bwo.Ctx(m, newpos)
     style.nodes(ctx, H(m))
     bwo.CELL_CLASS.clear()
@@ -603,7 +634,7 @@ def build(folder, body, keep, clips, style_name, seat=None, rider_height=None, h
     lo, hi = bwo.bounds(m)
     blo, bhi = _body_bounds(m)
     if seat:
-        rig["scale"] = [x * 0.93 for x in orig_scale]  # the gear (a plume, a hat) adds height: the elephants' riders stay inside the contract
+        rig["scale"] = [x * 0.9 for x in orig_scale]  # the gear (a plume, a hat) adds height: the elephants' riders stay inside the contract
     else:
         radius = max(abs(lo[0]), abs(hi[0]), abs(lo[2]), abs(hi[2]))  # the contract measures the bind pose (arms out, a long gun held sideways): at most 0.62
         rig["scale"] = [min(height / (bhi[1] - blo[1]), 0.98 / (hi[1] - lo[1]), 0.62 / radius)] * 3
