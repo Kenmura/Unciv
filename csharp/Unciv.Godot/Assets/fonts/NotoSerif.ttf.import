@@ -2,13 +2,13 @@
 
 importer="font_data_dynamic"
 type="FontFile"
-uid="uid://c7serif62fnt4k"
-path="res://.godot/imported/NotoSerif.ttf-a4c1f0d2e6b84b7f9a3d5c8e1f2b6a70.fontdata"
+uid="uid://br45ybiqe3fo"
+path="res://.godot/imported/NotoSerif.ttf-89c8911086bade62d8f85485d512417c.fontdata"
 
 [deps]
 
 source_file="res://Assets/fonts/NotoSerif.ttf"
-dest_files=["res://.godot/imported/NotoSerif.ttf-a4c1f0d2e6b84b7f9a3d5c8e1f2b6a70.fontdata"]
+dest_files=["res://.godot/imported/NotoSerif.ttf-89c8911086bade62d8f85485d512417c.fontdata"]
 
 [params]
 
