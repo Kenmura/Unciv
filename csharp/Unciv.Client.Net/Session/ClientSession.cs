@@ -164,6 +164,7 @@ public sealed class ClientSession : IAsyncDisposable
     private volatile bool standbyResubscribeDue;
     private long standbyLastAck = long.MinValue;
     private Channel<Message>? standbyFrames;
+    private volatile ChannelWriter<Message>? standbyWriter; // read by the receive loop without the gate, so a frame being fsynced never delays it
     private long standbyHave = -1;
 
     /// <summary>T272: the last log seq of this player's standby copy (-1 when it holds none or is not a backup host). Counters only: the copy itself is never exposed.</summary>
@@ -378,6 +379,7 @@ public sealed class ClientSession : IAsyncDisposable
     {
         lock (standbyGate)
         {
+            standbyWriter = null;
             standbyFrames?.Writer.TryComplete();
             standbyFrames = null;
             standbyStore?.Dispose();
@@ -428,6 +430,7 @@ public sealed class ClientSession : IAsyncDisposable
             standbyStore = opened;
             standbyGameId = id;
             standbyFrames = Channel.CreateBounded<Message>(new BoundedChannelOptions(128) { SingleReader = true, SingleWriter = true, FullMode = BoundedChannelFullMode.Wait });
+            standbyWriter = standbyFrames.Writer;
             _ = Task.Run(() => RunStandbyWorkerAsync(opened, standbyFrames.Reader, token), CancellationToken.None);
             have = opened.HaveSeq;
             haveSha = opened.HaveLineSha256;
@@ -439,8 +442,7 @@ public sealed class ClientSession : IAsyncDisposable
     // Receive loop: hands the frame to the worker (bounded: a disk that cannot keep up pauses reading, and the host's pacing then stops sending).
     private async Task HandleStandbyFrameAsync(Message frame, CancellationToken token)
     {
-        ChannelWriter<Message>? writer;
-        lock (standbyGate) writer = standbyStore == null || standbyBroken ? null : standbyFrames?.Writer; // never subscribed on this connection: a host cannot push a copy onto a player who did not ask
+        var writer = standbyWriter; // null: never subscribed on this connection (a host cannot push a copy onto a player who did not ask); a broken copy is checked by the worker
         if (writer == null) return;
         var epoch = frame switch { StandbyMeta m => m.Epoch, StandbySnapshot p => p.Epoch, StandbyEntry e => e.Epoch, _ => -1 };
         if (epoch != connectionEpoch) return;

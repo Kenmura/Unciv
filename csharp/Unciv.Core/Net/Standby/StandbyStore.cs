@@ -135,7 +135,7 @@ public sealed class StandbyStore : IDisposable
         public bool Consented { get; init; } = true;
     }
 
-    // T292: bounds the standby/ tree. Only directories this class could have created (safe names) are considered, the one being opened is never removed, and a failure to delete is ignored.
+    // T292: bounds the standby/ tree. Only directories this class could have created (safe names) are considered, a game this player still consents to (it may be promoted from) is never removed, the one being opened is never removed, and a failure to delete is ignored.
     private static void PruneOtherGames(string dataRoot, string keep, int maxGames)
     {
         if (maxGames <= 0) return;
@@ -143,7 +143,7 @@ public sealed class StandbyStore : IDisposable
         {
             var root = Path.Combine(dataRoot, "standby");
             var others = new DirectoryInfo(root).GetDirectories()
-                .Where(it => !string.Equals(it.Name, keep, StringComparison.Ordinal) && DirectoryFor(dataRoot, it.Name) != null)
+                .Where(it => !string.Equals(it.Name, keep, StringComparison.Ordinal) && DirectoryFor(dataRoot, it.Name) != null && !HasConsent(dataRoot, it.Name))
                 .OrderByDescending(LastWrite)
                 .Skip(maxGames - 1)
                 .ToList();

@@ -134,7 +134,7 @@ public sealed class StandbyStoreTests : IDisposable
     public void TheStandbyTree_KeepsOnlyTheNewestGames()
     {
         var limits = new StandbyLimits { MaxStandbyGames = 2 };
-        foreach (var (id, age) in new[] { ("old-1", 3), ("old-2", 2) })
+        foreach (var (id, age) in new[] { ("old-1", 4), ("old-2", 3), ("old-3", 2) })
         {
             StandbyStore.Open(root, id, limits).Dispose();
             var dir = StandbyStore.DirectoryFor(root, id)!;
@@ -142,9 +142,11 @@ public sealed class StandbyStoreTests : IDisposable
             foreach (var file in Directory.GetFiles(dir)) File.SetLastWriteTimeUtc(file, new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc).AddDays(-age));
             Directory.SetLastWriteTimeUtc(dir, new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc).AddDays(-age));
         }
+        StandbyStore.RecordConsent(root, "old-1"); // still a successor for it: never pruned
         StandbyStore.Open(root, "new-3", limits).Dispose(); // written now: newer than the fixed 2026 dates above
-        Assert.False(Directory.Exists(StandbyStore.DirectoryFor(root, "old-1")!));
-        Assert.True(Directory.Exists(StandbyStore.DirectoryFor(root, "old-2")!));
+        Assert.True(Directory.Exists(StandbyStore.DirectoryFor(root, "old-1")!));
+        Assert.False(Directory.Exists(StandbyStore.DirectoryFor(root, "old-2")!));
+        Assert.True(Directory.Exists(StandbyStore.DirectoryFor(root, "old-3")!));
         Assert.True(Directory.Exists(StandbyStore.DirectoryFor(root, "new-3")!));
     }
 
