@@ -58,7 +58,7 @@ public sealed record NewGameOptionsQuery(string? BaseRuleset = null, IReadOnlyLi
     public NewGameOptions Run()
     {
         var mods = new LinkedHashSet<string>(Mods ?? []);
-        var baseName = BaseRuleset ?? Models.Metadata.BaseRuleset.Civ_V_GnK.FullName();
+        var baseName = BaseRuleset ?? Models.Metadata.BaseRuleset.Civ_V_BNW.FullName();
         var ruleset = RulesetCache.GetComplexRuleset(mods, baseName);
         var effectiveBase = RulesetCache.Get(baseName)?.ModOptions.IsBaseRuleset == true
             ? baseName

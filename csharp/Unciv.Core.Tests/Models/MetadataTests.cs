@@ -33,6 +33,15 @@ public class MetadataTests
     }
 
     [Fact]
+    public void DefaultBaseRulesetIsBrave_New_World_T359()
+    {
+        const string bnw = "Civ V - Brave New World";
+        Assert.Equal(bnw, new GameParameters().BaseRuleset);
+        Assert.Equal(bnw, new Unciv.Logic.Map.MapParameters().BaseRuleset);
+        Assert.Equal(bnw, new Unciv.Net.Lobby.LobbySettings().Ruleset);
+    }
+
+    [Fact]
     public void BaseRulesetAndPlayerTypeNames()
     {
         Assert.Equal("Civ V - Vanilla", BaseRuleset.Civ_V_Vanilla.FullName());
@@ -158,12 +167,12 @@ public class MetadataTests
     public void ToStringMatchesKotlin()
     {
         Assert.Equal("(Emperor Epic Medieval era, 2 Human, 3 AI, Random number of Players: 2..5, 9 CS, No barbs, God mode, Enabled Victories: Cultural, Time, Civ V - Vanilla, mods=(ModB,ModA))", CustomParameters().ToString());
-        Assert.Equal("(Prince Quick Ancient era, 1 Human, 3 AI, 6 CS, Enabled Victories: , Civ V - Gods & Kings, no mods)", new GameParameters().ToString());
+        Assert.Equal("(Prince Quick Ancient era, 1 Human, 3 AI, 6 CS, Enabled Victories: , Civ V - Brave New World, no mods)", new GameParameters().ToString());
         foreach (var (count, expected) in new[] { (6, "M1,M2,M3,M4,M5,M6"), (7, "M1,M2,M3,M4,M5,M6,..."), (8, "M1,M2,M3,M4,M5,M6,...") })
         {
             var g = new GameParameters();
             for (int i = 1; i <= count; i++) g.Mods.Add("M" + i);
-            Assert.Equal($"(Prince Quick Ancient era, 1 Human, 3 AI, 6 CS, Enabled Victories: , Civ V - Gods & Kings, mods=({expected}))", g.ToString());
+            Assert.Equal($"(Prince Quick Ancient era, 1 Human, 3 AI, 6 CS, Enabled Victories: , Civ V - Brave New World, mods=({expected}))", g.ToString());
         }
     }
 

@@ -181,7 +181,7 @@ public class MapParameters : IIsPartOfGameInfoSerialization
     public LinkedHashSet<string> Mods { get; set; } = [];
 
     [JsonPropertyName("baseRuleset")]
-    public string BaseRuleset { get; set; } = Models.Metadata.BaseRuleset.Civ_V_GnK.FullName();
+    public string BaseRuleset { get; set; } = Models.Metadata.BaseRuleset.Civ_V_BNW.FullName();
 
     /// <summary>Unciv Version of creation for support cases.</summary>
     [JsonPropertyName("createdWithVersion")]

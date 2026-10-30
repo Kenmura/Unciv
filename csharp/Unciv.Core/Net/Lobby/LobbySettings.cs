@@ -22,7 +22,7 @@ public sealed class LobbySettings
     public int CityStateCount { get; set; } = 4;
     public bool AiFill { get; set; } = true;
     public bool NoBarbarians { get; set; }
-    public string Ruleset { get; set; } = "Civ V - Gods & Kings";
+    public string Ruleset { get; set; } = BaseRuleset.Civ_V_BNW.FullName();
     public List<string> Mods { get; set; } = [];
     public string TurnMode { get; set; } = "Simultaneous";
     public int TurnTimerSeconds { get; set; } = 120;

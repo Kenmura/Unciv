@@ -191,7 +191,7 @@ public static class CliRunner
         var shapeName = cli.Get("shape");
         var difficultyName = cli.Get("difficulty");
         var speedName = cli.Get("speed");
-        var baseName = cli.Get("ruleset") ?? BaseRuleset.Civ_V_Vanilla.FullName();
+        var baseName = cli.Get("ruleset") ?? BaseRuleset.Civ_V_BNW.FullName();
         var modNames = (cli.Get("mods") ?? "").Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
         var mapFile = allowMap ? cli.Get("map") : null;
         LoadRulesets(cli);

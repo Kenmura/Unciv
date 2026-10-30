@@ -147,7 +147,7 @@ public class MapParametersTests
         Assert.NotNull(fromKotlinDefault);
         Assert.Equal("({Medium} {Hexagonal} R20)", fromKotlinDefault.ToString());
         Assert.Equal(123456789L, fromKotlinDefault.Seed);
-        Assert.Equal("Civ V - Gods & Kings", fromKotlinDefault.BaseRuleset);
+        Assert.Equal("Civ V - Brave New World", fromKotlinDefault.BaseRuleset);
         Assert.Equal(0.6f, fromKotlinDefault.TemperatureIntensity);
 
         // Named rectangular world-wrap configuration matching JVM golden output

@@ -10,6 +10,7 @@ public sealed class NewGameFormTests
 {
     private const string Vanilla = "Civ V - Vanilla";
     private const string Gnk = "Civ V - Gods & Kings";
+    private const string Bnw = "Civ V - Brave New World";
 
     private static NewGameForm Form(int maxHumans = 1)
     {
@@ -30,7 +31,7 @@ public sealed class NewGameFormTests
     public void DefaultsAreOneHumanAndThreeRandomAiAndTheQueryDefaults()
     {
         var form = Form();
-        Assert.Equal(Gnk, form.BaseRuleset);
+        Assert.Equal(Bnw, form.BaseRuleset);
         Assert.Equal([new PlayerSlot("Random", true), new PlayerSlot("Random", false), new PlayerSlot("Random", false), new PlayerSlot("Random", false)], form.Slots);
         Assert.Equal(1, form.Humans);
         Assert.Equal(6, form.CityStates);
@@ -56,7 +57,7 @@ public sealed class NewGameFormTests
     public void ListsComeFromTheRuleset()
     {
         var form = Form();
-        Assert.Equal(34, form.MaxPlayers);
+        Assert.Equal(43, form.MaxPlayers);
         Assert.Equal(form.MaxPlayers, form.PlayableNations.Count);
         Assert.DoesNotContain("Spectator", form.PlayableNations);
         Assert.DoesNotContain("Barbarians", form.PlayableNations);
@@ -250,7 +251,7 @@ public sealed class NewGameFormTests
     {
         var form = Form();
         Assert.Equal("Nonsense is not a base ruleset.", form.SetBaseRuleset("Nonsense"));
-        Assert.Equal(Gnk, form.BaseRuleset);
+        Assert.Equal(Bnw, form.BaseRuleset);
         Assert.Equal("Civ V - Vanilla is not a mod that can be used.", form.SetMod(Vanilla, true));
         Assert.Equal("Ghost is not a mod that can be used.", form.SetMod("Ghost", true));
         Assert.Empty(form.Mods);
@@ -289,7 +290,7 @@ public sealed class NewGameFormTests
         var form = FormWithFakeMod(mods => mods.Contains("FakeMod"));
         Assert.Equal("These rulesets cannot be combined: clash", form.SetMod("FakeMod", true));
         Assert.Empty(form.Mods);
-        Assert.Equal(Gnk, form.BaseRuleset);
+        Assert.Equal(Bnw, form.BaseRuleset);
         Assert.Null(form.SetMod("OtherMod", true));
         Assert.Equal(["OtherMod"], form.Mods);
     }

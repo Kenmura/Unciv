@@ -162,7 +162,7 @@ public class GameParameters : IIsPartOfGameInfoSerialization
     public int MinutesRecoveredPerTurn { get; set; } = 60 * 24;
 
     [JsonPropertyName("baseRuleset")]
-    public string BaseRuleset { get; set; } = Metadata.BaseRuleset.Civ_V_GnK.FullName();
+    public string BaseRuleset { get; set; } = Metadata.BaseRuleset.Civ_V_BNW.FullName();
 
     [JsonPropertyName("mods")]
     public LinkedHashSet<string> Mods { get; set; } = [];

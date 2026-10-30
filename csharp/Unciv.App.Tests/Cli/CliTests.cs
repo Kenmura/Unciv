@@ -303,6 +303,7 @@ public sealed class CliTests : IDisposable
     public void RulesetOptionSelectsTheBaseRuleset()
     {
         var vanilla = Run("new", "--out", Path("v.json"), "--city-states", "0");
+        Assert.Contains("Brave New World", File.ReadAllText(Path("v.json")), StringComparison.Ordinal); // T359: no --ruleset plays BNW
         var gnk = Run("new", "--out", Path("k.json"), "--city-states", "0", "--ruleset", "Civ V - Gods & Kings");
         Assert.Equal(CliRunner.ExitOk, gnk.Code);
         Assert.Contains("Gods", File.ReadAllText(Path("k.json")), StringComparison.Ordinal);

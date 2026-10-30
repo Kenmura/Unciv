@@ -885,6 +885,7 @@ public sealed class RulesetLoadTests : IDisposable
 
         var vanilla = RulesetCache.Get(BaseRuleset.Civ_V_Vanilla.FullName())!;
         var gnk = RulesetCache.Get(BaseRuleset.Civ_V_GnK.FullName())!;
+        var bnw = RulesetCache.Get(BaseRuleset.Civ_V_BNW.FullName())!;
         Assert.Equal(74, vanilla.Technologies.Count);
         Assert.Equal(["Ancient era", "Classical era", "Medieval era", "Renaissance era", "Industrial era", "Modern era", "Atomic era", "Information era", "Future era"], vanilla.Eras.Keys);
         Assert.Equal(Enumerable.Range(0, vanilla.Eras.Count), vanilla.Eras.Values.Select(it => it.EraNumber));
@@ -900,8 +901,8 @@ public sealed class RulesetLoadTests : IDisposable
         Assert.NotNull(vanilla.AllHappinessLevelsThatAffectUniques);
 
         var combined = RulesetCache.GetComplexRuleset(new GameParameters());
-        Assert.Equal(gnk.Name, combined.Mods.Single());
-        Assert.Equal(gnk.Buildings.Keys, combined.Buildings.Keys);
+        Assert.Equal(bnw.Name, combined.Mods.Single());
+        Assert.Equal(bnw.Buildings.Keys, combined.Buildings.Keys);
         // building costs are filled from the tech columns
         Assert.DoesNotContain(combined.Buildings.Values, it => it.Cost == -1 && it.Name == "Monument");
         Assert.Equal(gnk.Name, gnk.ToString());
