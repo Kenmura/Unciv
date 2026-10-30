@@ -130,7 +130,8 @@ Local releases (`csharp-releases/`, git-ignored) are built by `release.py` below
 
 - `python3 -I tools/release.py T### [--cli-only | --client-only] [--windows] [--keep N] [--force] [--dry-run]` (run automatically by `ticket.py` after
   `state T### Done`) builds the tree it is run on into `<main checkout>/csharp-releases/<ticket>-<shortsha>/`:
-  `cli/` (`dotnet publish Unciv.Cli`, self-contained linux-x64, so `./Unciv.Cli` runs with no dotnet installed), `client-linux/` (the
+  `cli/` (`dotnet publish Unciv.Cli`, self-contained linux-x64, so `./Unciv.Cli` runs with no dotnet installed), `server-linux-x64/` and `server-win-x64/`
+  (`dotnet publish Unciv.Server`, self-contained, rulesets and the run guide bundled, T266; the Linux one is started and stopped by the smoke, the Windows one is UNVERIFIED and only warns on failure), `client-linux/` (the
   `package.sh` output below) and `manifest.json`. `csharp-releases/latest` only ever moves forward, the newest 5 versions are kept, and a tree
   already released (same git tree id) is not rebuilt without `--force`. After building, the CLI is smoke-run with an empty `PATH`.
 - `Unciv.Godot/tools/package.sh [linux|windows]` does the client: `dotnet build -c Release`, `godot --headless --export-release` with the presets in
@@ -158,13 +159,13 @@ GitHub release; it never publishes. It uses only `github.token` (`contents: writ
 
 1. Pick a commit on `csharp-migration` whose `csharp.yml` run is green (the release workflow does not re-run the tests). `git push origin csharp-migration` if needed.
 2. Tag and push that commit: `git tag csharp-v0.1.0 <commit> && git push origin csharp-v0.1.0`. A tag that is not `csharp-v<semver>`, is not on `csharp-migration`, or already has a release makes the `verify` job fail and nothing is built.
-3. Wait for the run (Actions, "C# release (draft)"; about 30 to 60 minutes: Godot export of three platforms, three CLI publishes). Jobs: `verify`, `cli`, `client`, then `publish`.
-4. Open the draft under Releases. Check the files: `Unciv-client-{linux.tar.gz,windows.zip,macos.zip}`, `Unciv-cli-{linux-x64.tar.gz,win-x64.zip,osx-arm64.tar.gz}` and `SHA256SUMS` (`sha256sum -c SHA256SUMS` in the download folder). Read the notes: Windows and macOS builds are marked **UNVERIFIED**
-   (never started on those systems; macOS is unsigned and not notarised). Edit the notes if you have since tested them.
+3. Wait for the run (Actions, "C# release (draft)"; about 30 to 60 minutes: Godot export of three platforms, three CLI publishes). Jobs: `verify`, `cli`, `server`, `client`, then `publish`.
+4. Open the draft under Releases. Check the files: `Unciv-client-{linux.tar.gz,windows.zip,macos.zip}`, `Unciv-cli-{linux-x64.tar.gz,win-x64.zip,osx-arm64.tar.gz}`, `Unciv-server-{linux-x64.tar.gz,win-x64.zip}` (T266, run guide `Unciv.Server/README.md`) and `SHA256SUMS` (`sha256sum -c SHA256SUMS` in the download folder). Read the notes: Windows and macOS builds are marked **UNVERIFIED**
+   (never started on those systems; macOS is unsigned and not notarised), as is the Windows dedicated server (never run). Edit the notes if you have since tested them.
 5. Publish by hand in the GitHub UI (tick "pre-release" for `-rc` tags). To redo a failed or wrong release: delete the draft and the tag (`git push origin :refs/tags/csharp-v0.1.0`), fix, and tag again; the workflow refuses to overwrite an existing release.
 
 The archive names are the ones in the table above plus the CLI ones (`release_assets.py` owns the list; `test_ci.py` checks the workflow against it). The CLI archives are `dotnet publish -r <rid> --self-contained`
-with `data/jsons` and `LICENSE` bundled; only the Linux client (main menu under Xvfb) and the Linux CLI (tiny game, empty `PATH`) are run by the workflow. Android joins in T280 (marked place in the workflow).
+with `data/jsons` and `LICENSE` bundled; only the Linux client (main menu under Xvfb) and the Linux CLI (tiny game, empty `PATH`) are run by the workflow. The server archives (T266) are `dotnet publish Unciv.Server -r <rid> --self-contained` for linux-x64 and win-x64 with `data/jsons`, `LICENSE` and `README.md` bundled; the Linux one is smoke-run (`release_assets.py smoke-server`: `--help`, start, `LISTENING` line, SIGTERM, exit 0), and `csharp.yml` job `server-publish` builds and smokes the same (nothing uploaded). `Unciv.Server.csproj` keeps `IsRidAgnostic` (the client export would otherwise fail with NETSDK1152); a direct `dotnet publish -r` of the server is unaffected (checked). Android joins in T280 (marked place in the workflow).
 Unverified until the first real tag run: the whole workflow (it cannot be run without pushing a tag); locally only `release_assets.py` (real CLI publishes for all three runtimes, packing, the Linux CLI smoke), the YAML syntax and the shape tests were checked.
 
 ## CI (T169)

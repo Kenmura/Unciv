@@ -241,7 +241,7 @@ class ReleaseWorkflowShape(unittest.TestCase):
     def test_write_permission_only_on_the_publish_job(self):
         self.assertRegex(self.text, r"(?m)^permissions:\n  contents: read\n(?=\n)")
         jobs = self.jobs()
-        self.assertEqual(sorted(jobs), ["cli", "client", "publish", "verify"])
+        self.assertEqual(sorted(jobs), ["cli", "client", "publish", "server", "verify"])
         for name, body in jobs.items():
             if name == "publish":
                 self.assertRegex(body, r"(?m)^    permissions:\n      contents: write\n(?!      )")
@@ -272,7 +272,7 @@ class ReleaseWorkflowShape(unittest.TestCase):
         self.assertTrue(uses)
         for u in uses:
             self.assertRegex(u, r"^[\w.-]+/[\w./-]+@[0-9a-f]{40}$", u)
-        self.assertRegex(self.jobs()["publish"], r"needs: \[verify, cli, client\]")
+        self.assertRegex(self.jobs()["publish"], r"needs: \[verify, cli, server, client\]")
         for name in ("cli", "client"):
             self.assertRegex(self.jobs()[name], r"needs: verify")
 
@@ -288,6 +288,9 @@ class ReleaseWorkflowShape(unittest.TestCase):
             self.assertIn(name, self.text)
         rids = re.search(r"for rid in ([\w\- ]+); do", self.text).group(1).split()
         self.assertEqual(rids, mod.CLI_RIDS)
+        server_rids = re.findall(r"for rid in ([\w\- ]+); do\n\s+\(cd csharp && dotnet publish Unciv\.Server", self.text)  # T266
+        self.assertEqual([r.split() for r in server_rids], [mod.SERVER_RIDS])
+        self.assertIn("release_assets.py smoke-server", self.text)
         self.assertIn("python3 -I csharp/migration/tools/release_assets.py verify", self.text)
         self.assertIn("T280", self.text)  # the marked place for the Android job
 
@@ -318,7 +321,8 @@ class ReleaseAssets(unittest.TestCase):
         self.assertEqual(
             self.mod.expected_assets(),
             ["Unciv-client-linux.tar.gz", "Unciv-client-windows.zip", "Unciv-client-macos.zip",
-             "Unciv-cli-linux-x64.tar.gz", "Unciv-cli-win-x64.zip", "Unciv-cli-osx-arm64.tar.gz"],
+             "Unciv-cli-linux-x64.tar.gz", "Unciv-cli-win-x64.zip", "Unciv-cli-osx-arm64.tar.gz",
+             "Unciv-server-linux-x64.tar.gz", "Unciv-server-win-x64.zip"],
         )
 
     def fake_publish(self, tmp, rid):
@@ -364,6 +368,36 @@ class ReleaseAssets(unittest.TestCase):
             with self.assertRaises(SystemExit):
                 self.mod.pack_cli("linux-x64", d, Path(t) / "out", jsons, lic)
 
+    def test_pack_server_layout_and_release_py_rids(self):
+        import tarfile
+        import zipfile
+
+        self.assertEqual(self.mod.SERVER_RIDS, ClientPlatforms().load("release").SERVER_RIDS)
+        with tempfile.TemporaryDirectory() as t:
+            for rid in self.mod.SERVER_RIDS:
+                d, jsons, lic = self.fake_publish(t, rid)
+                exe = "Unciv.Server.exe" if rid.startswith("win-") else "Unciv.Server"
+                (d / ("Unciv.Cli.exe" if rid.startswith("win-") else "Unciv.Cli")).rename(d / exe)
+                out = self.mod.pack_server(rid, d, Path(t) / "out", jsons, lic)
+                self.assertEqual(out.name, f"Unciv-server-{rid}.{'zip' if rid.startswith('win-') else 'tar.gz'}")
+                names = zipfile.ZipFile(out).namelist() if out.suffix == ".zip" else tarfile.open(out).getnames()
+                top = f"Unciv-server-{rid}/"
+                self.assertEqual(sorted(names), sorted(top + n for n in (exe, "lib.dll", "LICENSE", "README.md", "data/jsons/ModCategories.json", "data/jsons/sub/a.json")))
+            with self.assertRaises(SystemExit):
+                self.mod.pack_server("osx-arm64", d, Path(t) / "out", jsons, lic)  # no macOS server
+            with self.assertRaises(SystemExit):
+                self.mod.pack_server("linux-x64", self.fake_publish(Path(t) / "cli", "linux-x64")[0], Path(t) / "out", jsons, lic)  # a CLI publish folder is not a server one
+
+    def test_smoke_server_reports_a_server_that_never_listens(self):
+        with tempfile.TemporaryDirectory() as t:
+            fake = Path(t) / "Unciv.Server"
+            fake.write_text("#!/bin/sh\necho '--game-id'\n[ \"$1\" = --help ] && exit 0\nexit 7\n")
+            fake.chmod(0o755)
+            problems = self.mod.smoke_server(t)
+            self.assertTrue(problems and "LISTENING" in problems[0], problems)
+            fake.write_text("#!/bin/sh\nexit 3\n")
+            self.assertTrue("--help failed" in self.mod.smoke_server(t)[0])
+
     def complete_dir(self, tmp):
         import zipfile
 
@@ -396,7 +430,7 @@ class ReleaseAssets(unittest.TestCase):
                 if not (out / n).exists():
                     (out / n).write_bytes(n.encode())
             lines = self.mod.write_sums(out)
-            self.assertEqual(len(lines), 6)
+            self.assertEqual(len(lines), 8)
             self.assertEqual(lines, sorted(lines, key=lambda l: l.split("  ")[1]))
             self.assertEqual(self.mod.verify(out), [])
             self.assertEqual(self.mod.write_sums(out), lines)  # SHA256SUMS does not hash itself
@@ -411,7 +445,7 @@ class ReleaseAssets(unittest.TestCase):
         self.assertIn("a" * 40, text)
         self.assertIn("1.2.3", text)
         rows = {r.split("|")[1].strip(" `"): r for r in text.splitlines() if r.startswith("| `")}
-        for name in ("Unciv-client-windows.zip", "Unciv-client-macos.zip", "Unciv-cli-win-x64.zip", "Unciv-cli-osx-arm64.tar.gz"):
+        for name in ("Unciv-client-windows.zip", "Unciv-client-macos.zip", "Unciv-cli-win-x64.zip", "Unciv-cli-osx-arm64.tar.gz", "Unciv-server-win-x64.zip"):
             self.assertIn("**UNVERIFIED.**", rows[name], name)
         for name in ("Unciv-client-linux.tar.gz", "Unciv-cli-linux-x64.tar.gz"):
             self.assertNotIn("UNVERIFIED", rows[name], name)

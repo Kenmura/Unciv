@@ -71,7 +71,7 @@ flowchart TD
   class C099 waiting
   class T260 blocked
   class T263 ready
-  class T266 prog
+  class T266 review
   class T273 prog
   class T274 ondeck
   class T275 waiting
@@ -138,7 +138,7 @@ xychart-beta
 | T273 | In-Progress [Claude-T273] | T272, T267 | 2 | Host migration 3/5: graceful hand-off and promotion (HostHandoff, promote from standby store, client redirect, rolledBack resync) |
 | T277 | Available (waiting on T260) | T260, T276 | 1 | Android CI: build the APK (arm64 plus x86_64) as an artifact and smoke it on an emulator |
 | C099 | Available (waiting on T260) | T260, C096 | 0 | Android shell behaviour: back button, safe area, orientation, lifecycle autosave, virtual keyboard, hide Host, permissions |
-| T266 | In-Progress [Claude-T266] | T270 | 0 | Dedicated server distribution: self-contained Linux and Windows builds in releases and CI, run guide |
+| T266 | Needs-Review [Claude-T266] | T270 | 0 | Dedicated server distribution: self-contained Linux and Windows builds in releases and CI, run guide |
 | T275 | Available (waiting on T274) | T274, C034, C035 | 0 | Host migration 5/5: client UI and docs (backup-host picker, trust notice, standby status, rollback and host-changed notices, superseded-host screen) |
 | T278 | Available (waiting on T260) | T260, T276 | 0 | Android on-device verification: TLS join, lifecycle reconnect, frame time and APK size on a mid-range phone |
 | T280 | Available (waiting on T260, T277) | T279, T260, T277 | 0 | Add the Android APK to the tagged GitHub release workflow |

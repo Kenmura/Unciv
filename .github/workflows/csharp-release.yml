@@ -84,6 +84,42 @@ jobs:
           if-no-files-found: error
           retention-days: 3
 
+  # Dedicated server (T266), self-contained for linux-x64 and win-x64. Only the Linux one can be run here (--help, start, LISTENING line, SIGTERM, exit 0).
+  server:
+    name: Server archives
+    needs: verify
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+        with:
+          dotnet-version: 10.0.x
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.nuget/packages
+          key: nuget-${{ runner.os }}-${{ hashFiles('csharp/**/*.csproj', 'csharp/Directory.Packages.props') }}
+          restore-keys: nuget-${{ runner.os }}-
+      - name: Publish and archive each runtime
+        run: |
+          mkdir -p "$RUNNER_TEMP/assets"
+          for rid in linux-x64 win-x64; do
+            (cd csharp && dotnet publish Unciv.Server -c Release -r "$rid" --self-contained true -o "$RUNNER_TEMP/publish-$rid")
+            python3 -I csharp/migration/tools/release_assets.py pack-server "$rid" "$RUNNER_TEMP/publish-$rid" "$RUNNER_TEMP/assets"
+          done
+      - name: Smoke the Linux server (no dotnet on PATH)
+        run: |
+          mkdir "$RUNNER_TEMP/smoke" && tar -xzf "$RUNNER_TEMP/assets/Unciv-server-linux-x64.tar.gz" -C "$RUNNER_TEMP/smoke"
+          python3 -I csharp/migration/tools/release_assets.py smoke-server "$RUNNER_TEMP/smoke/Unciv-server-linux-x64"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: release-server
+          path: ${{ runner.temp }}/assets/
+          if-no-files-found: error
+          retention-days: 3
+
   # Linux client (smoke-tested), Windows and macOS clients (archive check only), same steps as csharp.yml's client-export job.
   client:
     name: Client archives
@@ -155,7 +191,7 @@ jobs:
   # The only job with write access: a DRAFT release for the tag with the archives, SHA256SUMS and the notes.
   publish:
     name: Create the draft release
-    needs: [verify, cli, client]
+    needs: [verify, cli, server, client]
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     permissions:

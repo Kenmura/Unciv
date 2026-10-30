@@ -7,6 +7,8 @@ ticket.py runs this after every `state T### Done`. The folder sits next to `csha
 removed when its agent finishes):
 
     csharp-releases/<ticket>-<shortsha>/cli/        dotnet publish of Unciv.Cli, self-contained linux-x64 (runtime and data/jsons bundled: ./Unciv.Cli works with no dotnet installed)
+    csharp-releases/<ticket>-<shortsha>/server-linux-x64/ and server-win-x64/   dotnet publish of Unciv.Server (T266), self-contained, data/jsons bundled (--cli-only builds them too).
+                                                       Only the Linux one is run (start, LISTENING line, SIGTERM, exit 0); the Windows one is UNVERIFIED and its failure only warns
     csharp-releases/<ticket>-<shortsha>/client-linux/   Unciv.Godot/tools/package.sh linux (self-contained: Godot export with the .NET runtime, data/jsons, fonts, LICENSE, notices)
     csharp-releases/<ticket>-<shortsha>/client-windows/ and client-macos/   the same for the other platforms (T258; --linux-only skips them). Only the Linux build is ever run
                                                        (smoke-export.sh in CI); Windows and macOS are checked for file presence and size (check_package.py) and are UNVERIFIED otherwise.
@@ -33,6 +35,7 @@ CSHARP = HERE.parent
 CONTAINER = "dotnet-dev"
 KEEP_DEFAULT = 5
 RID = "linux-x64"
+SERVER_RIDS = ["linux-x64", "win-x64"]  # T266: release_assets.SERVER_RIDS (a unit test keeps them equal)
 CLIENT_PLATFORMS = ["linux", "windows", "macos"]  # T258: default client platforms; T279 builds the same list, in the same order, as release archives
 
 
@@ -96,6 +99,18 @@ def smoke_cli(cli_dir):
         if r.returncode or not save.exists():
             print((r.stdout + r.stderr)[-1500:], file=sys.stderr)
             die(f"the published CLI does not run on its own (exit {r.returncode})")
+
+
+def smoke_server(server_dir):
+    """The published Linux server must run with no dotnet on PATH: --help, start (LISTENING line), SIGTERM, exit 0 (release_assets.smoke_server)."""
+    import importlib.util
+
+    spec = importlib.util.spec_from_file_location("release_assets", HERE / "tools" / "release_assets.py")
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    problems = mod.smoke_server(server_dir)
+    if problems:
+        die(problems[0])
 
 
 def versions(root):
@@ -179,6 +194,21 @@ def main(argv):
             shutil.copytree(CSHARP.parent / "android" / "assets" / "jsons", out / "data" / "jsons")
             smoke_cli(out)
             built.append("cli")
+            for rid in SERVER_RIDS:
+                out = stage / f"server-{rid}"
+                try:
+                    run(f"publish Unciv.Server ({rid})", in_container(f"cd {shlex.quote(str(CSHARP))} && dotnet publish Unciv.Server -c Release -r {rid} --self-contained true -o {shlex.quote(str(out))}"))
+                    shutil.copytree(CSHARP.parent / "android" / "assets" / "jsons", out / "data" / "jsons")
+                    shutil.copy2(CSHARP / "Unciv.Server" / "README.md", out / "README.md")
+                    if rid == "linux-x64":
+                        smoke_server(out)
+                except SystemExit:
+                    if rid == "linux-x64":
+                        raise  # the Linux server is the one we run: its failure fails the release
+                    shutil.rmtree(out, ignore_errors=True)
+                    print(f"release: WARNING {rid} server failed and is left out of this release", file=sys.stderr)
+                    continue
+                built.append(f"server-{rid}")
         if client:
             for platform in platforms:
                 try:
