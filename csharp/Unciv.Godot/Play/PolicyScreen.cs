@@ -400,7 +400,7 @@ public partial class PolicyScreen : PanelContainer
             {
                 Name = view.Complete.Id, Text = view.Complete.Name.TrText(), TooltipText = view.Complete.Name.TrText() + "\n" + view.Complete.Hint.TrText(), ToggleMode = true, Alignment = HorizontalAlignment.Center,
                 ThemeTypeVariation = UiVariants.PolicyNode(view.Complete.State, view.Complete.Pickable), SizeFlagsHorizontal = Control.SizeFlags.ExpandFill, ClipText = true,
-                CustomMinimumSize = new Vector2(0f, uiTheme.Px(UiTokens.ControlMinHeight)),
+                CustomMinimumSize = new Vector2(0f, Math.Max(uiTheme.Px(UiTokens.ControlMinHeight), uiTheme.MinTargetPx)), // T283: a finger target on touch
             };
             string completeName = view.Complete.Name;
             strip.Pressed += () => Select(completeName);

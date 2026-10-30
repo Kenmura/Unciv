@@ -282,9 +282,15 @@ public partial class TechScreen : PanelContainer
         var centres = new Dictionary<string, Vector2>(StringComparer.Ordinal);
         foreach (var node in Layout.Nodes)
         {
-            var card = new TechNodeCard(theme, node, w, h) { Position = new Vector2(pad + node.GridColumn * (w + gx), pad + node.GridRow * (h + gy)) };
+            var card = new TechNodeCard(theme, node, w, h) { Pan = canvas.Pan, Position = new Vector2(pad + node.GridColumn * (w + gx), pad + node.GridRow * (h + gy)) };
             string name = node.Name;
-            card.Pressed += () => Select(name);
+            card.Pressed += () =>
+            {
+                bool pan = card.Dragged;
+                card.ClearDrag();
+                if (!pan) Select(name); // the release of a pan is not a click
+                else card.SetPressedNoSignal(name == SelectedTech);
+            };
             card.Activated += () => Quick(name, "Research");
             card.QueueRequested += () => Quick(name, "Enqueue");
             nodeButtons[name] = card;

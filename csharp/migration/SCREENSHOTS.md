@@ -87,6 +87,7 @@
 - [C101 Phone layouts of the full screens (split by screen group when claimed): HUD and menus, city, tech and policy, tables, pedia](#c101-phone-layouts-of-the-full-screens-split-by-screen-group-when-claimed-hud-and-menus-city-tech-and-policy-tables-pedia)
 - [T252 (ticket not Done or unknown)](#t252-ticket-not-done-or-unknown)
 - [T256 (ticket not Done or unknown)](#t256-ticket-not-done-or-unknown)
+- [T283 (ticket not Done or unknown)](#t283-ticket-not-done-or-unknown)
 - [T284 (ticket not Done or unknown)](#t284-ticket-not-done-or-unknown)
 - [T285 (ticket not Done or unknown)](#t285-ticket-not-done-or-unknown)
 - [T286 (ticket not Done or unknown)](#t286-ticket-not-done-or-unknown)
@@ -1764,6 +1765,32 @@ Scenario `unit-visuals`.
 ![Aircraft, missiles and the helicopter: aircraft hover on a pole above their shadow, the helicopter stands on its skids.](../Unciv.Godot.Harness/golden/unit-visuals/air.png)
 
 *Aircraft, missiles and the helicopter: aircraft hover on a pole above their shadow, the helicopter stands on its skids.* (`unit-visuals/air.png`)
+
+## T283 (ticket not Done or unknown)
+
+The tech tree and the policy screen on a 2400x1080 400 ppi phone profile: node cards and the Complete strip are at least 48 dp, no clipped or overlapping text, nothing behind a container that cannot scroll; a drag that starts on a tech card pans the tree.
+
+Scenario `phone-tech`.
+
+![Tech tree on a phone: 48 dp+ node cards, era band, detail panel; Agriculture (researched) is chosen so the footer buttons are disabled. The tree scrolls and pans by dragging (short viewport: about two card rows).](../Unciv.Godot.Harness/golden/phone-tech/tech.png)
+
+*Tech tree on a phone: 48 dp+ node cards, era band, detail panel; Agriculture (researched) is chosen so the footer buttons are disabled. The tree scrolls and pans by dragging (short viewport: about two card rows).* (`phone-tech/tech.png`)
+
+![Tech tree on a phone with Pottery chosen: Research now and Add to queue are enabled 48 dp footer buttons.](../Unciv.Godot.Harness/golden/phone-tech/tech-chosen.png)
+
+*Tech tree on a phone with Pottery chosen: Research now and Add to queue are enabled 48 dp footer buttons.* (`phone-tech/tech-chosen.png`)
+
+![Policy screen on a phone: culture bar, branch tabs (an arrow-scrolled strip, not all visible), the Tradition card, and an empty detail panel.](../Unciv.Godot.Harness/golden/phone-tech/policy.png)
+
+*Policy screen on a phone: culture bar, branch tabs (an arrow-scrolled strip, not all visible), the Tradition card, and an empty detail panel.* (`phone-tech/policy.png`)
+
+![Policy screen on a phone with Tradition chosen: its effects and a full-width Adopt button in the detail panel.](../Unciv.Godot.Harness/golden/phone-tech/policy-chosen.png)
+
+*Policy screen on a phone with Tradition chosen: its effects and a full-width Adopt button in the detail panel.* (`phone-tech/policy-chosen.png`)
+
+![Policy screen on a phone scrolled to the Tradition Complete strip: a full 48 dp tall bar under the nodes.](../Unciv.Godot.Harness/golden/phone-tech/policy-complete.png)
+
+*Policy screen on a phone scrolled to the Tradition Complete strip: a full 48 dp tall bar under the nodes.* (`phone-tech/policy-complete.png`)
 
 ## T284 (ticket not Done or unknown)
 

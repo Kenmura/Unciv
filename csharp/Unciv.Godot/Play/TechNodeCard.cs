@@ -108,8 +108,34 @@ public partial class TechNodeCard : Button
     /// <summary>A Shift+click: add this tech to the research queue.</summary>
     public event Action? QueueRequested;
 
+    /// <summary>T283: a drag that starts on the card moves the tree (the cards cover most of it, and a button swallows the drag the scroll container would otherwise take for a finger).</summary>
+    public Action<Vector2>? Pan { get; set; }
+
+    /// <summary>True from a drag of more than a few pixels until the next press: the release that ends it is a pan, not a selection.</summary>
+    public bool Dragged { get; private set; }
+
+    private Vector2 dragTravel;
+
+    /// <summary>Forgets the drag once its release has been handled.</summary>
+    public void ClearDrag()
+    {
+        Dragged = false;
+        dragTravel = Vector2.Zero;
+    }
+
     public override void _GuiInput(InputEvent @event)
     {
+        if (@event is InputEventMouseButton { ButtonIndex: MouseButton.Left, Pressed: true })
+        {
+            Dragged = false;
+            dragTravel = Vector2.Zero;
+        }
+        if (@event is InputEventMouseMotion { ButtonMask: MouseButtonMask.Left } motion)
+        {
+            dragTravel += motion.Relative;
+            if (dragTravel.Length() > theme.Px(6)) Dragged = true;
+            if (Dragged) Pan?.Invoke(motion.Relative);
+        }
         if (@event is InputEventMouseButton { ButtonIndex: MouseButton.Left, Pressed: true } click)
         {
             if (click.ShiftPressed) QueueRequested?.Invoke();

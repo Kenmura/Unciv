@@ -1600,9 +1600,18 @@
     "about": "Ultra-only water and terrain shader, with the Low, High and Ultra levels compared on a real GPU. No golden exists because goldens are pinned to Low on llvmpipe OpenGL and the Ultra look is time-animated and only meaningful on a real GPU; the settings picker is shown under C097 (settings-graphics).",
     "doc_note": "Documentation images rendered on an NVIDIA GeForce RTX 5060 Ti (Forward+, Vulkan, 1920x1080, 2026-10-29) from the T271 Large Pangaea fixture. They are not goldens and no CI comparison reads them; details in `design/images/ultra/README.md`.",
     "shots": [
-      {"doc": "ultra/compare-low-high-ultra.jpg", "caption": "Low, High and Ultra (columns) at the default, coast and overview views (rows) on a real GPU."},
-      {"doc": "ultra/ultra-mid.jpg", "caption": "Ultra at the default play view: soft depth-tinted water, shadows and ambient occlusion."},
-      {"doc": "ultra/ultra-water-closeup.jpg", "caption": "Ultra water close-up at a low tilt; the shader ripple and depth tint are subtle by design."}
+      {
+        "doc": "ultra/compare-low-high-ultra.jpg",
+        "caption": "Low, High and Ultra (columns) at the default, coast and overview views (rows) on a real GPU."
+      },
+      {
+        "doc": "ultra/ultra-mid.jpg",
+        "caption": "Ultra at the default play view: soft depth-tinted water, shadows and ambient occlusion."
+      },
+      {
+        "doc": "ultra/ultra-water-closeup.jpg",
+        "caption": "Ultra water close-up at a low tilt; the shader ripple and depth tint are subtle by design."
+      }
     ]
   },
   "C097": {
@@ -1740,6 +1749,32 @@
       {
         "golden": "phone-pedia/search.png",
         "caption": "Civilopedia search on a phone: results over every category with the category as subtitle, and a 48 dp Clear button beside the box (the line edit's own 15 px clear icon is replaced on touch)."
+      }
+    ]
+  },
+  "T283": {
+    "scenario": "phone-tech",
+    "about": "The tech tree and the policy screen on a 2400x1080 400 ppi phone profile: node cards and the Complete strip are at least 48 dp, no clipped or overlapping text, nothing behind a container that cannot scroll; a drag that starts on a tech card pans the tree.",
+    "shots": [
+      {
+        "golden": "phone-tech/tech.png",
+        "caption": "Tech tree on a phone: 48 dp+ node cards, era band, detail panel; Agriculture (researched) is chosen so the footer buttons are disabled. The tree scrolls and pans by dragging (short viewport: about two card rows)."
+      },
+      {
+        "golden": "phone-tech/tech-chosen.png",
+        "caption": "Tech tree on a phone with Pottery chosen: Research now and Add to queue are enabled 48 dp footer buttons."
+      },
+      {
+        "golden": "phone-tech/policy.png",
+        "caption": "Policy screen on a phone: culture bar, branch tabs (an arrow-scrolled strip, not all visible), the Tradition card, and an empty detail panel."
+      },
+      {
+        "golden": "phone-tech/policy-chosen.png",
+        "caption": "Policy screen on a phone with Tradition chosen: its effects and a full-width Adopt button in the detail panel."
+      },
+      {
+        "golden": "phone-tech/policy-complete.png",
+        "caption": "Policy screen on a phone scrolled to the Tradition Complete strip: a full 48 dp tall bar under the nodes."
       }
     ]
   }

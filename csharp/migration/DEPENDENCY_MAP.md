@@ -81,7 +81,7 @@ flowchart TD
   class T278 waiting
   class T280 waiting
   class T282 ready
-  class T283 prog
+  class T283 review
   class T285 review
   class T288 ready
   class T289 prog
@@ -146,7 +146,7 @@ xychart-beta
 | T275 | Available (waiting on T274) | T274, C034, C035 | 0 | Host migration 5/5: client UI and docs (backup-host picker, trust notice, standby status, rollback and host-changed notices, superseded-host screen) |
 | T278 | Available (waiting on T260) | T260, T276 | 0 | Android on-device verification: TLS join, lifecycle reconnect, frame time and APK size on a mid-range phone |
 | T280 | Available (waiting on T260, T277) | T279, T260, T277 | 0 | Add the Android APK to the tagged GitHub release workflow |
-| T283 | In-Progress [Claude-T283] | C101 | 0 | Phone layout: Tech and policy screens (C101 follow-up) |
+| T283 | In-Review [Claude-T283] | C101 | 0 | Phone layout: Tech and policy screens (C101 follow-up) |
 | T285 | Needs-Review [Claude-T285] | C101 | 0 | Phone layout: Civilopedia (C101 follow-up) |
 | T289 | In-Progress [Claude-T289] | T271 | 0 | Ultra water ripple and sun glint tuning |
 | T293 | In-Progress [Claude-soakfix] | none | 0 | Soak failure: Tile roadOwner differs between live game and save reload after turn 250 (BNW 300-turn soak) |
