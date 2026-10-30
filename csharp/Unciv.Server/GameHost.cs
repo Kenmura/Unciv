@@ -107,6 +107,9 @@ public sealed partial class GameHost : IAsyncDisposable
     private readonly CommandGate gate;
     private readonly IClock clock;
     private readonly HostLimits limits;
+
+    /// <summary>The limits this host runs with (T302: tests check that the options reach it).</summary>
+    public HostLimits Limits => limits;
     private readonly Dictionary<string, HostSession> sessions = new(StringComparer.Ordinal);
     private readonly Channel<Func<Task>> mailbox = Channel.CreateUnbounded<Func<Task>>();
     private readonly CancellationTokenSource cts = new();

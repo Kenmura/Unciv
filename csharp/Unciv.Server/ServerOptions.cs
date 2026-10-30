@@ -40,7 +40,7 @@ public sealed record ServerOptions
           --address HOST      The host name or address written into the invite (default localhost).
           --jsons DIR         The rulesets folder (default: data/jsons next to the executable, else android/assets/jsons above the current folder).
           --mods-dir DIR      A folder of mods to offer.
-          --parallel-views N  Build the per-player views of a round on up to N tasks (2 to 64; 0 or absent: off, the default). Frames are byte-identical either way; it only pays on a host with spare cores and several players.
+          --parallel-views N  Build the per-player views of a round on up to N tasks (2 to 64; 0, 1 or absent: off, the default). Frames are byte-identical either way; it only pays on a host with spare cores and several players.
           --log-level LEVEL   debug, info (default), warn or error. Log lines go to stdout.
           --help, -h          Show this help and exit.
 

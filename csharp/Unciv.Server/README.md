@@ -49,6 +49,7 @@ There are no accounts, no web UI and no remote admin console.
 | `--game-id ID` | Save the game as `DATA-DIR/games/ID` and resume it if it exists. Without it nothing is saved and the server warns. |
 | `--password-file F` | Join password from the first line of F. Prefer it to `--password`, which is visible in `ps`. |
 | `--max-players N`, `--ai-fill` / `--no-ai-fill` | Seats, and whether empty seats become AI. |
+| `--parallel-views N` | Build the per-player views of a round on up to N tasks (2 to 64; 0, 1 or absent: off, the default). Frames are identical either way. |
 | `--auto-start`, `--min-humans N` | Start by itself when the humans are ready. |
 | `--settings FILE` | Map, speed, difficulty, mods, turn timer as `LobbySettings` JSON; the options above override it. |
 | `--address HOST` | Name or address written into the invite. |

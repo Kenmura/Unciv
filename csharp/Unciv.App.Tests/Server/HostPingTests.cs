@@ -241,6 +241,34 @@ public sealed class HostPingTests : IDisposable
     }
 
     [Fact]
+    public async Task InProcessHost_OptionsLimits_ReachTheGameHost_OnStartAndResume()
+    {
+        var game = NewGame();
+        var setup = new GameSetupInfo(
+            new GameParameters { BaseRuleset = ruleset.Name, NumberOfCityStates = 0, VictoryTypes = ruleset.Victories.Keys.ToList(), Players = [new("Babylon", PlayerType.Human), new("Greece", PlayerType.AI)] },
+            new MapParameters { Type = MapType.Pangaea, Shape = MapShape.Rectangular, Seed = 3, MapSize = MapSize.Tiny });
+        using var babylon = ClientIdentity.Generate();
+        var bindings = new Dictionary<string, SlotBinding> { ["Babylon"] = new SlotBinding { PlayerKey = babylon.PlayerKey, DisplayName = "B" } };
+        var limits = new HostLimits { ParallelViewBuilding = true, MaxViewParallelism = 3 };
+        var options = new InProcessHostOptions { TickInterval = null, Limits = limits };
+        var root = Directory.CreateTempSubdirectory("unciv-limits-").FullName;
+        try
+        {
+            var dir = Path.Combine(root, "g");
+            await using (var started = InProcessHost.Start(game, setup, Seed, 1000L, dir, "Babylon", bindings, options))
+                Assert.Same(limits, started.Host.Limits);
+            await using var resumed = InProcessHost.ResumeFromDirectory(dir, babylon.PlayerKey, options);
+            Assert.Same(limits, resumed.Host.Limits);
+            await using var plain = InProcessHost.ResumeFromDirectory(dir, babylon.PlayerKey, new InProcessHostOptions { TickInterval = null });
+            Assert.False(plain.Host.Limits.ParallelViewBuilding);
+        }
+        finally
+        {
+            try { Directory.Delete(root, recursive: true); } catch (IOException) { }
+        }
+    }
+
+    [Fact]
     public async Task Ping_FromASessionBoundToNoCiv_GetsNoEchoAndReachesNobody()
     {
         var game = NewGame();
