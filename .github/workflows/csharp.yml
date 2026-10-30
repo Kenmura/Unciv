@@ -220,6 +220,103 @@ jobs:
           mkdir "$RUNNER_TEMP/smoke" && tar -xzf "$RUNNER_TEMP/assets/Unciv-server-linux-x64.tar.gz" -C "$RUNNER_TEMP/smoke"
           python3 -I csharp/migration/tools/release_assets.py smoke-server "$RUNNER_TEMP/smoke/Unciv-server-linux-x64"
 
+  # T277: the Android client. Exports the debug-signed APKs (arm64-v8a only, and arm64-v8a plus x86_64 for the emulator) with the same package.sh as a local build, uploads them as
+  # a 7-day artifact (throw-away keystore, no store signing, no secrets) and, when the runner offers /dev/kvm, installs the emulator APK on a headless x86_64 emulator and waits for
+  # the main-menu marker in logcat (android-smoke.sh). Without KVM the build-and-artifact half still runs and the smoke step reports a warning instead of failing. T280 adds Android to the draft release.
+  android:
+    name: Android APK (arm64 and x86_64) and emulator smoke
+    if: github.event_name != 'schedule'
+    needs: engine
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    env:
+      ANDROID_HOME: ${{ github.workspace }}/../android-sdk
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+        with:
+          dotnet-version: 10.0.x
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.nuget/packages
+          key: nuget-${{ runner.os }}-${{ hashFiles('csharp/**/*.csproj', 'csharp/Directory.Packages.props') }}
+          restore-keys: nuget-${{ runner.os }}-
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            ~/.local/opt/godot-4.7.2
+            ~/.local/share/godot/export_templates
+          key: godot-${{ runner.os }}-${{ hashFiles('csharp/Unciv.Godot.Harness/tools/setup-godot.sh', 'csharp/Unciv.Godot/tools/install-export-templates.sh') }}
+      - name: Install system packages
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends xvfb xauth libgl1-mesa-dri libglx-mesa0 libxcursor1 libxinerama1 libxi6 libxrandr2 fontconfig libasound2t64
+      - name: Install the pinned Godot and export templates (SHA-512 checked)
+        working-directory: csharp
+        run: |
+          Unciv.Godot.Harness/tools/setup-godot.sh --print-path
+          Unciv.Godot/tools/install-export-templates.sh
+      # A fresh SDK root next to the checkout, filled by the runner image's own sdkmanager (needs no write access to the image's SDK). Licences are accepted
+      # non-interactively; build-tools and platform are the versions design/ANDROID.md and package.sh expect.
+      - name: Install the Android SDK pieces
+        run: |
+          mkdir -p "$ANDROID_HOME"
+          ANDROID_HOME="$(realpath "$ANDROID_HOME")"; echo "ANDROID_HOME=$ANDROID_HOME" >> "$GITHUB_ENV"
+          sdkmanager="${ANDROID_SDK_ROOT:-/usr/local/lib/android/sdk}/cmdline-tools/latest/bin/sdkmanager"
+          set +o pipefail
+          yes | "$sdkmanager" --sdk_root="$ANDROID_HOME" --licenses > /dev/null
+          set -o pipefail
+          "$sdkmanager" --sdk_root="$ANDROID_HOME" 'cmdline-tools;latest' 'platform-tools' 'build-tools;36.1.0' 'platforms;android-36' 'emulator' 'system-images;android-34;default;x86_64' > /dev/null
+      - name: Package (Android, arm64-v8a)
+        working-directory: csharp
+        run: Unciv.Godot/tools/retry-on-crash.sh 2 Unciv.Godot/tools/package.sh android
+      - name: Package (Android, arm64-v8a and x86_64)
+        working-directory: csharp
+        run: Unciv.Godot/tools/retry-on-crash.sh 2 Unciv.Godot/tools/package.sh android-emulator
+      - name: Check the APK ABIs and signature
+        working-directory: csharp/Unciv.Godot/build/android
+        run: |
+          unzip -l Unciv.apk | grep -q 'lib/arm64-v8a/libgodot_android.so'
+          if unzip -l Unciv.apk | grep -q 'lib/x86_64/'; then echo 'the arm64-only APK holds x86_64 libraries' >&2; exit 1; fi
+          unzip -l Unciv-emulator.apk | grep -q 'lib/arm64-v8a/libgodot_android.so'
+          unzip -l Unciv-emulator.apk | grep -q 'lib/x86_64/libgodot_android.so'
+          for apk in Unciv.apk Unciv-emulator.apk; do "$ANDROID_HOME/build-tools/36.1.0/apksigner" verify "$apk"; done
+      - name: Upload the debug APKs
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: android-apk
+          path: |
+            csharp/Unciv.Godot/build/android/Unciv.apk
+            csharp/Unciv.Godot/build/android/Unciv-emulator.apk
+          if-no-files-found: error
+          retention-days: 7
+      # The hosted x86_64 runners expose /dev/kvm to the runner user only after a udev rule opens it up; without it the emulator is far too slow, so the step is skipped with a warning.
+      - name: Enable KVM
+        id: kvm
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules > /dev/null
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm || true
+          sudo udevadm settle || true
+          if [[ -r /dev/kvm && -w /dev/kvm ]]; then echo "available=true" >> "$GITHUB_OUTPUT"; else echo "::warning::/dev/kvm is not available on this runner: the emulator smoke is skipped"; echo "available=false" >> "$GITHUB_OUTPUT"; fi
+      - name: Emulator smoke (x86_64, reaches the main menu)
+        if: steps.kvm.outputs.available == 'true'
+        # UNVERIFIED on a hosted runner: report a failure (red step) without failing the job until the first green run, then remove this line
+        continue-on-error: true
+        working-directory: csharp
+        run: Unciv.Godot/tools/android-smoke.sh
+      # The screenshot and logs of the emulator run: the only way to see what the emulator showed
+      - name: Upload the emulator smoke output
+        if: ${{ always() && steps.kvm.outputs.available == 'true' }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: android-smoke
+          path: csharp/Unciv.Godot/build/android/smoke/
+          if-no-files-found: ignore
+          retention-days: 7
+
   # Rendered scenarios (C008) against the committed goldens. Goldens were recorded with Fedora's Mesa llvmpipe; ubuntu's differs in blending (T246), so
   # the job compares with GoldenTolerance.Renderer (HARNESS_GOLDEN_TOLERANCE below). T239 saw it green on the runner image, so it gates like the others.
   client-scenarios:

@@ -64,7 +64,7 @@ Recommended: A, with B as the fallback (see the decision in section 5).
    `screen/immersive_mode=true`, `include_filter` for the data files once T276 decides how content gets into the pck (the jsons live in `android/assets/jsons`, outside `res://`, and the packs sit behind `Packs/.gdignore`, so a plain filter is not enough; section 3, gap A-1).
 3. Android SDK: `cmdline-tools;latest`, `platform-tools`, `build-tools;36.1.0`, `platforms;android-36`; editor settings `export/android/android_sdk_path`, `java_sdk_path`, `debug_keystore` (a throw-away keystore made with `keytool -genkeypair`, never committed).
 4. `godot --headless --path Unciv.Godot --export-debug Android build/android/Unciv.apk` after the same throw-away `.sln` step `package.sh` already does.
-5. `adb install -r Unciv.apk && adb shell am start -n org.unciv.godot/com.godot.game.GodotApp`.
+5. `adb install -r Unciv.apk && adb shell am start -n org.unciv.godot/com.godot.game.GodotAppLauncher` (the launcher alias; `GodotApp` itself is not exported and `am start` is refused with a SecurityException, found by T277).
 
 **Size of what is bundled (Verified by `du`, compression ratios are Estimate):**
 

@@ -121,8 +121,12 @@ class WorkflowShape(unittest.TestCase):
         self.assertEqual(len(re.findall(r"(?i)github\.token|GITHUB_TOKEN", code)), 1)
         self.assertRegex(code, r"GH_TOKEN: \$\{\{ github\.token \}\}")
         self.assertNotIn("pull_request_target", self.text)
-        self.assertEqual(self.text.count("upload-artifact"), 1)  # T255: only the failed scenario renders, 7 days
-        self.assertIn("name: scenario-renders", self.text)
+        # T255: the failed scenario renders; T277: the debug APKs and the emulator smoke output (throw-away keystore, never a store signature). Nothing else, all 7 days.
+        self.assertEqual(self.text.count("upload-artifact"), 3)
+        for name in ("scenario-renders", "android-apk", "android-smoke"):
+            self.assertIn(f"name: {name}\n", self.text)
+        self.assertEqual(self.text.count("retention-days: 7"), 3)
+        self.assertNotRegex(self.text, r"(?i)jarsigner|keystore-password|\.jks|release-keystore")
         for word in ("gh release", "git push", "nuget push", "docker push"):
             self.assertNotIn(word, self.text)
 
@@ -141,7 +145,7 @@ class WorkflowShape(unittest.TestCase):
     def test_soak_only_on_schedule_or_dispatch_and_nothing_else_on_schedule(self):
         self.assertRegex(self.text, r"if: github\.event_name == 'schedule' \|\| github\.event_name == 'workflow_dispatch'")
         # engine and client-scenarios also wait for the throttle verdict; the throttle job itself is harmless on a schedule (it exits at once)
-        self.assertEqual(self.text.count("if: github.event_name != 'schedule'"), 2)  # client-export, plus the engine line (prefix match)
+        self.assertEqual(self.text.count("if: github.event_name != 'schedule'"), 3)  # client-export and android (T277), plus the engine line (prefix match)
         self.assertEqual(self.text.count("if: github.event_name != 'schedule' && needs.throttle.outputs.run == 'true'"), 1)  # engine
         self.assertEqual(
             self.text.count("if: ${{ !cancelled() && github.event_name != 'schedule' && needs.throttle.outputs.run == 'true' }}"), 1
@@ -163,7 +167,7 @@ class ClientPlatforms(unittest.TestCase):
 
     def test_ci_exports_exactly_the_release_platforms(self):
         text = WORKFLOW.read_text(encoding="utf-8")
-        packaged = re.findall(r"Unciv\.Godot/tools/package\.sh (\w+)", text)
+        packaged = re.findall(r"Unciv\.Godot/tools/package\.sh (?!android)([a-z]+)\n", text)  # desktop clients only; the Android APKs (T277) are their own job
         checked = re.findall(r"check_package\.py (\w+)", text)
         self.assertEqual(packaged, self.load("release").CLIENT_PLATFORMS)
         self.assertEqual(checked, packaged)
@@ -302,6 +306,17 @@ class ReleaseWorkflowShape(unittest.TestCase):
         self.assertIn("dotnet publish Unciv.Server", job)
         self.assertIn("release_assets.py smoke-server", job)
         self.assertNotIn("upload-artifact", job)
+
+    def test_csharp_yml_android_job_builds_both_apks_and_smokes_without_secrets(self):  # T277
+        text = WORKFLOW.read_text(encoding="utf-8")
+        job = re.search(r"(?ms)^  android:\n(.*?)(?=^  \S|\Z)", text).group(1)
+        self.assertIn("needs: engine", job)
+        self.assertRegex(job, r"package\.sh android\n")
+        self.assertRegex(job, r"package\.sh android-emulator\n")
+        self.assertIn("android-smoke.sh", job)
+        self.assertIn("steps.kvm.outputs.available == 'true'", job)  # no KVM: build and artifact only
+        self.assertIn("continue-on-error: true", job)  # T277: smoke unverified on hosted runners; drop with its first green run
+        self.assertNotRegex(job, r"(?i)secrets|\bgh \w+|git push")
 
     def test_csharp_yml_is_untouched_by_the_release(self):
         text = WORKFLOW.read_text(encoding="utf-8")

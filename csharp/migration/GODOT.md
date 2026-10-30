@@ -109,7 +109,8 @@ export ANDROID_HOME=$HOME/Android/Sdk      # cmdline-tools/latest, platform-tool
 Unciv.Godot/tools/install-export-templates.sh
 Unciv.Godot/tools/package.sh android               # -> Unciv.Godot/build/android/Unciv.apk (arm64-v8a, debug-signed)
 Unciv.Godot/tools/package.sh android-emulator      # -> build/android/Unciv-emulator.apk (arm64-v8a + x86_64, for the emulator)
-adb install -r Unciv.Godot/build/android/Unciv.apk && adb shell am start -n org.unciv.godot/com.godot.game.GodotApp
+adb install -r Unciv.Godot/build/android/Unciv.apk && adb shell am start -n org.unciv.godot/com.godot.game.GodotAppLauncher   # the exported launcher alias (GodotApp itself is not exported)
+Unciv.Godot/tools/android-smoke.sh                 # T277: headless x86_64 emulator, installs Unciv-emulator.apk, waits for UNCIV_MENU_READY in logcat, screenshot to build/android/smoke/
 ```
 
 - **Why net9.0.** The Godot 4.7.2 Android export template bundles .NET 9 and refuses a `net10.0` game assembly. `package.sh android` exports
@@ -123,6 +124,7 @@ adb install -r Unciv.Godot/build/android/Unciv.apk && adb shell am start -n org.
 - **Headless SDK/JDK paths.** A headless Godot export reads the Android SDK and JDK only from editor settings (no `ANDROID_HOME`/`JAVA_HOME` fallback), so the script runs Godot with a throw-away `XDG_CONFIG_HOME` that sets `export/android/android_sdk_path` and `java_sdk_path` (from `ANDROID_HOME`/`ANDROID_SDK_ROOT` and `JAVA_HOME`, else the JDK that owns `keytool`). Your own editor settings are not touched.
 - **Content.** The script runs `tools/stage-content.py` first; the presets include `Content/*` so the rulesets, packs and fonts travel in the pck (T276). Measured sizes (arm64 `Unciv.apk` 131 MiB, emulator variant 231 MiB): `design/ANDROID.md`, section 1.
 - **Reinstall.** The keystore is regenerated on every build, so install a rebuilt APK with `adb uninstall org.unciv.godot` first (`install -r` fails on a signature mismatch).
+- **Emulator smoke (T277).** `tools/android-smoke.sh [apk]` needs `sdkmanager 'emulator' 'platform-tools' 'system-images;android-34;default;x86_64'` and `/dev/kvm` (exit 3 lists missing pieces, exit 4 means no KVM). It makes a throw-away AVD (the developer's `~/.android` AVDs are untouched), boots it headless (`-gpu swangle_indirect`; `swiftshader_indirect` and `guest` segfaulted the emulator on the Fedora dev machine), installs the APK, starts it through the `GodotAppLauncher` alias and polls `adb logcat` for `UNCIV_MENU_READY` (the same marker `smoke-export.sh` waits for; Godot's `print` goes to logcat), then saves `menu.png`, `logcat.txt` and the emulator log in `build/android/smoke/`. Verified locally: boot about 40 s, whole run 46 s, screenshot shows the real main menu.
 - **Editor.** To export from the editor instead: Editor Settings > Export > Android: set the Android SDK path, Java SDK path and a debug keystore, then Project > Export > Android.
 
 ## How a release is produced (T169)
@@ -173,13 +175,14 @@ Unverified until the first real tag run: the whole workflow (it cannot be run wi
 
 **The workflow lives at `.github/workflows/csharp.yml`** (T239). It is separate from the Kotlin/Gradle workflows and runs only for changes under `csharp/**`, `android/assets/jsons/**`
 (the rulesets the engine reads) or the workflow itself, on pushes to `csharp-migration` and on pull requests; plus a weekly schedule for the soak.
-`permissions: contents: read`, no secrets, no `pull_request_target`, no artifact upload, every action pinned by commit SHA.
+`permissions: contents: read`, no secrets, no `pull_request_target`, nothing published, every action pinned by commit SHA. The only uploads are 7-day workflow artifacts: the failed scenario renders (T255) and the Android debug APKs plus the emulator smoke output (T277).
 
 | Job | Runs | What |
 |---|---|---|
 | `engine` | push, PR | the Green gate: `dotnet build -warnaserror`, `dotnet format --verify-no-changes`, `dotnet test`, `Unciv.Godot` and `Unciv.Godot.Harness` builds with `-warnaserror` (they need only the SDK and the `Godot.NET.Sdk` NuGet package), `coverage.py --check` (base chosen by `tools/ci_base.py`: PR merge-base, push `before`, else `--all`), `screenshots.py --check`, `ticket.py check`, the tools' Python unit tests |
 | `client-export` | push, PR | pinned Godot + export templates (cached, SHA-512 checked), `retry-on-crash.sh 2 package.sh linux`, `smoke-export.sh` |
 | `client-scenarios` | push, PR (non-blocking) | `run-smoke.sh`, every scenario in `scenarios.txt`, and `run-scenario.sh menu --expect-golden-failure`, under Xvfb |
+| `android` | push, PR | T277: SDK pieces from the runner image's `sdkmanager` into a fresh root, `package.sh android` (arm64-v8a) and `android-emulator` (arm64-v8a + x86_64) with `retry-on-crash.sh`, ABI and `apksigner verify` checks, artifact `android-apk` (both debug-signed APKs, throw-away keystore, 7 days), then, if `/dev/kvm` can be opened (udev rule step), `android-smoke.sh` on an x86_64 emulator and artifact `android-smoke` (screenshot and logs). **No KVM: the smoke step is skipped with a warning, build and artifact still run. The smoke step has `continue-on-error: true` until its first green hosted run (a failure shows as a red step, the job stays green); remove that line then.** UNVERIFIED on a hosted runner (needs a push); T280 adds the APK to the draft release |
 | `soak` | weekly schedule, manual | `UNCIV_SOAK=1 dotnet test --filter Category=Soak` (T167); the ordinary `dotnet test` skips it |
 
 System packages for the Godot jobs on ubuntu-24.04: `xvfb xauth libgl1-mesa-dri libglx-mesa0 libxcursor1 libxinerama1 libxi6 libxrandr2 fontconfig libasound2t64`.
