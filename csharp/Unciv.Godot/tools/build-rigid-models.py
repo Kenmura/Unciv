@@ -351,18 +351,17 @@ def banner_side(m, x, z, w=0.3, h=0.14, y=0.3):
 
 def ram(m):
     for s in (-1, 1):
-        m.add("DarkWood", block((s * 0.17, 0.09, 0.0), (0.06, 0.05, 0.78)))  # base beams
+        m.add("Wood", block((s * 0.17, 0.09, 0.0), (0.06, 0.05, 0.78)))  # base beams
         for z in (-0.27, 0.27):
             wheel(m, s * 0.22, z, 0.1, "Iron", 0.05)
             for dz in (-0.2, 0.2):
-                m.add("DarkWood", block((s * 0.17, 0.3, z * 0.8 + dz * 0.0), (0.04, 0.4, 0.04)))  # posts
-        m.add("Hide", mov(rot(block((0, 0, 0), (0.3, 0.03, 0.84)), rz=-s * 0.55), s * 0.14, 0.52, 0.0))  # the two slopes of the hide roof
-        m.add("Thatch", mov(rot(block((0, 0, 0), (0.05, 0.035, 0.86)), rz=-s * 0.55), s * 0.015, 0.63, 0.0))
+                m.add("Wood", block((s * 0.17, 0.3, z * 0.8 + dz * 0.0), (0.04, 0.4, 0.04)))  # posts
+        m.add("RedWood", mov(rot(block((0, 0, 0), (0.24, 0.03, 0.8)), rz=-s * 0.55), s * 0.19, 0.5, -0.02))  # the two slopes of the roof, a slot between them shows the log
         banner_side(m, s * 0.25, 0.0, 0.46, 0.17, 0.29)
-    m.add("TeamColor", block((0, 0.665, 0.0), (0.06, 0.02, 0.9)))  # a narrow stripe along the ridge
-    m.add("Wood", tube((0, 0.26, 0.05), 1.0, 0.055, axis="z", n=8))  # the log hangs under the roof and sticks out at both ends
-    m.add("Iron", tube((0, 0.26, 0.58), 0.18, 0.09, 0.03, axis="z", n=8))  # the iron head
-    m.add("DarkWood", tube((0, 0.26, -0.5), 0.05, 0.065, axis="z", n=8))
+    m.add("TeamColor", block((0, 0.6, -0.02), (0.05, 0.02, 0.8)))  # a narrow stripe along the ridge
+    m.add("Ash", tube((0, 0.4, 0.08), 1.0, 0.075, axis="z", n=8))  # the pale log hangs in the slot and sticks out far at both ends
+    m.add("Steel", tube((0, 0.4, 0.62), 0.2, 0.12, 0.05, axis="z", n=8))  # the big bright iron head
+    m.add("DarkWood", tube((0, 0.4, -0.42), 0.06, 0.09, axis="z", n=8))
 
 
 def catapult(m):
@@ -502,7 +501,7 @@ def gun_node(m, y, z, length, radius, colour="Dark", sleeve=False):
     m.add(colour, tube((0, 0, length / 2), 0.05, radius * 1.4, n=8), "Part2")
 
 
-def tank(m, hull_colour="Blue", barrel=0.5, flat=False, stripe=False, length=0.82, x=0.21, skirts=0.0, deck=False, brake=False, turret=0.16, track_colour="Dark"):
+def tank(m, hull_colour="Blue", barrel=0.5, flat=False, stripe=False, length=0.82, x=0.21, skirts=0.0, deck=False, brake=False, turret=0.16, track_colour="Dark", turret_colour=None, gun=0.02):
     """T307: length, track spacing, side skirts (a slab over the tracks), a rear engine deck and a muzzle brake set the outline seen from above: Tank, Panzer and Modern Armor differ in all of them."""
     tracks(m, length, x, 0.1, 0.17, track_colour)
     tank_body(m, hull_colour, rear=-length * 0.46, glacis=length * 0.52, length=length)
@@ -513,8 +512,8 @@ def tank(m, hull_colour="Blue", barrel=0.5, flat=False, stripe=False, length=0.8
         m.add("Dark", block((0, 0.285, -length * 0.3), (0.3, 0.03, length * 0.24)))
         for k in range(4):
             m.add("Steel", block((0, 0.302, -length * 0.38 + k * 0.045), (0.26, 0.008, 0.012)))
-    turret_node(m, hull_colour, 0.29, turret, 0.11, flat=flat)
-    gun_node(m, 0.35, 0.05 + barrel / 2, barrel, 0.02)
+    turret_node(m, turret_colour or hull_colour, 0.29, turret, 0.11, flat=flat)  # T307 review: a turret colour apart from the hull makes it read from above
+    gun_node(m, 0.35, 0.05 + barrel / 2, barrel, gun)
     if brake:
         m.add("Dark", block((0, 0.35, 0.05 + barrel + 0.01), (0.1, 0.07, 0.08)))
     if stripe:
