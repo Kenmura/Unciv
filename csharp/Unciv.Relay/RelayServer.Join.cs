@@ -143,7 +143,12 @@ public sealed partial class RelayServer
             return;
         }
         var done = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-        await conn.SendAsync(new JsonObject { ["ok"] = true }, stopping.Token).ConfigureAwait(false);
+        try { await conn.SendAsync(new JsonObject { ["ok"] = true }, stopping.Token).ConfigureAwait(false); }
+        catch
+        {
+            pending.Accepted.TrySetResult(null); // the claimed joiner must not wait forever for a host data channel that died
+            throw;
+        }
         pending.Accepted.TrySetResult(new AcceptResult(conn, done));
         await done.Task.ConfigureAwait(false);
     }

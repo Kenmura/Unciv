@@ -151,8 +151,13 @@ public sealed partial class RelayServer : IAsyncDisposable
         }
         var fresh = new byte[32];
         random.Fill(fresh);
-        File.WriteAllText(path, Convert.ToHexString(fresh));
-        if (!OperatingSystem.IsWindows()) File.SetUnixFileMode(path, UnixFileMode.UserRead | UnixFileMode.UserWrite);
+        if (OperatingSystem.IsWindows()) File.WriteAllText(path, Convert.ToHexString(fresh));
+        else
+        {
+            // created 0600 from the start: no window in which the secret is readable by others
+            using var stream = new FileStream(path, new FileStreamOptions { Mode = FileMode.Create, Access = FileAccess.Write, UnixCreateMode = UnixFileMode.UserRead | UnixFileMode.UserWrite });
+            stream.Write(Encoding.ASCII.GetBytes(Convert.ToHexString(fresh)));
+        }
         return fresh;
     }
 
