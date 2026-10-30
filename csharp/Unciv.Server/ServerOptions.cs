@@ -40,6 +40,7 @@ public sealed record ServerOptions
           --address HOST      The host name or address written into the invite (default localhost).
           --jsons DIR         The rulesets folder (default: data/jsons next to the executable, else android/assets/jsons above the current folder).
           --mods-dir DIR      A folder of mods to offer.
+          --parallel-views N  Build the per-player views of a round on up to N tasks (2 to 64; 0 or absent: off, the default). Frames are byte-identical either way; it only pays on a host with spare cores and several players.
           --log-level LEVEL   debug, info (default), warn or error. Log lines go to stdout.
           --help, -h          Show this help and exit.
 
@@ -86,6 +87,12 @@ public sealed record ServerOptions
 
     public ServerLogLevel LogLevel { get; init; } = ServerLogLevel.Info;
 
+    /// <summary>T302: <c>--parallel-views N</c>; 0 (default) keeps the sequential view building. Reaches the game host through <see cref="ToHostLimits"/>.</summary>
+    public int ParallelViews { get; init; }
+
+    /// <summary>The host limits this command line asks for: the defaults, plus parallel view building when <see cref="ParallelViews"/> is 2 or more.</summary>
+    public HostLimits ToHostLimits() => ParallelViews >= 2 ? new HostLimits { ParallelViewBuilding = true, MaxViewParallelism = ParallelViews } : new HostLimits();
+
     public static ServerOptions Parse(IReadOnlyList<string> args)
     {
         var result = new ServerOptions();
@@ -105,7 +112,7 @@ public sealed record ServerOptions
                 case "print-invite": result = result with { PrintInvite = true }; continue;
             }
 
-            if (name is not ("port" or "data-dir" or "password" or "password-file" or "game-id" or "max-players" or "min-humans" or "settings" or "address" or "jsons" or "mods-dir" or "log-level"))
+            if (name is not ("port" or "data-dir" or "password" or "password-file" or "game-id" or "max-players" or "min-humans" or "settings" or "address" or "jsons" or "mods-dir" or "log-level" or "parallel-views"))
                 throw new ServerUsageException($"unknown option --{name} (see --help)");
             if (i + 1 >= args.Count) throw new ServerUsageException($"option --{name} needs a value");
             var value = args[++i];
@@ -122,6 +129,7 @@ public sealed record ServerOptions
                 "address" => result with { Address = value },
                 "jsons" => result with { Jsons = value },
                 "mods-dir" => result with { ModsDir = value },
+                "parallel-views" => result with { ParallelViews = ParseInt(name, value, 0, 64) },
                 _ => result with { LogLevel = ParseLevel(value) },
             };
         }

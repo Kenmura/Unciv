@@ -92,6 +92,27 @@ public sealed partial class DedicatedServerTests : IDisposable
     }
 
     [Fact]
+    public void ParallelViews_DefaultsOff_AndMapsToHostLimits()
+    {
+        var off = ServerOptions.Parse([]);
+        Assert.Equal(0, off.ParallelViews);
+        Assert.False(off.ToHostLimits().ParallelViewBuilding);
+        Assert.False(ServerOptions.Parse(["--parallel-views", "0"]).ToHostLimits().ParallelViewBuilding);
+        Assert.False(ServerOptions.Parse(["--parallel-views", "1"]).ToHostLimits().ParallelViewBuilding);
+        var on = ServerOptions.Parse(["--parallel-views", "6"]).ToHostLimits();
+        Assert.True(on.ParallelViewBuilding);
+        Assert.Equal(6, on.MaxViewParallelism);
+        Assert.Contains("--parallel-views", ServerOptions.HelpText);
+    }
+
+    [Theory]
+    [InlineData("65")]
+    [InlineData("-1")]
+    [InlineData("x")]
+    public void ParallelViews_RejectsBadValues(string value) =>
+        Assert.Throws<ServerUsageException>(() => ServerOptions.Parse(["--parallel-views", value]));
+
+    [Fact]
     public void Parse_AllOptions()
     {
         var o = ServerOptions.Parse(["--port", "0", "--data-dir", "d", "--password", "pw", "--max-players", "5", "--no-ai-fill", "--auto-start", "--min-humans", "2",

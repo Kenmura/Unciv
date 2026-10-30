@@ -90,7 +90,7 @@ public static class ServerRunner
         OpenedGame? saved = null;
         if (gameDirectory != null && File.Exists(Path.Combine(gameDirectory, "commands.log"))) saved = OpenSaved(gameDirectory, log);
 
-        await using var lobby = new ServerLobby(settings, hostFingerprint: fingerprint, hostName: "Dedicated server", gameDirectory: gameDirectory);
+        await using var lobby = new ServerLobby(settings, hostFingerprint: fingerprint, hostName: "Dedicated server", gameDirectory: gameDirectory, hostLimits: options.ToHostLimits());
         GameHost? resumed = null;
         try
         {

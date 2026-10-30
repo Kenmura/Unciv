@@ -34,6 +34,9 @@ public sealed record InProcessHostOptions
 
     /// <summary>T273: set by <see cref="InProcessHost.ResumeFromDirectory"/> callers that are promoting a standby copy (see <see cref="HostPromotion"/>); null for an ordinary resume.</summary>
     public HostPromotion? Promotion { get; init; }
+
+    /// <summary>T302: the host's protection and performance limits (including <see cref="HostLimits.ParallelViewBuilding"/>); null means <see cref="HostLimits.Default"/>.</summary>
+    public HostLimits? Limits { get; init; }
 }
 
 /// <summary>
@@ -121,7 +124,7 @@ public sealed class InProcessHost : IAsyncDisposable
         var meta = new GameMeta { Slots = new SortedDictionary<string, SlotBinding>(humanKeys.ToDictionary(x => x.Key, x => x.Value), StringComparer.Ordinal), TimerPolicy = options.TurnPolicy };
         var store = FileGameStore.Create(directory, game.GameId, header, meta, game, options.Store);
         var session = new GameSession(game) { Clock = () => clock.NowMillis };
-        return new InProcessHost(new GameHost(session, store, clock: clock, announceRoster: options.AnnounceRoster, turnPolicy: options.TurnPolicy), store, hostCivId, options, null);
+        return new InProcessHost(new GameHost(session, store, clock: clock, announceRoster: options.AnnounceRoster, turnPolicy: options.TurnPolicy, limits: options.Limits), store, hostCivId, options, null);
     }
 
     /// <summary>
@@ -141,7 +144,7 @@ public sealed class InProcessHost : IAsyncDisposable
             var hostCiv = meta.Slots.FirstOrDefault(x => string.Equals(x.Value.PlayerKey, hostPlayerKey, StringComparison.Ordinal)).Key
                 ?? throw new GameStoreException("The host player key is not bound to a civ in this game");
             var session = new GameSession(opened.Session.Game, lastSeq: opened.Session.LastSeq) { Clock = () => clock.NowMillis };
-            var host = new GameHost(session, opened.Store, clock: clock, announceRoster: options.AnnounceRoster, turnPolicy: options.TurnPolicy ?? meta.TimerPolicy);
+            var host = new GameHost(session, opened.Store, clock: clock, announceRoster: options.AnnounceRoster, turnPolicy: options.TurnPolicy ?? meta.TimerPolicy, limits: options.Limits);
             var result = new InProcessHost(host, opened.Store, hostCiv, options, opened.Report);
             if (promotion != null)
             {

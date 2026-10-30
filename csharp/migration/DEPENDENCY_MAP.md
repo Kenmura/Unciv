@@ -62,7 +62,7 @@ flowchart TD
   class T295 blocked
   class T300 prog
   class T301 prog
-  class T302 prog
+  class T302 review
   class T303 prog
 ```
 
@@ -116,5 +116,5 @@ xychart-beta
 | T295 | Blocked | T294 | 0 | Roll the chosen gritty unit style out to the remaining units |
 | T300 | In-Progress [Claude] | none | 0 | Replace text-letter placeholder icons (resource chips etc.) with real pictorial icons |
 | T301 | In-Progress [Claude] | none | 0 | Maximizing a windowed game freaks out and may crash |
-| T302 | In-Progress [Claude] | T297 | 0 | Dedicated server and in-process host: wire the parallel view building option (T297) to ServerOptions and a CLI flag |
+| T302 | Needs-Review [Claude] | T297 | 0 | Dedicated server and in-process host: wire the parallel view building option (T297) to ServerOptions and a CLI flag |
 | T303 | In-Progress [Claude] | T298 | 0 | Persist last-known tile ownership for fogged tiles across reconnect and load (server-side per-civ memory) |
