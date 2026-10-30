@@ -150,7 +150,7 @@ xychart-beta
 | T327 | **On deck** (after T323) | T323 | 0 | Golden scenarios city-a, city-b, flat-city and phone-menus fail on the dev machine at the unmodified base (renderer differences) |
 | T328 | **On deck** (after T323) | T323 | 0 | Modal owners that use the width Fit() returns keep a stale body wrap width after a live resize (DecisionPickerView, VictoryStatusView, GameOverScreen, GameMenuView, VoteResultScreen) |
 | T329 | **On deck** (after T323) | T323 | 0 | Layout-matrix resize phase covers only menu screens: HUD, city and tech (and their shared widgets) are not resized live |
-| T323 | Needs-Review [Claude] | T316 | 4 | Shared UI widgets still fix Px() sizes at construction (ListRow, ListPanel, IconLabel, StatChip, StatBar, TooltipHost, Modal): follow live resize with UiTheme.Fit |
+| T323 | In-Review [Claude-Reviewer] | T316 | 4 | Shared UI widgets still fix Px() sizes at construction (ListRow, ListPanel, IconLabel, StatChip, StatBar, TooltipHost, Modal): follow live resize with UiTheme.Fit |
 | T274 | In-Progress [Claude-T274] | T273 | 1 | Host migration 4/5: crash election (loss detection, signed HostLossVote quorum, split-brain refusal, superseded-host mode, forced take-over, kill-the-host scenarios) |
 | T278 | Available (waiting on ) | T260, T276 | 1 | Android on-device verification: TLS join, lifecycle reconnect, frame time and APK size on a mid-range phone |
 | T305 | Available (waiting on ) | T280 | 1 | Verify the Android APK job of the release workflow on a hosted runner (first tag push) |
