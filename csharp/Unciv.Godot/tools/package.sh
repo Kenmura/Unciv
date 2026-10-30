@@ -50,6 +50,14 @@ if $android; then
     export JAVA_HOME
     # The Godot 4.7.2 Android template bundles .NET 9, so the client builds as net9.0 (Directory.Build.props reads UncivAndroid).
     export UncivAndroid=true
+    # Godot reads the SDK and JDK paths only from its editor settings (there is no ANDROID_HOME/JAVA_HOME fallback in a headless export, verified
+    # with 4.7.2: "A valid Java SDK path is required in Editor Settings"), so run it with a throw-away config home holding just those two paths.
+    # The developer's own editor settings are left alone.
+    cfg_home="$(mktemp -d)"
+    mkdir -p "$cfg_home/godot"
+    printf '[gd_resource type="EditorSettings" format=3]\n\n[resource]\nexport/android/java_sdk_path = "%s"\nexport/android/android_sdk_path = "%s"\n' \
+        "$JAVA_HOME" "$sdk" > "$cfg_home/godot/editor_settings-4.7.tres"
+    export XDG_CONFIG_HOME="$cfg_home"
 fi
 
 if $android; then mkdir -p "$out"; rm -f "$out/$exe"; else rm -rf "$out"; mkdir -p "$out"; fi
@@ -62,10 +70,12 @@ fi
 if $android; then
     # Debug-signed with a throw-away keystore generated here (never committed; Godot reads it from these variables).
     keystore="$out/debug.keystore"
-    rm -f "$keystore"; trap 'rm -f "$keystore"' EXIT
+    rm -f "$keystore"; trap 'rm -f "$keystore"; rm -rf "$cfg_home"' EXIT
     keytool -genkeypair -keystore "$keystore" -storepass android -keypass android -alias androiddebugkey -keyalg RSA -keysize 2048 \
         -validity 10000 -dname "CN=Unciv debug,O=Unciv,C=US" >/dev/null
     export GODOT_ANDROID_KEYSTORE_DEBUG_PATH="$keystore" GODOT_ANDROID_KEYSTORE_DEBUG_USER=androiddebugkey GODOT_ANDROID_KEYSTORE_DEBUG_PASSWORD=android
+    # T276: no data folder beside an APK, so the content travels as a zip inside the pck (the presets include Content/*).
+    python3 -I "$project/tools/stage-content.py"
     "$godot" --headless --path "$project" --export-debug "$preset" "$out/$exe"
     if [[ ! -s "$out/$exe" ]]; then echo "Godot produced no $exe: see the errors above" >&2; exit 1; fi
     rm -f "$keystore" "$out/$exe.idsig"

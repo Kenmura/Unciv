@@ -206,7 +206,8 @@ public sealed class StandbyStore : IDisposable
         foreach (var line in scan.Lines)
             if (line is CommandLogLine.Checkpoint checkpoint) lastCheckpointSeq = checkpoint.Seq;
         string? newestCheckpointLine = null;
-        foreach (var line in Encoding.UTF8.GetString(File.ReadAllBytes(PathOf(LogName))).Split('\n').Reverse())
+        // Enumerable.Reverse explicitly: on net9.0 with C# 14 a bare array .Reverse() binds to the in-place Span overload (T260)
+        foreach (var line in Enumerable.Reverse(Encoding.UTF8.GetString(File.ReadAllBytes(PathOf(LogName))).Split('\n')))
         {
             if (line.Length == 0) continue;
             if (line.StartsWith("{\"checkpoint\"", StringComparison.Ordinal))
