@@ -102,6 +102,16 @@ public sealed class Props3DScenario : Scenario
                 return features.Count > 3 && vertices >= features.Sum(it => it.GetChildren().OfType<MeshInstance3D>().Sum(m => m.Mesh.SurfaceGetArrays(0)[(int)Mesh.ArrayType.Vertex].AsVector3Array().Length))
                     && nodeColours.All(Baked) && Baked(fogColour);
             }),
+            new Act("T287: reload with resources off, go far, resources back on", () =>
+            {
+                view.SetZoom(8f);
+                view.ShowResources = false;
+                view.Load(AssetRegistry.ForRuleset(ruleset), tiles, keepCamera: true);
+                view.SetZoom(MapView.MaxZoom); // the first bake happens now, with every resource prop hidden
+                view.ShowResources = true;
+            }),
+            new AssertQuery("resources hidden before the first bake are still baked and drawn", () =>
+                view.VisibleResourcePropCount == tiles.Count(t => t.Resource != null) && view.MergedPropBake(resource: true).Vertices > 0 && view.MergedPropCount == expectedProps),
             new Act("T287: resources off while far", () => view.ShowResources = false),
             new AssertQuery("the resource toggle still works on the merged meshes", () => view.VisibleResourcePropCount == 0),
             new Act("T287: resources back on, zoom in", () =>

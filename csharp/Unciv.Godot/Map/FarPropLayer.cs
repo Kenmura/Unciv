@@ -97,10 +97,10 @@ public partial class FarPropLayer : Node3D
         var groups = new Dictionary<(bool Resource, ChunkId Id), Bake>();
         foreach (var (tile, prop, resource) in props)
         {
-            if (!GodotObject.IsInstanceValid(prop) || !CanMerge(prop)) continue;
+            if (!GodotObject.IsInstanceValid(prop) || !GodotObject.IsInstanceValid(tile) || !CanMerge(prop)) continue;
             var key = (resource, TerrainChunks.Of(tile.Position.X, tile.Position.Z));
             if (!groups.TryGetValue(key, out var bake)) groups[key] = bake = new Bake();
-            Collect(bake, prop, Transform3D.Identity.Translated(tile.Position), cache);
+            Collect(bake, prop, Transform3D.Identity.Translated(tile.Position), cache, root: true);
             done.Add(prop);
         }
         foreach (var ((resource, id), bake) in groups.OrderBy(it => it.Key.Resource).ThenBy(it => it.Key.Id.X).ThenBy(it => it.Key.Id.Z))
@@ -152,9 +152,9 @@ public partial class FarPropLayer : Node3D
         && m.ShadingMode == BaseMaterial3D.ShadingModeEnum.PerPixel && m.CullMode == BaseMaterial3D.CullModeEnum.Back
         && m.Metallic == 0f && m.Roughness == 1f && !m.EmissionEnabled && !m.NormalEnabled && !m.Uv1Triplanar;
 
-    private static void Collect(Bake bake, Node3D node, Transform3D parent, Dictionary<(Mesh, int), Godot.Collections.Array> cache)
+    private static void Collect(Bake bake, Node3D node, Transform3D parent, Dictionary<(Mesh, int), Godot.Collections.Array> cache, bool root = false)
     {
-        if (!node.Visible) return;
+        if (!root && !node.Visible) return; // the prop itself is shown or hidden from outside (resource toggle, far switch): bake it regardless
         var transform = parent * node.Transform;
         if (node is MeshInstance3D { Mesh: { } mesh } instance)
         {
