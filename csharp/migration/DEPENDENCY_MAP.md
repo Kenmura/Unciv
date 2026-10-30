@@ -66,7 +66,7 @@ flowchart TD
   class T275 ondeck
   class T278 ready
   class T290 blocked
-  class T295 prog
+  class T295 review
   class T300 prog
   class T301 prog
   class T303 prog
@@ -127,7 +127,7 @@ xychart-beta
 | T307 | **On deck** (after T295) | T295 | 0 | Restyle the rigid unit models (ships, siege, armour, aircraft) to match the T295 unit style |
 | T308 | **On deck** (after T295) | T295 | 0 | Make every unit class distinct at the default zoom: per-class silhouettes for foot, mounted and elephant units |
 | T309 | **On deck** (after T295) | T295 | 0 | Harden the unit sheet and silhouette test: single-figure pages, tight layout, every unit has a style |
-| T295 | In-Progress [Claude] | T294 | 3 | Roll the chosen gritty unit style out to the remaining units |
+| T295 | Needs-Review [Claude] | T294 | 3 | Roll the chosen gritty unit style out to the remaining units |
 | T274 | In-Progress [Claude-T274] | T273 | 1 | Host migration 4/5: crash election (loss detection, signed HostLossVote quorum, split-brain refusal, superseded-host mode, forced take-over, kill-the-host scenarios) |
 | T290 | Blocked | T271 | 0 | Real-device frame-time pass: Windows, macOS, Android phone |
 | T300 | In-Progress [Claude] | none | 0 | Replace text-letter placeholder icons (resource chips etc.) with real pictorial icons |
