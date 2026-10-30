@@ -20,6 +20,7 @@
   - [Look, colour calibration and animation](#look-colour-calibration-and-animation)
   - [Real-GPU pictures (T291)](#real-gpu-pictures-t291)
   - [Conclusions and follow-ups](#conclusions-and-follow-ups)
+  - [Far-zoom draw-call reduction (T287)](#far-zoom-draw-call-reduction-t287)
   - [Windows, macOS and Android (UNVERIFIED)](#windows-macos-and-android-unverified)
 <!-- /toc -->
 
@@ -224,6 +225,15 @@ Documentation images (not goldens; nothing reads them in CI) rendered on the RTX
 1. The C097 defaults stand: Low default, High and Ultra opt-in; no level is too slow on a discrete GPU.
 2. Ultra's colour constants are calibrated (above); the tests pin the calibration direction, not the exact numbers.
 3. Follow-ups filed in the backlog: T287 far-zoom draw-call reduction (13.3k draw calls at the maximum zoom-out, the CPU bound on every GPU); T288 an integrated-GPU note for Ultra; T289 stronger water ripples/glint tuning; T290 real-device passes on Windows, macOS and a mid-range Android phone.
+
+### Far-zoom draw-call reduction (T287)
+
+The overview cost of section 7 was draw calls, not pixels: of the 13.3k calls at Low, about 6.1k were the yield icons (a sprite and a label per chip), about 6.2k the feature and resource prop models (a node and several materials per tile, so nothing batches) and about 1k cities and units. T287 changes two things, both only at camera size 22 and beyond (`FarZoomLod`; the default view is 14 and every CI golden is at 14 or nearer, so goldens did not move):
+
+- Yield icons are hidden from zoom 24 (an icon is under 11 px there and its amount unreadable). They are also no longer shadow casters, like the unit bars, status marks and city banners.
+- From zoom 22 the prop models give way to one merged mesh per terrain chunk and kind (`FarPropLayer`): the parts' transforms and flat colours (fog dimming included) are baked into vertices, so the picture is the same (checked by viewing the overview before and after). A prop whose model is not plain flat-coloured meshes (a pack model with textures) is not merged and stays a node. The resource toggle still applies.
+
+Measured with `gpu-bench` (views overview and mid, RTX 5060 Ti, Forward+; load average 80-165 during these runs, so CPU time is about 2x the quiet T271 numbers; 3 runs, min-max): overview draw calls at Low 13,272 -> 1,450, at High/Ultra 26,071 -> 3,794. CPU render time at Low overview 22.1-28.0 ms -> 3.0-4.0 ms; High overview 30.8-35.6 -> 4.4-5.4 ms (same machine, interleaved runs). GPU time is unchanged within noise (Low overview 2.65 -> 2.31 ms). Mid zoom (the unchanged path) stays at 2,037 / 6,168 draws, CPU 5.0-5.5 vs 4.3-4.9 ms (noise). Compatibility renderer (2 runs): Low overview 13,287 -> 1,465 draws, CPU 42.5-42.9 -> 6.9 ms, GPU 30-31 -> 1.95 ms. What remains at overview is the terrain chunks (140), cities (about 400 meshes) and unit figures (about 700); the shadow pass at High still draws 6.2k at mid (props and units as casters), a candidate for a later merge of props at all zooms.
 
 ### Windows, macOS and Android (UNVERIFIED)
 

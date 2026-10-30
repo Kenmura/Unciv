@@ -60,6 +60,7 @@ public partial class MapOverlayLayer : Node3D
 
     private Node3D? yieldRoot;
     private bool showYields = true;
+    private bool yieldsFar;
 
     /// <summary>C032: whether the yield icons are shown (the "Show tile yields" setting).</summary>
     public bool ShowYields
@@ -68,12 +69,28 @@ public partial class MapOverlayLayer : Node3D
         set
         {
             showYields = value;
-            if (yieldRoot != null) yieldRoot.Visible = value;
+            ApplyYieldVisibility();
         }
     }
 
-    /// <summary>Yield icons visible right now (zero when the setting is off).</summary>
-    public int VisibleYieldChipCount => showYields ? YieldChipCount : 0;
+    /// <summary>T287: whether the camera is too far out for the yield icons (see <see cref="FarZoomLod"/>); they are hidden then, which saves two draw calls per icon.</summary>
+    public bool YieldsFar
+    {
+        get => yieldsFar;
+        set
+        {
+            yieldsFar = value;
+            ApplyYieldVisibility();
+        }
+    }
+
+    private void ApplyYieldVisibility()
+    {
+        if (yieldRoot != null) yieldRoot.Visible = showYields && !yieldsFar;
+    }
+
+    /// <summary>Yield icons visible right now (zero when the setting is off or the camera is too far out).</summary>
+    public int VisibleYieldChipCount => showYields && !yieldsFar ? YieldChipCount : 0;
 
     /// <summary>The improvement prop standing on a tile, or null.</summary>
     public Node3D? ImprovementAt(HexCoord coord) => GetNodeOrNull<Node3D>($"Improvement_{coord.X}_{coord.Y}");
@@ -161,7 +178,7 @@ public partial class MapOverlayLayer : Node3D
 
     private void BuildYields(AssetRegistry assets, Ruleset ruleset, IReadOnlyList<TileDto> tiles, IReadOnlyList<CityDto> cityRows, Func<int, int, float> topOf)
     {
-        yieldRoot = new Node3D { Name = "Yields", Visible = showYields };
+        yieldRoot = new Node3D { Name = "Yields", Visible = showYields && !yieldsFar };
         AddChild(yieldRoot);
         YieldChipCount = 0;
         YieldTileCount = 0;
@@ -189,6 +206,7 @@ public partial class MapOverlayLayer : Node3D
                     TextureFilter = BaseMaterial3D.TextureFilterEnum.Nearest,
                     NoDepthTest = true,
                     Shaded = false,
+                    CastShadow = GeometryInstance3D.ShadowCastingSetting.Off, // T287: a billboard icon's shadow is nothing to see and doubles its draw calls
                     Position = new Vector3(dx, 0f, dz),
                 };
                 chip.AddChild(new Label3D
@@ -201,6 +219,7 @@ public partial class MapOverlayLayer : Node3D
                     Billboard = BaseMaterial3D.BillboardModeEnum.Enabled,
                     NoDepthTest = true,
                     Shaded = false,
+                    CastShadow = GeometryInstance3D.ShadowCastingSetting.Off,
                     Position = new Vector3(0f, -0.17f, 0.001f),
                 });
                 if (!tile.Visible)
@@ -288,6 +307,7 @@ public partial class MapOverlayLayer : Node3D
             Billboard = BaseMaterial3D.BillboardModeEnum.Enabled,
             NoDepthTest = true,
             Shaded = false,
+            CastShadow = GeometryInstance3D.ShadowCastingSetting.Off,
             Position = new Vector3(0f, flagHeight + 0.3f, 0f),
         };
         node.AddChild(banner);

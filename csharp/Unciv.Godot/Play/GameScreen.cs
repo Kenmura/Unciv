@@ -1286,6 +1286,7 @@ public partial class GameScreen : Control
     private void ApplyUnitLod()
     {
         var far = UnitLod.IsFar(Map.Zoom, Map.Graphics.FarZoom);
+        Overlays.YieldsFar = FarZoomLod.HideYields(Map.Zoom);
         foreach (var node in unitNodes.Values)
         {
             node.ApplyLod(far);

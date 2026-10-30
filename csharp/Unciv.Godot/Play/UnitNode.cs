@@ -202,6 +202,7 @@ public partial class UnitNode : Node3D
                 TextureFilter = BaseMaterial3D.TextureFilterEnum.Nearest,
                 PixelSize = BarPixelSize,
                 NoDepthTest = true,
+                CastShadow = GeometryInstance3D.ShadowCastingSetting.Off, // T287
                 Position = new Vector3(0f, BarHeight, 0f),
             });
         }
@@ -216,6 +217,7 @@ public partial class UnitNode : Node3D
                 Billboard = BaseMaterial3D.BillboardModeEnum.Enabled,
                 PixelSize = IconPixelSize,
                 NoDepthTest = true,
+                CastShadow = GeometryInstance3D.ShadowCastingSetting.Off,
                 Position = new Vector3((i - (StatusIcons.Count - 1) / 2f) * IconSpacing, IconHeight, 0f),
             });
         }

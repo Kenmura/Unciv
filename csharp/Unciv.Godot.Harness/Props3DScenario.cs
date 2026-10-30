@@ -88,6 +88,19 @@ public sealed class Props3DScenario : Scenario
             }),
             new WaitFrames(2),
             new Capture("herd-close", "Low close view of the horse herd and its neighbours"),
+            new Act("T287: zoom all the way out", () => view.SetZoom(MapView.MaxZoom)),
+            new AssertQuery("far out every prop is drawn by merged chunk meshes instead of its node", () =>
+                view.MergedPropsDrawn && view.MergedPropCount == expectedProps && view.MergedPropMeshCount is > 0 and <= 2 * 4
+                && view.PropsAt(At(0, 0)).All(it => !it.Visible) && view.PropsAt(At(1, 0)).All(it => !it.Visible)),
+            new Act("T287: resources off while far", () => view.ShowResources = false),
+            new AssertQuery("the resource toggle still works on the merged meshes", () => view.VisibleResourcePropCount == 0),
+            new Act("T287: resources back on, zoom in", () =>
+            {
+                view.ShowResources = true;
+                view.SetZoom(8f);
+            }),
+            new AssertQuery("zoomed in again the prop nodes are drawn and the merged meshes are not", () =>
+                !view.MergedPropsDrawn && view.PropsAt(At(0, 0)).All(it => it.Visible) && view.PropsAt(At(1, 0)).All(it => it.Visible) && view.VisibleResourcePropCount > 0),
         ];
     }
 
