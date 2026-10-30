@@ -133,7 +133,7 @@ xychart-beta
 | T260 | Blocked | T259, C042 | 4 | Android APK build: unblock the .NET export (net9.0 target or Gradle), Android preset, debug-signed arm64 APK from tools/package.sh android |
 | T273 | In-Progress [Claude-T273] | T272, T267 | 2 | Host migration 3/5: graceful hand-off and promotion (HostHandoff, promote from standby store, client redirect, rolledBack resync) |
 | T277 | Available (waiting on T260) | T260, T276 | 1 | Android CI: build the APK (arm64 plus x86_64) as an artifact and smoke it on an emulator |
-| T294 | Needs-Review [Claude-warrior] | none | 1 | Gritty realistic unit look: Warrior design options for owner choice |
+| T294 | In-Review [Claude-warrior-reviewer] | none | 1 | Gritty realistic unit look: Warrior design options for owner choice |
 | T296 | In-Progress [Claude] | T263 | 1 | Audit lazy engine caches reachable from host view building and add a read-only guard test (T263 precondition) |
 | C099 | Available (waiting on T260) | T260, C096 | 0 | Android shell behaviour: back button, safe area, orientation, lifecycle autosave, virtual keyboard, hide Host, permissions |
 | T275 | Available (waiting on T274) | T274, C034, C035 | 0 | Host migration 5/5: client UI and docs (backup-host picker, trust notice, standby status, rollback and host-changed notices, superseded-host screen) |
