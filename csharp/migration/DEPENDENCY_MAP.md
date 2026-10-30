@@ -63,7 +63,7 @@ flowchart TD
   class C099 ready
   class T274 prog
   class T275 ondeck
-  class T277 prog
+  class T277 review
   class T278 ready
   class T280 ondeck
   class T282 review
@@ -124,7 +124,7 @@ xychart-beta
 | T275 | **On deck** (after T274) | T274, C034, C035 | 0 | Host migration 5/5: client UI and docs (backup-host picker, trust notice, standby status, rollback and host-changed notices, superseded-host screen) |
 | T280 | **On deck** (after T277) | T279, T260, T277 | 0 | Add the Android APK to the tagged GitHub release workflow |
 | T274 | In-Progress [Claude-T274] | T273 | 1 | Host migration 4/5: crash election (loss detection, signed HostLossVote quorum, split-brain refusal, superseded-host mode, forced take-over, kill-the-host scenarios) |
-| T277 | In-Progress [Claude] | T260, T276 | 1 | Android CI: build the APK (arm64 plus x86_64) as an artifact and smoke it on an emulator |
+| T277 | Needs-Review [Claude] | T260, T276 | 1 | Android CI: build the APK (arm64 plus x86_64) as an artifact and smoke it on an emulator |
 | T282 | Needs-Review [Claude] | T281 | 0 | Host migration 1c: periodic standby re-probe and the standby-mode Welcome answer (probe beyond the TLS handshake) |
 | T295 | Blocked | T294 | 0 | Roll the chosen gritty unit style out to the remaining units |
 | T300 | In-Progress [Claude] | none | 0 | Replace text-letter placeholder icons (resource chips etc.) with real pictorial icons |
