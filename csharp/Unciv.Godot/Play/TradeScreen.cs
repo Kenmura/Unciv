@@ -91,7 +91,7 @@ public partial class TradeScreen : PanelContainer
         incoming.AddThemeConstantOverride("separation", gap);
         // a small window cannot hold the cards and both columns: the body scrolls and the footer actions stay in view
         var body = new ScrollContainer { Name = "Body", SizeFlagsVertical = SizeFlags.ExpandFill, HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled };
-        var stack = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
+        var stack = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill, SizeFlagsVertical = SizeFlags.ExpandFill };
         stack.AddThemeConstantOverride("separation", gap);
         body.AddChild(stack);
         column.AddChild(body);

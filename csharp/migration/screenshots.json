@@ -1843,5 +1843,71 @@
   },
   "T311": {
     "none": "A scale model, not a screen: the real-GPU scale sheet (tools/scale-sheet.sh) renders the HUD and menu at each common window size on demand and is deliberately not a CI golden; the all-screens pass with screenshots is T312."
+  },
+  "T312": {
+    "about": "Multi-resolution layout pass: every main screen at 1366x768, 1920x1080, 2560x1440, 3440x1440 (ultrawide) and 3840x2160 on the real GPU, six screens per sheet.",
+    "doc_note": "Real-GPU (RTX 5060 Ti, Vulkan) renders of the layout-matrix scenario (design/images/layout/README.md); not goldens.",
+    "shots": [
+      {
+        "doc": "layout/1366x768-0.jpg",
+        "caption": "1366x768: HUD, game menu, city, tech, policies, diplomacy."
+      },
+      {
+        "doc": "layout/1366x768-1.jpg",
+        "caption": "1366x768: trade, overview (stats, cities, units), espionage, Civilopedia."
+      },
+      {
+        "doc": "layout/1366x768-2.jpg",
+        "caption": "1366x768: main menu, new game, host, lobby, join, options."
+      },
+      {
+        "doc": "layout/1920x1080-0.jpg",
+        "caption": "1920x1080: HUD, game menu, city, tech, policies, diplomacy."
+      },
+      {
+        "doc": "layout/1920x1080-1.jpg",
+        "caption": "1920x1080: trade, overview (stats, cities, units), espionage, Civilopedia."
+      },
+      {
+        "doc": "layout/1920x1080-2.jpg",
+        "caption": "1920x1080: main menu, new game, host, lobby, join, options."
+      },
+      {
+        "doc": "layout/2560x1440-0.jpg",
+        "caption": "2560x1440: HUD, game menu, city, tech, policies, diplomacy."
+      },
+      {
+        "doc": "layout/2560x1440-1.jpg",
+        "caption": "2560x1440: trade, overview (stats, cities, units), espionage, Civilopedia."
+      },
+      {
+        "doc": "layout/2560x1440-2.jpg",
+        "caption": "2560x1440: main menu, new game, host, lobby, join, options."
+      },
+      {
+        "doc": "layout/3440x1440-0.jpg",
+        "caption": "3440x1440: HUD, game menu, city, tech, policies, diplomacy."
+      },
+      {
+        "doc": "layout/3440x1440-1.jpg",
+        "caption": "3440x1440: trade, overview (stats, cities, units), espionage, Civilopedia."
+      },
+      {
+        "doc": "layout/3440x1440-2.jpg",
+        "caption": "3440x1440: main menu, new game, host, lobby, join, options."
+      },
+      {
+        "doc": "layout/3840x2160-0.jpg",
+        "caption": "3840x2160: HUD, game menu, city, tech, policies, diplomacy."
+      },
+      {
+        "doc": "layout/3840x2160-1.jpg",
+        "caption": "3840x2160: trade, overview (stats, cities, units), espionage, Civilopedia."
+      },
+      {
+        "doc": "layout/3840x2160-2.jpg",
+        "caption": "3840x2160: main menu, new game, host, lobby, join, options."
+      }
+    ]
   }
 }

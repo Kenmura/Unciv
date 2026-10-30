@@ -95,6 +95,9 @@ public static class UiTokens
     public const int RowHeight = 32;
     public const int CompactRowHeight = 28;
     public const int TooltipMaxWidth = 340;
+
+    /// <summary>T312: the widest a full-screen screen's content (and its header and footer rows) grows, in logical pixels; a wider window leaves the extra as side margins (ultrawide).</summary>
+    public const int MaxContentWidth = 1500;
     public const int BarThin = 6;
     public const int BarLabelled = 14;
     public const int SwitchWidth = 40;

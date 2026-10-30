@@ -76,6 +76,13 @@ public partial class HostScreen : Control
         var column = new VBoxContainer();
         column.Fill();
         AddChild(column);
+        // T312: on a window wider than the widest content (ultrawide) the settings keep that width, centred
+        Resized += () =>
+        {
+            float extra = Math.Max(0f, (Size.X - theme.Px(UiTokens.MaxContentWidth)) / 2f);
+            column.OffsetLeft = extra;
+            column.OffsetRight = -extra;
+        };
 
         settingsColumn.SizeFlagsVertical = SizeFlags.ExpandFill;
         column.AddChild(settingsColumn);

@@ -29,10 +29,10 @@ public sealed class ScaleSheetScenario : Scenario
     public override IReadOnlyList<string> Checklist => ["Open scale-*.png: do buttons, text and panels stay comfortable and inside the window at every size?"];
 
     /// <summary>The sizes of the sheet from <c>UNCIV_SCALE_RES</c>: width, height and OS display scale of each.</summary>
-    internal static IReadOnlyList<(int Width, int Height, float OsScale)> Sizes()
+    internal static IReadOnlyList<(int Width, int Height, float OsScale)> Sizes(string variable = "UNCIV_SCALE_RES", string defaults = DefaultSizes)
     {
         var sizes = new List<(int, int, float)>();
-        foreach (string entry in (GpuBenchScenario.Bench("UNCIV_SCALE_RES") ?? DefaultSizes).Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+        foreach (string entry in (GpuBenchScenario.Bench(variable) ?? defaults).Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
         {
             var atParts = entry.Split('@');
             var dims = atParts[0].Split('x');

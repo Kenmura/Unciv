@@ -20,10 +20,15 @@ public partial class ScreenFrame : VBoxContainer
     private readonly PanelContainer footer = new() { Name = "FrameFooter", ThemeTypeVariation = UiVariants.PanelHeader, Visible = false };
     private readonly HBoxContainer footerRow = new() { Alignment = BoxContainer.AlignmentMode.End };
     private readonly IconButton close;
+    private readonly MarginContainer headerMargin = new();
+    private readonly MarginContainer footerMargin = new();
+    private readonly UiTheme theme;
+    private readonly int baseMargin;
 
     public ScreenFrame(UiTheme theme, string titleText, bool closeButton = true, string closeLabel = "Close")
     {
         Name = "ScreenFrame";
+        this.theme = theme;
         header.Bind(theme, 0);
         AddThemeConstantOverride("separation", 0);
         title.Text = titleText.TrText();
@@ -33,14 +38,30 @@ public partial class ScreenFrame : VBoxContainer
         close = new IconButton(theme, AssetKey.Of(RulesetAssetKeys.UiIcon, "Close"), closeLabel, hotkey: "Esc") { Visible = closeButton };
         close.Pressed += () => CloseRequested?.Invoke();
         headerRow.AddChild(close);
-        header.AddChild(headerRow);
+        headerMargin.AddChild(headerRow);
+        header.AddChild(headerMargin);
         AddChild(header);
         int margin = theme.Px(theme.Breakpoint == UiBreakpoint.Compact ? UiTokens.S2 : UiTokens.S4);
+        baseMargin = margin;
         foreach (string side in new[] { "left", "top", "right", "bottom" }) content.AddThemeConstantOverride("margin_" + side, margin);
         AddChild(content);
         footerRow.AddThemeConstantOverride("separation", theme.Px(UiTokens.S2));
-        footer.AddChild(footerRow);
+        footerMargin.AddChild(footerRow);
+        footer.AddChild(footerMargin);
+        Resized += FitWidth;
         AddChild(footer);
+    }
+
+    /// <summary>T312: on a window wider than <see cref="UiTokens.MaxContentWidth"/> the content, header and footer rows keep that width, centred; the rest becomes side margin.</summary>
+    private void FitWidth()
+    {
+        int extra = Math.Max(0, (int)((Size.X - theme.Px(UiTokens.MaxContentWidth)) / 2f));
+        foreach (string side in new[] { "left", "right" })
+        {
+            content.AddThemeConstantOverride("margin_" + side, baseMargin + extra);
+            headerMargin.AddThemeConstantOverride("margin_" + side, extra);
+            footerMargin.AddThemeConstantOverride("margin_" + side, extra);
+        }
     }
 
     /// <summary>The close button was pressed.</summary>

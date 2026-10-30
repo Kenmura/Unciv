@@ -243,7 +243,7 @@ public sealed class HostScreenScenario : Scenario
                 new Capture("resumed", "A saved hosted game resumed: it listens again, with an invite and the players who were in it"),
                 new Press("Stop hosting"),
                 new WaitUntil("stopped again", () => !screen.IsHosting && !screen.StartButton.Disabled),
-                new Press("Back"),
+                new WaitFrames(3), new Press("Back"),
                 new AssertQuery("Back leaves the screen", () => wentBack),
                 new Act("clean up", () =>
                 {

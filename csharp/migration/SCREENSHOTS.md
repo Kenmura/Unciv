@@ -95,6 +95,7 @@
 - [T294 (ticket not Done or unknown)](#t294-ticket-not-done-or-unknown)
 - [T298 (ticket not Done or unknown)](#t298-ticket-not-done-or-unknown)
 - [T299 (ticket not Done or unknown)](#t299-ticket-not-done-or-unknown)
+- [T312 (ticket not Done or unknown)](#t312-ticket-not-done-or-unknown)
 - [Missing screenshots](#missing-screenshots)
 <!-- /toc -->
 
@@ -1910,6 +1911,73 @@ Scenario `tutorial-dismiss`.
 ![After Never show tutorials: no popup and no card.](../Unciv.Godot.Harness/golden/tutorial-dismiss/gone.png)
 
 *After Never show tutorials: no popup and no card.* (`tutorial-dismiss/gone.png`)
+
+## T312 (ticket not Done or unknown)
+
+Multi-resolution layout pass: every main screen at 1366x768, 1920x1080, 2560x1440, 3440x1440 (ultrawide) and 3840x2160 on the real GPU, six screens per sheet.
+
+
+Real-GPU (RTX 5060 Ti, Vulkan) renders of the layout-matrix scenario (design/images/layout/README.md); not goldens.
+
+![1366x768: HUD, game menu, city, tech, policies, diplomacy.](design/images/layout/1366x768-0.jpg)
+
+*1366x768: HUD, game menu, city, tech, policies, diplomacy.* (`design/images/layout/1366x768-0.jpg`, documentation image, not a golden)
+
+![1366x768: trade, overview (stats, cities, units), espionage, Civilopedia.](design/images/layout/1366x768-1.jpg)
+
+*1366x768: trade, overview (stats, cities, units), espionage, Civilopedia.* (`design/images/layout/1366x768-1.jpg`, documentation image, not a golden)
+
+![1366x768: main menu, new game, host, lobby, join, options.](design/images/layout/1366x768-2.jpg)
+
+*1366x768: main menu, new game, host, lobby, join, options.* (`design/images/layout/1366x768-2.jpg`, documentation image, not a golden)
+
+![1920x1080: HUD, game menu, city, tech, policies, diplomacy.](design/images/layout/1920x1080-0.jpg)
+
+*1920x1080: HUD, game menu, city, tech, policies, diplomacy.* (`design/images/layout/1920x1080-0.jpg`, documentation image, not a golden)
+
+![1920x1080: trade, overview (stats, cities, units), espionage, Civilopedia.](design/images/layout/1920x1080-1.jpg)
+
+*1920x1080: trade, overview (stats, cities, units), espionage, Civilopedia.* (`design/images/layout/1920x1080-1.jpg`, documentation image, not a golden)
+
+![1920x1080: main menu, new game, host, lobby, join, options.](design/images/layout/1920x1080-2.jpg)
+
+*1920x1080: main menu, new game, host, lobby, join, options.* (`design/images/layout/1920x1080-2.jpg`, documentation image, not a golden)
+
+![2560x1440: HUD, game menu, city, tech, policies, diplomacy.](design/images/layout/2560x1440-0.jpg)
+
+*2560x1440: HUD, game menu, city, tech, policies, diplomacy.* (`design/images/layout/2560x1440-0.jpg`, documentation image, not a golden)
+
+![2560x1440: trade, overview (stats, cities, units), espionage, Civilopedia.](design/images/layout/2560x1440-1.jpg)
+
+*2560x1440: trade, overview (stats, cities, units), espionage, Civilopedia.* (`design/images/layout/2560x1440-1.jpg`, documentation image, not a golden)
+
+![2560x1440: main menu, new game, host, lobby, join, options.](design/images/layout/2560x1440-2.jpg)
+
+*2560x1440: main menu, new game, host, lobby, join, options.* (`design/images/layout/2560x1440-2.jpg`, documentation image, not a golden)
+
+![3440x1440: HUD, game menu, city, tech, policies, diplomacy.](design/images/layout/3440x1440-0.jpg)
+
+*3440x1440: HUD, game menu, city, tech, policies, diplomacy.* (`design/images/layout/3440x1440-0.jpg`, documentation image, not a golden)
+
+![3440x1440: trade, overview (stats, cities, units), espionage, Civilopedia.](design/images/layout/3440x1440-1.jpg)
+
+*3440x1440: trade, overview (stats, cities, units), espionage, Civilopedia.* (`design/images/layout/3440x1440-1.jpg`, documentation image, not a golden)
+
+![3440x1440: main menu, new game, host, lobby, join, options.](design/images/layout/3440x1440-2.jpg)
+
+*3440x1440: main menu, new game, host, lobby, join, options.* (`design/images/layout/3440x1440-2.jpg`, documentation image, not a golden)
+
+![3840x2160: HUD, game menu, city, tech, policies, diplomacy.](design/images/layout/3840x2160-0.jpg)
+
+*3840x2160: HUD, game menu, city, tech, policies, diplomacy.* (`design/images/layout/3840x2160-0.jpg`, documentation image, not a golden)
+
+![3840x2160: trade, overview (stats, cities, units), espionage, Civilopedia.](design/images/layout/3840x2160-1.jpg)
+
+*3840x2160: trade, overview (stats, cities, units), espionage, Civilopedia.* (`design/images/layout/3840x2160-1.jpg`, documentation image, not a golden)
+
+![3840x2160: main menu, new game, host, lobby, join, options.](design/images/layout/3840x2160-2.jpg)
+
+*3840x2160: main menu, new game, host, lobby, join, options.* (`design/images/layout/3840x2160-2.jpg`, documentation image, not a golden)
 
 ## Missing screenshots
 

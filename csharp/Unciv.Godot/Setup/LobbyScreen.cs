@@ -194,7 +194,17 @@ public partial class LobbyScreen : Control
             column.SizeFlagsVertical = SizeFlags.ExpandFill;
             margin.AddChild(column);
         }
-        else AddChild(column);
+        else
+        {
+            AddChild(column);
+            // T312: on a window wider than the widest content (ultrawide) the lobby keeps that width, centred
+            Resized += () =>
+            {
+                float extra = Math.Max(0f, (Size.X - theme.Px(UiTokens.MaxContentWidth)) / 2f);
+                column.OffsetLeft = extra;
+                column.OffsetRight = -extra;
+            };
+        }
         column.AddChild(titleLabel);
         slotsBox.SizeFlagsHorizontal = SizeFlags.ExpandFill;
         column.AddChild(slotsBox);

@@ -30,12 +30,12 @@ public partial class ScreenManager : Control
     public UiTheme UiTheme { get; }
 
     /// <summary>
-    /// C101: on a touch build the menu theme follows the window like the world screen's does: the density-derived scale and the 48 dp target floor reach every menu screen built
-    /// below this root. A mouse build keeps the unbound theme (scale 1), as before.
+    /// C101: the menu theme follows the window like the world screen's does: the density-derived scale and the 48 dp target floor on a touch build, the T311 automatic scale on a desktop window,
+    /// reach every menu screen built below this root. T312: a desktop build used to keep the unbound theme (scale 1), so every menu screen stayed tiny on a 1440p or 4K window.
     /// </summary>
     public override void _EnterTree()
     {
-        if (DisplayProfile.Current.UsesDensity) UiTheme.Bind(GetViewport());
+        UiTheme.Bind(GetViewport());
     }
 
     public override void _ExitTree() => UiTheme.Unbind();

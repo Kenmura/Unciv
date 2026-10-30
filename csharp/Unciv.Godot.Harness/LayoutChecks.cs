@@ -75,6 +75,13 @@ internal static class LayoutChecks
         }
     }
 
+    /// <summary>
+    /// T312: the target problems under <paramref name="root"/>: a visible button shorter than <paramref name="minPx"/> (too small to hit) or taller than <paramref name="maxPx"/> (a huge widget), unless <paramref name="exempt"/> excuses it.
+    /// </summary>
+    public static List<string> TargetProblems(Node root, int minPx, int maxPx, Func<BaseButton, bool>? exempt = null) => Buttons(root)
+        .Where(it => !(exempt?.Invoke(it) ?? false) && it.IsVisibleInTree() && it.Size.Y > 0 && Visible(it) != null && (it.Size.Y + 0.5f < minPx || it.Size.Y > maxPx))
+        .Select(it => $"{it.GetType().Name} '{(it as Button)?.Text}' {it.Name} is {it.Size.X}x{it.Size.Y} (allowed height {minPx}..{maxPx})").ToList();
+
     private static IEnumerable<BaseButton> Buttons(Node root)
     {
         foreach (var child in root.GetChildren())
