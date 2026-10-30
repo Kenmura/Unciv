@@ -50,6 +50,7 @@ public sealed partial class GpuBenchScenario : Scenario
         public readonly List<double> Gpu = [];
         public readonly List<double> Cpu = [];
         public readonly List<double> Draws = [];
+        public double ElapsedSeconds;
         public int Wanted;
         public Action? EachFrame;
         public bool Done => Wanted == 0 && Wall.Count > 0;
@@ -65,6 +66,7 @@ public sealed partial class GpuBenchScenario : Scenario
 
         public override void _Process(double delta)
         {
+            ElapsedSeconds += delta;
             if (Wanted <= 0) return;
             var vp = GetViewport().GetViewportRid();
             Wall.Add(delta * 1000.0);
@@ -189,15 +191,7 @@ public sealed partial class GpuBenchScenario : Scenario
                     steps.Add(new Act("shot", () => Shot($"{config.Name}_{view.Name}")));
                     if (seqShots > 0 && view.Name.StartsWith("coast", StringComparison.Ordinal))
                     {
-                        // T289: a short animation sequence, one shot every half second of wall time (the water animates with TIME)
-                        for (int i = 1; i <= seqShots; i++)
-                        {
-                            ulong start = 0;
-                            int shotIndex = i;
-                            steps.Add(new Act("seq wait", () => start = Time.GetTicksMsec()));
-                            steps.Add(new WaitUntil("half second", () => Time.GetTicksMsec() - start >= 500, MaxFrames: 100000));
-                            steps.Add(new Act("seq shot", () => Shot($"{config.Name}_{view.Name}_t{shotIndex}")));
-                        }
+                        AddSequence(steps, probe, shotName => Shot($"{config.Name}_{view.Name}_{shotName}"), seqShots);
                     }
                     else if (view.Name is "coast" or "coastlow")
                     {
@@ -209,6 +203,19 @@ public sealed partial class GpuBenchScenario : Scenario
         }
         steps.Add(new Act("done", () => GD.Print("[bench] finished; results in " + outDir)));
         return steps;
+    }
+
+    /// <summary>T289: a short animation sequence, one shot every half second of rendered time (the water animates with TIME); the clock is the sum of frame deltas.</summary>
+    private static void AddSequence(List<ScenarioStep> steps, Probe probe, Action<string> shot, int count)
+    {
+        for (int i = 1; i <= count; i++)
+        {
+            string name = $"t{i}";
+            double start = 0;
+            steps.Add(new Act("seq wait", () => start = probe.ElapsedSeconds));
+            steps.Add(new WaitUntil("half second", () => probe.ElapsedSeconds - start >= 0.5, MaxFrames: 100000));
+            steps.Add(new Act("seq shot", () => shot(name)));
+        }
     }
 
     /// <summary>The configurations to measure: Low, High and Ultra, or (ablation) Low plus each effect alone first; Ultra loses SSAO and SSR on the compatibility renderer, which errors on them.</summary>
