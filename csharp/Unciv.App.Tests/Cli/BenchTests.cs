@@ -54,6 +54,19 @@ public sealed class BenchTests : IDisposable
     }
 
     [Fact]
+    public void HostParallel_KeepsTheStateHashes_AndReportsTheTaskCount()
+    {
+        var sequential = Bench("--turns", "6", "--host-turns", "2", "--recipients", "3");
+        var parallel = Bench("--turns", "6", "--host-turns", "2", "--recipients", "3", "--host-parallel", "2");
+        Assert.Equal(Hashes(sequential), Hashes(parallel));
+        var host = parallel["scenarios"]![0]!["host"]!;
+        Assert.Equal(2, (int)host["parallelTasks"]!);
+        Assert.True((int)host["commands"]! > 0);
+        Assert.NotNull(host["phases"]!["Host.BuildDelta"]);
+        Assert.Equal(0, (int)sequential["scenarios"]![0]!["host"]!["parallelTasks"]!);
+    }
+
+    [Fact]
     public void GoldenFileMatchesMismatchesAndSkipsUnlistedScenarios()
     {
         var hashes = Hashes(Bench("--turns", "4", "--no-probe"));
