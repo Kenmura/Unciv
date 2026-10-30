@@ -28,6 +28,7 @@ overview-espionage
 options
 trade
 improvements
+borders
 menu
 decisions
 decisions-religion

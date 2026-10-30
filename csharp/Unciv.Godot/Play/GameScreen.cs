@@ -68,6 +68,7 @@ public partial class GameScreen : Control
     public MinimapView Minimap { get; private set; } = null!; // JUSTIFY: C014 assigned in _Ready before any use
 
     /// <summary>Cities, borders, roads and improvements drawn on the map (C041).</summary>
+    private readonly TileOwnerMemory ownerMemory = new(); // what this screen has seen of tile ownership, so fogged tiles keep their last-known owner (T298)
     public MapOverlayLayer Overlays { get; private set; } = null!; // JUSTIFY: C041 assigned in _Ready before any use
 
     public UnitPanelView Panel { get; private set; } = null!; // JUSTIFY: C012 assigned in _Ready before any use
@@ -1262,7 +1263,8 @@ public partial class GameScreen : Control
         mapLoaded = true;
         Minimap.Update(snapshot.Tiles, OwnerColour);
         Layout();
-        Overlays.Rebuild(assets, session.Ruleset, Map, snapshot.Tiles, snapshot.Cities, OwnerColour);
+        ownerMemory.Remember(snapshot.Tiles);
+        Overlays.Rebuild(assets, session.Ruleset, Map, snapshot.Tiles, snapshot.Cities, OwnerColour, ownerMemory);
         RefreshMarkers();
         if (OpenCity != null) ShowCity(snapshot.Cities.FirstOrDefault(it => it.X == OpenCity.X && it.Y == OpenCity.Y));
         RebuildUnits();

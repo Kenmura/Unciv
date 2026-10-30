@@ -324,6 +324,20 @@
       }
     ]
   },
+  "T298": {
+    "scenario": "borders",
+    "about": "Territory borders: shared edges and remembered owners on fogged tiles.",
+    "shots": [
+      {
+        "golden": "borders/shared-and-fogged.png",
+        "caption": "Japan (white) runs on into the dimmed, remembered tiles with no border where sight ends; where it meets Greece (blue) both ribbons show."
+      },
+      {
+        "golden": "borders/shared-edge-close.png",
+        "caption": "The edge Japan and Greece share, close up: each civ's ribbon lies on its own side of the edge, side by side."
+      }
+    ]
+  },
   "C043": {
     "scenario": "settings",
     "about": "Client settings model persisted under user:// and the engine PlayerSettings options.",

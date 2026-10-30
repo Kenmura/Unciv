@@ -93,6 +93,7 @@
 - [T286 (ticket not Done or unknown)](#t286-ticket-not-done-or-unknown)
 - [T288 (ticket not Done or unknown)](#t288-ticket-not-done-or-unknown)
 - [T294 (ticket not Done or unknown)](#t294-ticket-not-done-or-unknown)
+- [T298 (ticket not Done or unknown)](#t298-ticket-not-done-or-unknown)
 - [T299 (ticket not Done or unknown)](#t299-ticket-not-done-or-unknown)
 - [Missing screenshots](#missing-screenshots)
 <!-- /toc -->
@@ -1877,6 +1878,20 @@ Documentation images rendered on an NVIDIA GeForce RTX 5060 Ti (Forward+, Vulkan
 ![Option 4 (bronze hoplite, recommended second baseline) against the current Warrior.](design/images/units/warrior-options/d4-vs-current.jpg)
 
 *Option 4 (bronze hoplite, recommended second baseline) against the current Warrior.* (`design/images/units/warrior-options/d4-vs-current.jpg`, documentation image, not a golden)
+
+## T298 (ticket not Done or unknown)
+
+Territory borders: shared edges and remembered owners on fogged tiles.
+
+Scenario `borders`.
+
+![Japan (white) runs on into the dimmed, remembered tiles with no border where sight ends; where it meets Greece (blue) both ribbons show.](../Unciv.Godot.Harness/golden/borders/shared-and-fogged.png)
+
+*Japan (white) runs on into the dimmed, remembered tiles with no border where sight ends; where it meets Greece (blue) both ribbons show.* (`borders/shared-and-fogged.png`)
+
+![The edge Japan and Greece share, close up: each civ's ribbon lies on its own side of the edge, side by side.](../Unciv.Godot.Harness/golden/borders/shared-edge-close.png)
+
+*The edge Japan and Greece share, close up: each civ's ribbon lies on its own side of the edge, side by side.* (`borders/shared-edge-close.png`)
 
 ## T299 (ticket not Done or unknown)
 

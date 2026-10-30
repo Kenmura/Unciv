@@ -101,7 +101,7 @@ public partial class MapOverlayLayer : Node3D
     private readonly Dictionary<HexCoord, IReadOnlyList<YieldChip>> yieldChips = [];
 
     /// <summary>Replaces everything drawn. <paramref name="colourOf"/> gives a civ's own colour (borders, city blocks, banner outlines), null for an unknown civ.</summary>
-    public void Rebuild(AssetRegistry assets, Ruleset ruleset, MapView map, IReadOnlyList<TileDto> tiles, IReadOnlyList<CityDto> cityRows, Func<string, Rgb?> colourOf)
+    public void Rebuild(AssetRegistry assets, Ruleset ruleset, MapView map, IReadOnlyList<TileDto> tiles, IReadOnlyList<CityDto> cityRows, Func<string, Rgb?> colourOf, TileOwnerMemory? owners = null)
     {
         foreach (var child in GetChildren())
         {
@@ -114,14 +114,14 @@ public partial class MapOverlayLayer : Node3D
         float TopOf(int x, int y) => TerrainRelief.TopHeight(map.TileNodeAt(new HexCoord(x, y))?.Relief ?? ReliefKind.Flat);
         float RimOf(int x, int y) => TerrainRelief.RimHeight(map.TileNodeAt(new HexCoord(x, y))?.Relief ?? ReliefKind.Flat);
 
-        var borders = MapOverlays.BorderEdges(tiles);
+        var borders = MapOverlays.BorderEdges(tiles, owners);
         BorderEdgeCount = borders.Count;
         foreach (var group in borders.GroupBy(it => it.Owner))
         {
             var ribbon = new Ribbon();
             foreach (var edge in group)
             {
-                var (a, b) = MapOverlays.EdgeEnds(edge.X, edge.Y, edge.Dx, edge.Dy);
+                var (a, b) = MapOverlays.EdgeEnds(edge.X, edge.Y, edge.Dx, edge.Dy, BorderWidth / 2f); // inward by half the ribbon: both civs of a shared edge show
                 float y = RimOf(edge.X, edge.Y) + BorderLift;
                 ribbon.Add(new Vector3(a.X, y, a.Z), new Vector3(b.X, y, b.Z), BorderWidth);
             }

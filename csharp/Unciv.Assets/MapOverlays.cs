@@ -9,6 +9,32 @@ public readonly record struct BorderEdge(int X, int Y, int Dx, int Dy, string Ow
 /// <summary>A road piece: from the tile centre to the neighbour at (<see cref="Dx"/>, <see cref="Dy"/>), or a lone stub when both are 0. <see cref="Railroad"/> when both ends have rail.</summary>
 public readonly record struct RoadLink(int X, int Y, int Dx, int Dy, bool Railroad);
 
+/// <summary>
+/// What a client has last seen of tile ownership. The snapshot carries an owner only for visible tiles (the fog-of-war rule), so the map remembers it per tile as tiles are seen:
+/// a fogged tile keeps the owner it had when last in sight, which is exactly what the civ knows. Lives as long as the client's view of one game (empty after a reconnect or load).
+/// </summary>
+public sealed class TileOwnerMemory
+{
+    /// <summary>A memory that knows nothing: every fogged tile's owner is unknown.</summary>
+    public static readonly TileOwnerMemory Empty = new();
+
+    private readonly Dictionary<HexCoord, string?> owners = [];
+
+    /// <summary>Records the owner (or its absence) of every visible tile; fogged tiles leave their remembered owner untouched.</summary>
+    public void Remember(IReadOnlyList<TileDto> tiles)
+    {
+        foreach (var tile in tiles)
+            if (tile.Visible) owners[new HexCoord(tile.X, tile.Y)] = tile.Owner;
+    }
+
+    /// <summary>The owner of <paramref name="tile"/> as far as the viewer knows; false when it is fogged and has never been seen. A null owner with true means known unowned.</summary>
+    public bool TryOwner(TileDto tile, out string? owner)
+    {
+        if (tile.Visible) { owner = tile.Owner; return true; }
+        return owners.TryGetValue(new HexCoord(tile.X, tile.Y), out owner);
+    }
+}
+
 /// <summary>An improvement standing on a tile (roads excluded).</summary>
 public readonly record struct ImprovementMarker(int X, int Y, string Name, bool Pillaged);
 
@@ -28,21 +54,27 @@ public static class MapOverlays
     private const string RailroadName = "Railroad";
 
     /// <summary>
-    /// Every side of an owned, visible tile whose neighbour has a different owner. A neighbour that is missing (map edge), fogged (ownership unknown) or unowned counts as different,
-    /// so a territory is always fully outlined; two tiles of one owner never draw a line between them.
+    /// Every side of an owned explored tile whose neighbour has a different owner, so a territory is always fully outlined and two tiles of one owner never draw a line between them.
+    /// A fogged tile's owner is the one <paramref name="memory"/> last saw there (the snapshot carries none, so a civ never learns about changes it cannot see); with no memory of it
+    /// the owner is unknown and no edge is drawn against it, so borders only ever appear where the owner really changes, never where visibility does. A missing neighbour (map edge,
+    /// or never explored) and an unowned one count as different, but an unexplored tile never gets a border of its own because only snapshot tiles are walked.
     /// </summary>
-    public static IReadOnlyList<BorderEdge> BorderEdges(IReadOnlyList<TileDto> tiles)
+    public static IReadOnlyList<BorderEdge> BorderEdges(IReadOnlyList<TileDto> tiles, TileOwnerMemory? memory = null)
     {
         var byCoord = Index(tiles);
         var edges = new List<BorderEdge>();
         foreach (var tile in tiles)
         {
-            if (!tile.Visible || tile.Owner == null) continue;
+            if (!(memory ?? TileOwnerMemory.Empty).TryOwner(tile, out var owner) || owner == null) continue;
             foreach (var (dx, dy) in Neighbours)
             {
                 var other = byCoord.GetValueOrDefault(new HexCoord(tile.X + dx, tile.Y + dy));
-                if (other is { Visible: true } && other.Owner == tile.Owner) continue;
-                edges.Add(new BorderEdge(tile.X, tile.Y, dx, dy, tile.Owner));
+                if (other != null)
+                {
+                    if (!(memory ?? TileOwnerMemory.Empty).TryOwner(other, out var otherOwner)) continue; // fogged and never seen: not a border, just the edge of what we know
+                    if (otherOwner == owner) continue;
+                }
+                edges.Add(new BorderEdge(tile.X, tile.Y, dx, dy, owner));
             }
         }
         return edges;
@@ -100,8 +132,12 @@ public static class MapOverlays
     /// <summary>Height of the city marker block for a population: grows a little with size, capped so a metropolis does not hide its neighbours.</summary>
     public static float CityBlockHeight(int population) => 0.35f + 0.05f * Math.Clamp(population, 1, 12);
 
-    /// <summary>The ground-plane ends (world x, world z) of the side of tile (x, y) that faces the neighbour at (dx, dy). World z is minus the engine's y, as in the client's map layout.</summary>
-    public static ((float X, float Z) A, (float X, float Z) B) EdgeEnds(int x, int y, int dx, int dy)
+    /// <summary>
+    /// The ground-plane ends (world x, world z) of the side of tile (x, y) that faces the neighbour at (dx, dy). World z is minus the engine's y, as in the client's map layout.
+    /// <paramref name="inset"/> moves the side towards the tile centre by that distance (the hexagon shrinks about its centre, so neighbouring sides still meet at their corners):
+    /// a border ribbon drawn on it then lies on its own tile's side of the edge and the neighbouring civ's ribbon beside it, instead of the two overlapping.
+    /// </summary>
+    public static ((float X, float Z) A, (float X, float Z) B) EdgeEnds(int x, int y, int dx, int dy, float inset = 0f)
     {
         var centre = HexMath.Hex2WorldCoords(new HexCoord(x, y));
         var toNeighbour = HexMath.Hex2WorldCoords(new HexCoord(dx, dy));
@@ -111,7 +147,9 @@ public static class MapOverlays
         var midY = centre.y + toNeighbour.y / 2f;
         var halfX = -toNeighbour.y / length / 2f;
         var halfY = toNeighbour.x / length / 2f;
-        return ((midX - halfX, -(midY - halfY)), (midX + halfX, -(midY + halfY)));
+        var scale = 1f - inset / (length / 2f); // the apothem is half the centre distance
+        (float X, float Z) End(float ex, float ey) => (centre.x + (ex - centre.x) * scale, -(centre.y + (ey - centre.y) * scale));
+        return (End(midX - halfX, midY - halfY), End(midX + halfX, midY + halfY));
     }
 
     private static Dictionary<HexCoord, TileDto> Index(IReadOnlyList<TileDto> tiles)

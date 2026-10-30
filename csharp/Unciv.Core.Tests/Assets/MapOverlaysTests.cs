@@ -67,11 +67,107 @@ public class MapOverlaysTests
     }
 
     [Fact]
-    public void FoggedAndUnownedTilesGetNoBorderOfTheirOwnButCloseTheNeighboursOutline()
+    public void AFoggedTileWithNoMemoryDrawsNoEdgeAgainstItsVisibleNeighbour()
     {
-        var edges = MapOverlays.BorderEdges([Tile(0, 0, "Babylon"), Tile(1, 0, "Babylon", visible: false), Tile(0, 1)]);
+        // Visibility changes along that side, not ownership: nothing is known, so nothing is drawn (T298)
+        var edges = MapOverlays.BorderEdges([Tile(0, 0, "Babylon"), Tile(1, 0, owner: null, visible: false), Tile(0, 1)]);
         Assert.All(edges, it => Assert.Equal((0, 0), (it.X, it.Y)));
-        Assert.Equal(6, edges.Count);
+        Assert.Equal(5, edges.Count);
+        Assert.DoesNotContain(edges, it => it is { Dx: 1, Dy: 0 });
+    }
+
+    [Fact]
+    public void ATerritoryRunningIntoTheFogIsNotClosedThereAndTheFoggedPartKeepsItsOwnBorder()
+    {
+        // Osaka: (0,0) visible, (1,0) and (2,0) explored earlier and now fogged, all Japan; (1,1) visible and unowned
+        var memory = new TileOwnerMemory();
+        memory.Remember([Tile(0, 0, "Japan"), Tile(1, 0, "Japan"), Tile(2, 0, "Japan"), Tile(1, 1)]);
+        var tiles = new[] { Tile(0, 0, "Japan"), Tile(1, 0, owner: null, visible: false), Tile(2, 0, owner: null, visible: false), Tile(1, 1) };
+        var edges = MapOverlays.BorderEdges(tiles, memory);
+        Assert.DoesNotContain(new BorderEdge(0, 0, 1, 0, "Japan"), edges);
+        Assert.DoesNotContain(new BorderEdge(1, 0, -1, 0, "Japan"), edges);
+        Assert.DoesNotContain(edges, it => it is { X: 1, Y: 0, Dx: 1, Dy: 0 } or { X: 2, Y: 0, Dx: -1, Dy: 0 });
+        Assert.Contains(new BorderEdge(1, 0, 0, 1, "Japan"), edges); // fogged tile's side facing the visible unowned tile
+        Assert.Equal(14, edges.Count); // 5 + 4 + 5 sides facing unowned or missing tiles, none along the lit/fogged line
+    }
+
+    [Fact]
+    public void TheMemoryKeepsTheLastSeenOwnerAndNeverLearnsFromFoggedTiles()
+    {
+        var memory = new TileOwnerMemory();
+        memory.Remember([Tile(0, 0, "Japan"), Tile(1, 0)]);
+        // Now both fogged (the snapshot carries no owner for them) and the world moved on: remembering a fogged tile changes nothing
+        memory.Remember([Tile(0, 0, owner: null, visible: false), Tile(1, 0, owner: "Greece", visible: false)]);
+        Assert.True(memory.TryOwner(Tile(0, 0, owner: null, visible: false), out var first));
+        Assert.Equal("Japan", first);
+        Assert.True(memory.TryOwner(Tile(1, 0, owner: null, visible: false), out var second));
+        Assert.Null(second); // known unowned
+        Assert.False(memory.TryOwner(Tile(5, 5, owner: null, visible: false), out _)); // never seen
+        Assert.False(MapOverlays.BorderEdges([Tile(5, 5, owner: null, visible: false)], memory).Any());
+        // Seeing a tile again updates it
+        memory.Remember([Tile(0, 0, "Greece")]);
+        Assert.True(memory.TryOwner(Tile(0, 0, owner: null, visible: false), out var third));
+        Assert.Equal("Greece", third);
+    }
+
+    [Fact]
+    public void FoggedNeighbourOfAnotherOwnerStillClosesTheOutlineWhenItsOwnerIsRemembered()
+    {
+        var memory = new TileOwnerMemory();
+        memory.Remember([Tile(1, 0, "Greece")]);
+        var edges = MapOverlays.BorderEdges([Tile(0, 0, "Babylon"), Tile(1, 0, owner: null, visible: false)], memory);
+        Assert.Contains(new BorderEdge(0, 0, 1, 0, "Babylon"), edges);
+        Assert.Contains(new BorderEdge(1, 0, -1, 0, "Greece"), edges);
+    }
+
+    [Fact]
+    public void UnexploredTilesNeverGetABorderButTheMapEdgeOfAnExploredTerritoryIsOutlined()
+    {
+        var edges = MapOverlays.BorderEdges([Tile(0, 0, "Babylon")]);
+        Assert.All(edges, it => Assert.Equal((0, 0), (it.X, it.Y)));
+        Assert.Empty(MapOverlays.BorderEdges([]));
+    }
+
+    [Fact]
+    public void AnInsetMovesTheSideTowardsItsTileCentreKeepingCornersSharedWithTheNextSide()
+    {
+        var (a, b) = MapOverlays.EdgeEnds(0, 0, 1, 0);
+        var (ia, ib) = MapOverlays.EdgeEnds(0, 0, 1, 0, 0.05f);
+        var (n1a, n1b) = MapOverlays.EdgeEnds(0, 0, 1, 1, 0.05f);
+        var (n2a, n2b) = MapOverlays.EdgeEnds(0, 0, 0, -1, 0.05f);
+        var centre = HexMath.Hex2WorldCoords(new HexCoord(0, 0));
+        static float Dist((float X, float Z) p, float cx, float cz) => MathF.Sqrt((p.X - cx) * (p.X - cx) + (p.Z - cz) * (p.Z - cz));
+        Assert.True(Dist(ia, centre.x, -centre.y) < Dist(a, centre.x, -centre.y));
+        Assert.True(Dist(ib, centre.x, -centre.y) < Dist(b, centre.x, -centre.y));
+        // The side's midpoint moves by exactly the inset
+        var mid = ((a.X + b.X) / 2f, (a.Z + b.Z) / 2f);
+        var imid = ((ia.X + ib.X) / 2f, (ia.Z + ib.Z) / 2f);
+        Assert.Equal(0.05f, MathF.Sqrt(((mid.Item1 - imid.Item1) * (mid.Item1 - imid.Item1)) + ((mid.Item2 - imid.Item2) * (mid.Item2 - imid.Item2))), 4);
+        // Both ends are shared with the next side round the hexagon on each hand
+        Assert.True(new[] { n1a, n1b, n2a, n2b }.Count(it => Corner(ia, it)) == 1 && new[] { n1a, n1b, n2a, n2b }.Count(it => Corner(ib, it)) == 1);
+    }
+
+    private static bool Corner((float X, float Z) p, (float X, float Z) q) => MathF.Abs(p.X - q.X) < 1e-4f && MathF.Abs(p.Z - q.Z) < 1e-4f;
+
+    [Fact]
+    public void TheTwoSidesOfASharedEdgeAreInsetOntoTheirOwnTilesSoTheyDoNotOverlap()
+    {
+        var edges = MapOverlays.BorderEdges([Tile(0, 0, "Babylon"), Tile(1, 0, "Greece")]);
+        var babylon = edges.Single(it => it is { Owner: "Babylon", Dx: 1, Dy: 0 });
+        var greece = edges.Single(it => it is { Owner: "Greece", Dx: -1, Dy: 0 });
+        var (ba, bb) = MapOverlays.EdgeEnds(babylon.X, babylon.Y, babylon.Dx, babylon.Dy, 0.05f);
+        var (ga, gb) = MapOverlays.EdgeEnds(greece.X, greece.Y, greece.Dx, greece.Dy, 0.05f);
+        // Measure along the world direction from Babylon's tile to Greece's (z is minus the engine's y)
+        var to = HexMath.Hex2WorldCoords(new HexCoord(1, 0));
+        var dir = (X: to.x, Z: -to.y);
+        var len = MathF.Sqrt(dir.X * dir.X + dir.Z * dir.Z);
+        float Along((float X, float Z) p, (float X, float Z) q) => ((p.X + q.X) / 2f * dir.X + (p.Z + q.Z) / 2f * dir.Z) / len;
+        var raw = MapOverlays.EdgeEnds(0, 0, 1, 0);
+        var rawMid = Along(raw.A, raw.B);
+        var babylonMid = Along(ba, bb);
+        var greeceMid = Along(ga, gb);
+        Assert.True(babylonMid < rawMid && greeceMid > rawMid); // each on its own side of the common edge
+        Assert.Equal(0.1f, greeceMid - babylonMid, 4); // two ribbons of width 0.1 now touch instead of coinciding
     }
 
     [Fact]
