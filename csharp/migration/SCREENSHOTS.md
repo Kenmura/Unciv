@@ -1801,9 +1801,9 @@ Scenario `phone-pedia`.
 
 *Civilopedia unit page on a phone: header card with cost chip, then linked text.* (`phone-pedia/unit.png`)
 
-![Civilopedia search on a phone: results over every category with the category as subtitle.](../Unciv.Godot.Harness/golden/phone-pedia/search.png)
+![Civilopedia search on a phone: results over every category with the category as subtitle, and a 48 dp Clear button beside the box (the line edit's own 15 px clear icon is replaced on touch).](../Unciv.Godot.Harness/golden/phone-pedia/search.png)
 
-*Civilopedia search on a phone: results over every category with the category as subtitle.* (`phone-pedia/search.png`)
+*Civilopedia search on a phone: results over every category with the category as subtitle, and a 48 dp Clear button beside the box (the line edit's own 15 px clear icon is replaced on touch).* (`phone-pedia/search.png`)
 
 ## T286 (ticket not Done or unknown)
 
