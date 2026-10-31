@@ -800,4 +800,23 @@ public sealed class UnitSilhouetteTests
         }
         Assert.True(failures.Count == 0, string.Join("\n", failures));
     }
+
+    /// <summary>T384: every mounted figure, as drawn (mask pixels times the square of <see cref="Unciv.Assets.UnitVisuals.MountedFigureBoost"/>), covers at least this many pixels of the 40x56 frame (measured minimum 1123, Horse Archer; the T383 size, unboosted, was 499).</summary>
+    private const int MinT384DrawnMountedCoverage = 1000;
+
+    [Fact]
+    public void EveryMountedFigureAsDrawnIsBigEnough()
+    {
+        var failures = new List<string>();
+        foreach (var name in Units().Mounted.Select(it => it.Name))
+        {
+            var pixels = Masks(name).Average(m => m.Count(on => on)) * Unciv.Assets.UnitVisuals.MountedFigureBoost * Unciv.Assets.UnitVisuals.MountedFigureBoost;
+            if (pixels < MinT384DrawnMountedCoverage) failures.Add(string.Create(CultureInfo.InvariantCulture, $"{name} covers {pixels:0} pixels as drawn, need {MinT384DrawnMountedCoverage}"));
+        }
+        Assert.True(failures.Count == 0, string.Join("\n", failures));
+    }
+
+    /// <summary>T384: riders are drawn larger than walkers (they were not boosted at all in T383).</summary>
+    [Fact]
+    public void MountedFiguresAreDrawnLargerThanFootFigures() => Assert.True(Unciv.Assets.UnitVisuals.MountedFigureBoost >= Unciv.Assets.UnitVisuals.FootFigureBoost + 0.15f);
 }

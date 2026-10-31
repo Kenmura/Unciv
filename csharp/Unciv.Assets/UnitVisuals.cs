@@ -51,6 +51,9 @@ public static class UnitVisuals
     /// <summary>T383: factor on the scale of every humanoid (skeleton) figure: foot soldiers were about 40 px high at the game's default zoom and the owner wants every unit recognised at any view. Rigid models (ships, armour, aircraft) are modelled to size and keep 1.</summary>
     public const float FootFigureBoost = 1.3f;
 
+    /// <summary>T384: the same for mounted figures (a skeleton on a <c>HorseMesh</c>: horses, camels, elephants, chariots). T383 left them at their modelled size and they were the smallest units on the sheet (a horse is long and low).</summary>
+    public const float MountedFigureBoost = 1.5f;
+
     /// <summary>The arrangement of <paramref name="count"/> figures (clamped to 1..<see cref="MaxFigures"/>) on a tile: a lone figure in the middle, a pair side by side, a triangle, a square. Figures shrink as they multiply so the group stays inside the tile.</summary>
     public static IReadOnlyList<FigurePlacement> Formation(int count) => Math.Clamp(count, 1, MaxFigures) switch
     {

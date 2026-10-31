@@ -100,6 +100,7 @@ public partial class UnitNode : Node3D
             if (far && i == 0) (position, scale) = (Vector3.Zero, Vector3.One * (UnitVisuals.Formation(1)[0].Scale * leadBoost));
             figures[i].Visible = !far || i == 0;
             formationSlots[i] = position;
+            if (i == 0 && figures[i].Scale != scale) MapMaterials.OutlineUnit(figures[i].GetChild<Node3D>(0), scale.X); // T384: the rim keeps its width on screen when the lead figure grows to a lone figure
             figures[i].Scale = scale;
             if (Rigid == RigidKind.None) figures[i].Position = position;
         }
@@ -173,7 +174,6 @@ public partial class UnitNode : Node3D
         {
             var model = assets.Get<Node3D>(key);
             if (civ is { } c) MapMaterials.ColourTeam(model, c.R, c.G, c.B);
-            MapMaterials.OutlineUnit(model);
             if (UnitModels.FindPlayer(model) is { } player)
             {
                 var phase = UnitModels.IdlePhase(Unit.Id, i);
@@ -182,7 +182,8 @@ public partial class UnitNode : Node3D
                 animators.Add(new UnitAnimator(player, phase));
                 animatorFigures.Add(i);
             }
-            var boost = animatorFigures.Contains(i) && model.FindChild("HorseMesh", true, false) == null ? UnitVisuals.FootFigureBoost : 1f; // T383: foot figures (a skeleton and no mount) are drawn larger
+            var boost = !animatorFigures.Contains(i) ? 1f : model.FindChild("HorseMesh", true, false) == null ? UnitVisuals.FootFigureBoost : UnitVisuals.MountedFigureBoost; // T383/T384: figures with a skeleton are drawn larger, riders more than walkers
+            MapMaterials.OutlineUnit(model, formation[i].Scale * boost); // T384: the rim width follows the figure's scale
             if (i == 0) leadBoost = boost;
             if (i > 0) model.GetNodeOrNull("Glyphs")?.Free(); // one initials billboard for the whole group
             var figure = new Node3D { Name = "Figure" + i, Position = new Vector3(formation[i].X, 0f, formation[i].Z), Scale = Vector3.One * (formation[i].Scale * boost) };

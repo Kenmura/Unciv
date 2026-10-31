@@ -106,11 +106,16 @@ public sealed class UnitVisualsScenario : Scenario
         .Select(mi => mi.Transform * mi.Mesh.GetAabb()).Aggregate((a, b) => a.Merge(b));
     private static bool RigidModelsAreClipless(List<UnitNode> nodes) =>
         nodes.Where(IsRigidModel).All(n => FigureModels(n).All(m => m.FindChildren("*", nameof(Skeleton3D), true, false).Count == 0 && MapMaterials.TeamColourOf(m) != null));
-    private static bool HasRim(UnitNode n) => FigureModels(n).All(m => m.FindChildren("*", nameof(MeshInstance3D), true, false).OfType<MeshInstance3D>()
-        .All(mi => ReferenceEquals(mi.MaterialOverlay, MapMaterials.SharedRim) && mi.MaterialOverlay is StandardMaterial3D { Grow: true, CullMode: BaseMaterial3D.CullModeEnum.Front, NextPass: StandardMaterial3D { Grow: true } }));
-    /// <summary>T383: a foot figure (skeleton, no mount) is drawn at the formation scale times <see cref="UnitVisuals.FootFigureBoost"/>.</summary>
+    /// <summary>T382/T383/T384: every mesh of every figure wears the shared rim of its figure's drawn scale: dark hull plus halo, a thin hand-held part of a skeleton figure a narrow rim and halo.</summary>
+    private static bool HasRim(UnitNode n) => n.GetChildren().OfType<Node3D>().Where(f => f.Name.ToString().StartsWith("Figure", StringComparison.Ordinal))
+        .All(f => f.GetChild<Node3D>(0).FindChildren("*", nameof(MeshInstance3D), true, false).OfType<MeshInstance3D>().All(mi =>
+        {
+            bool thin = f.GetChild<Node3D>(0).FindChildren("*", nameof(Skeleton3D), true, false).Count > 0 && MapMaterials.IsThinPart(mi);
+            return ReferenceEquals(mi.MaterialOverlay, MapMaterials.RimFor(f.Scale.X, thin)) && mi.MaterialOverlay is StandardMaterial3D { Grow: true, CullMode: BaseMaterial3D.CullModeEnum.Front } rim && rim.NextPass is StandardMaterial3D { Grow: true } _ && (rim.GrowAmount * f.Scale.X < MapMaterials.OutlineGrow * 0.75f) == thin;
+        }));
+    /// <summary>T383/T384: a skeleton figure is drawn at the formation scale times <see cref="UnitVisuals.FootFigureBoost"/>.</summary>
     private static bool FootBoosted(UnitNode n) => n.GetChildren().OfType<Node3D>().Where(f => f.Name.ToString().StartsWith("Figure", StringComparison.Ordinal))
-        .All(f => f.GetChild<Node3D>(0).FindChild("HorseMesh", true, false) != null || IsRigidModel(n) || !IsModel(n) || f.Scale.X > UnitVisuals.Formation(n.FigureCount)[0].Scale * 1.2f);
+        .All(f => IsRigidModel(n) || !IsModel(n) || f.Scale.X > UnitVisuals.Formation(n.FigureCount)[0].Scale * (f.GetChild<Node3D>(0).FindChild("HorseMesh", true, false) != null ? 1.4f : 1.2f)); // T384: riders are boosted more than walkers
     private static bool HasClips(UnitNode n) => n.Players.Count == n.FigureCount && n.Players.All(p => UnitModels.Clips(p).SequenceEqual(UnitModelContract.ClipNames));
     private static bool HoldsIdle(AnimationPlayer p) => p.AssignedAnimation == UnitModelContract.IdleClip && !p.IsPlaying() && p.CurrentAnimationPosition > 0f;
     private static bool Textured(UnitNode n) => FigureModels(n).SelectMany(m => m.FindChildren("*", nameof(MeshInstance3D), true, false).OfType<MeshInstance3D>())
@@ -471,7 +476,7 @@ public sealed class UnitVisualsScenario : Scenario
             new WaitFrames(2),
             new AssertQuery("far out every unit that is drawn shows one figure, the lead enlarged to a lone figure in the tile's middle; most of the gallery is in view", () =>
                 nodes.Count(it => !it.Culled) > Slots.Length / 2
-                && nodes.Where(it => !it.Culled).All(it => it.FarLod && it.FiguresDrawn == 1 && (it.FigureCount == 1 || it.GetNode<Node3D>("Figure0").Scale.X is 1f or UnitVisuals.FootFigureBoost && it.GetNode<Node3D>("Figure0").Position == Vector3.Zero))
+                && nodes.Where(it => !it.Culled).All(it => it.FarLod && it.FiguresDrawn == 1 && (it.FigureCount == 1 || it.GetNode<Node3D>("Figure0").Scale.X is 1f or UnitVisuals.FootFigureBoost or UnitVisuals.MountedFigureBoost && it.GetNode<Node3D>("Figure0").Position == Vector3.Zero))
                 && nodes.Where(it => !it.Culled).Any(it => it.FigureCount > 1)),
             new AssertQuery("the hidden figures are hidden, not freed, and a clip or rigid pose still reaches the lead", () =>
                 node("Tank", null).GetChildren().OfType<Node3D>().Count(f => f.Name.ToString().StartsWith("Figure", StringComparison.Ordinal)) == 4

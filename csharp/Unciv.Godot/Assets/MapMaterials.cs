@@ -139,26 +139,53 @@ public static class MapMaterials
     /// <summary>T383: the halo colour (warm off-white: it holds on forest, jungle, mountain and marsh, and merges harmlessly with snow and desert, where the dark rim does the work).</summary>
     public static readonly Color HaloColour = new(0.93f, 0.9f, 0.78f);
 
-    private static StandardMaterial3D? sharedRim;
+    /// <summary>T384: width of the dark rim round a thin hand-held part (spear, sword, axe, staff), which a full-width rim and halo turned into a thick cream bar.</summary>
+    public const float ThinOutlineGrow = 0.012f;
 
-    /// <summary>T383: the one rim material every figure of every unit shares (T382 built one per figure): the dark inverted hull, its <c>NextPass</c> the light halo, both unshaded with front faces culled.</summary>
-    public static StandardMaterial3D SharedRim => sharedRim ??= BuildRim();
+    /// <summary>T384: total width (dark rim plus halo) round a thin hand-held part: the full halo made a spear a cream bar five times its own width, no halo lost it on forest.</summary>
+    public const float ThinHaloGrow = 0.022f;
 
-    private static StandardMaterial3D BuildRim()
-    {
-        var halo = new StandardMaterial3D { AlbedoColor = HaloColour, ShadingMode = BaseMaterial3D.ShadingModeEnum.Unshaded, CullMode = BaseMaterial3D.CullModeEnum.Front, Grow = true, GrowAmount = HaloGrow };
-        return new StandardMaterial3D { AlbedoColor = OutlineColour, ShadingMode = BaseMaterial3D.ShadingModeEnum.Unshaded, CullMode = BaseMaterial3D.CullModeEnum.Front, Grow = true, GrowAmount = OutlineGrow, NextPass = halo };
-    }
+    private static readonly Dictionary<(int Scale, bool Thin), StandardMaterial3D> rims = [];
 
     /// <summary>
-    /// T382/T383: gives every mesh of a unit model a dark rim with a light halo outside it (inverted hulls drawn as the mesh's overlay material: front faces culled, the vertices pushed out along their normals, unshaded), so a white
-    /// or yellow figure keeps its outline on snow and desert and a dark one on grass or forest. Works with skinned meshes because the push happens in the vertex shader. All figures share <see cref="SharedRim"/>.
+    /// T384: the rim material for a figure drawn at <paramref name="figureScale"/> (the formation scale times any boost): the dark inverted hull, its <c>NextPass</c> the light halo, both unshaded with front faces culled. Grow is in the
+    /// mesh's own units, so it is divided by the figure scale and the rim has the same width on screen for a boosted foot figure, a shrunken group figure and a ship. A <paramref name="thin"/> part gets a narrow dark rim and a narrow halo.
+    /// Materials are shared by every figure of the same scale (rounded to 0.01).
     /// </summary>
-    public static void OutlineUnit(Node3D unitModel)
+    public static StandardMaterial3D RimFor(float figureScale, bool thin)
     {
-        var rim = SharedRim;
+        int key = (int)MathF.Round(Math.Max(figureScale, 0.05f) * 100f, MidpointRounding.AwayFromZero);
+        if (rims.TryGetValue((key, thin), out var cached)) return cached;
+        float scale = key / 100f;
+        StandardMaterial3D Hull(Color colour, float grow) => new() { AlbedoColor = colour, ShadingMode = BaseMaterial3D.ShadingModeEnum.Unshaded, CullMode = BaseMaterial3D.CullModeEnum.Front, Grow = true, GrowAmount = grow / scale };
+        var rim = Hull(OutlineColour, thin ? ThinOutlineGrow : OutlineGrow);
+        rim.NextPass = Hull(HaloColour, thin ? ThinHaloGrow : HaloGrow);
+        return rims[(key, thin)] = rim;
+    }
+
+    /// <summary>T384: a hand-held part of a skeleton figure: a mesh without a skin whose two smaller sides are both under <see cref="ThinPartSide"/> model units (spear, javelin, staff, pick, sword, axe).</summary>
+    public const float ThinPartSide = 0.16f;
+
+    /// <summary>
+    /// T382/T383/T384: gives every mesh of a unit model a dark rim with a light halo outside it (inverted hulls drawn as the mesh's overlay material: front faces culled, the vertices pushed out along their normals, unshaded), so a white
+    /// or yellow figure keeps its outline on snow and desert and a dark one on grass or forest. Works with skinned meshes because the push happens in the vertex shader. The width is per figure scale (<see cref="RimFor"/>); thin
+    /// weapons of a skeleton figure get a narrow rim and halo.
+    /// </summary>
+    public static void OutlineUnit(Node3D unitModel, float figureScale = 1f)
+    {
+        bool skeleton = unitModel.FindChildren("*", nameof(Skeleton3D), true, false).Count > 0;
         foreach (var mesh in unitModel.FindChildren("*", nameof(MeshInstance3D), true, false).OfType<MeshInstance3D>())
-            mesh.MaterialOverlay = rim;
+            mesh.MaterialOverlay = RimFor(figureScale, skeleton && IsThinPart(mesh));
+    }
+
+    /// <summary>T384: whether a mesh is a thin hand-held part (see <see cref="ThinPartSide"/>).</summary>
+    public static bool IsThinPart(MeshInstance3D mesh)
+    {
+        if (mesh.Skin != null || mesh.Mesh == null) return false;
+        var size = mesh.Mesh.GetAabb().Size;
+        float a = size.X, b = size.Y, c = size.Z;
+        float mid = MathF.Max(MathF.Min(a, b), MathF.Min(MathF.Max(a, b), c)); // the middle of the three sides
+        return mid < ThinPartSide;
     }
 
     /// <summary>The colour a unit model wears: its <c>TeamColor</c> surfaces' albedo, else its <c>Banner</c>'s; null when it has neither (for tests).</summary>
