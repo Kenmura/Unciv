@@ -11,42 +11,20 @@ public readonly record struct RoadLink(int X, int Y, int Dx, int Dy, bool Railro
 
 /// <summary>
 /// What a client has last seen of tile ownership. The snapshot carries an owner only for visible tiles (the fog-of-war rule), so the map remembers it per tile as tiles are seen:
-/// a fogged tile keeps the owner it had when last in sight, which is exactly what the civ knows. Lives as long as the client's view of one game; <see cref="TileOwnerMemoryStore"/> (T378)
-/// keeps it across a reconnect or load. Nothing here ever comes from the host except the owners of tiles in sight, so persisting it reveals nothing the civ had not seen.
+/// a fogged tile keeps the owner it had when last in sight, which is exactly what the civ knows. Lives as long as the client's view of one game (empty after a reconnect or load).
 /// </summary>
 public sealed class TileOwnerMemory
 {
     private readonly Dictionary<HexCoord, string?> owners = [];
 
-    /// <summary>How many tiles have a remembered owner (or remembered absence of one).</summary>
-    public int Count => owners.Count;
-
     /// <summary>Forgets everything: for a different game or a different viewer, whose fog must not borrow what another saw.</summary>
     public void Clear() => owners.Clear();
 
-    /// <summary>Records the owner (or its absence) of every visible tile; fogged tiles leave their remembered owner untouched. True when that changed what is remembered.</summary>
-    public bool Remember(IReadOnlyList<TileDto> tiles)
+    /// <summary>Records the owner (or its absence) of every visible tile; fogged tiles leave their remembered owner untouched.</summary>
+    public void Remember(IReadOnlyList<TileDto> tiles)
     {
-        bool changed = false;
         foreach (var tile in tiles)
-        {
-            if (!tile.Visible) continue;
-            var at = new HexCoord(tile.X, tile.Y);
-            if (owners.TryGetValue(at, out var known) && known == tile.Owner) continue;
-            owners[at] = tile.Owner;
-            changed = true;
-        }
-        return changed;
-    }
-
-    /// <summary>Every remembered tile in a fixed order (by x, then y), the form that is stored and compared.</summary>
-    public IReadOnlyList<RememberedOwner> Entries() => [.. owners.OrderBy(it => it.Key.X).ThenBy(it => it.Key.Y).Select(it => new RememberedOwner(it.Key.X, it.Key.Y, it.Value))];
-
-    /// <summary>Replaces the memory with <paramref name="entries"/> (a later entry for the same tile wins).</summary>
-    public void Restore(IEnumerable<RememberedOwner> entries)
-    {
-        owners.Clear();
-        foreach (var entry in entries) owners[new HexCoord(entry.X, entry.Y)] = string.IsNullOrEmpty(entry.Owner) ? null : entry.Owner;
+            if (tile.Visible) owners[new HexCoord(tile.X, tile.Y)] = tile.Owner;
     }
 
     /// <summary>The owner of <paramref name="tile"/> as far as the viewer knows; false when it is fogged and has never been seen. A null owner with true means known unowned.</summary>
@@ -56,9 +34,6 @@ public sealed class TileOwnerMemory
         return owners.TryGetValue(new HexCoord(tile.X, tile.Y), out owner);
     }
 }
-
-/// <summary>One remembered tile: its last-seen owner, null when it was seen unowned.</summary>
-public readonly record struct RememberedOwner(int X, int Y, string? Owner);
 
 /// <summary>An improvement standing on a tile (roads excluded).</summary>
 public readonly record struct ImprovementMarker(int X, int Y, string Name, bool Pillaged);

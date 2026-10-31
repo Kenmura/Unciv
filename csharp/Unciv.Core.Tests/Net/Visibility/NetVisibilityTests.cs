@@ -93,33 +93,6 @@ public sealed class NetVisibilityTests
         Assert.Equal(f.CivId, seen.Owner);
     }
 
-    // T378: the client persists the owners it saw; the host adds nothing for that, and what is stored is exactly the tiles that were in sight.
-    [Fact]
-    public void RememberedOwners_AreOnlyThoseOfTilesInSight_AndTheHostSendsNoMore()
-    {
-        var snapshot = SnapshotFor(a);
-        Assert.All(snapshot.Tiles.Where(it => !it.Visible), it => Assert.Null(it.Owner)); // the wire still withholds every fogged owner
-        var memory = new Unciv.Assets.TileOwnerMemory();
-        memory.Remember(snapshot.Tiles);
-        var remembered = memory.Entries();
-        Assert.Equal(snapshot.Tiles.Count(it => it.Visible), remembered.Count);
-        Assert.DoesNotContain(remembered, it => it is { X: 0, Y: 3 }); // explored but never in sight (the fog city's tile)
-        Assert.DoesNotContain(remembered, it => HexMath.GetDistance(HexCoord.Zero, new HexCoord(it.X, it.Y)) > 3); // nor anything unexplored
-        Assert.Contains(remembered, it => it == new Unciv.Assets.RememberedOwner(3, 0, f.CivId));
-        string folder = Path.Combine(Directory.CreateTempSubdirectory("unciv-owner-memory-").FullName, "store");
-        try
-        {
-            var store = new Unciv.Assets.TileOwnerMemoryStore(folder);
-            Assert.True(store.Save(SecretGameId, a.CivId, snapshot.Turn, snapshot.Tiles, memory));
-            string file = File.ReadAllText(store.PathFor(SecretGameId, a.CivId));
-            Assert.DoesNotContain(h.CivId, file);
-            Assert.DoesNotContain(b.CivId, file);
-            Assert.DoesNotContain(SecretSeedText, file);
-            Assert.DoesNotContain(SecretGameId, file);
-        }
-        finally { if (Directory.Exists(folder)) Directory.Delete(folder, recursive: true); }
-    }
-
     [Fact]
     public void Cities_ForeignCityIsReducedAndUnexploredCitiesAreAbsent()
     {

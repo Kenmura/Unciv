@@ -123,7 +123,7 @@ more with the outer colour, so the line has an edge on every terrain (snow, dese
 2. **Two-tone casing** (nation's outer colour inside, inner colour as a thin edge, as Kotlin) or one colour only? Recommended: two-tone.
 3. **Hidden by relief.** Show a faint 35 % ghost of the border where a mountain or hill in front hides it (recommended), draw it fully over relief (also covers units), or let relief hide it like any solid object?
 4. **Remembered borders in fog.** Draw at 65 % opacity (recommended) or exactly like visible ones?
-5. **Unknown owners after a load/reconnect.** Fade the open ends (recommended, this ticket) and fix the cause in a separate ticket (persist the remembered owners with the save and the session, filed as T378 and done: the client stores what it saw per game and viewer, so the open ends only remain for tiles never seen), or
+5. **Unknown owners after a load/reconnect.** Fade the open ends (recommended, this ticket) and fix the cause in a separate ticket (persist the remembered owners with the save and the session, filed as T378), or
    let the server send owners of explored fogged tiles (Kotlin's behaviour, reveals what the civ could not know)?
 6. **War / alliance / city-state marking** on the border (e.g. dashed for war)? Recommended: no, the colour alone, as Kotlin.
 7. **Territory tint fill** (a 10 to 15 % wash inside the border)? Recommended: not now.

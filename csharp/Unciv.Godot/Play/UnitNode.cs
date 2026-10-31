@@ -171,6 +171,7 @@ public partial class UnitNode : Node3D
         {
             var model = assets.Get<Node3D>(key);
             if (civ is { } c) MapMaterials.ColourTeam(model, c.R, c.G, c.B);
+            MapMaterials.OutlineUnit(model);
             if (UnitModels.FindPlayer(model) is { } player)
             {
                 var phase = UnitModels.IdlePhase(Unit.Id, i);

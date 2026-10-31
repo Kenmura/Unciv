@@ -41,9 +41,6 @@ public static class UserPaths
     /// <summary>C034: one folder per saved hosted game.</summary>
     public static string HostedGames => Files.HostedGames;
 
-    /// <summary>T378: the remembered tile owners of fogged territory, one file per game and viewer.</summary>
-    public static string OwnerMemory => Files.OwnerMemory;
-
     /// <summary>C042: one folder per local mod (T334: shared by every profile, mods are content, not player state) (same layout as Unciv's <c>mods</c> folder); created on first start, scanned by <see cref="RulesetLocator"/>.</summary>
     public static string Mods => Files.Mods;
 }

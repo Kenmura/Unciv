@@ -62,8 +62,8 @@ public sealed class UnitSilhouetteTests
     private const float MinGrassContrast = 0.25f;
     private static readonly Vector3 GrassLinear = new(0.2f, 0.5f, 0.2f);
     private const float MinPanzerColourDistance = 0.15f;
-    /// <summary>T373: Maori Warrior, Spearman, Samurai, Rifleman, Great Merchant and Minuteman as pictures (measured minimum 0.486, Rifleman and Minuteman; before: the same hues, bar 0.27).</summary>
-    private const float MinT373PictureDistance = 0.45f;
+    /// <summary>T373: Maori Warrior, Spearman, Samurai, Rifleman, Great Merchant and Minuteman as pictures (T382: bar raised from 0.45 to 0.48, measured minimum 0.496 Rifleman and Minuteman after the Samurai turned magenta; before: the same hues, bar 0.27).</summary>
+    private const float MinT373PictureDistance = 0.48f;
     private static readonly string[] Siege = ["Battering Ram", "Catapult", "Ballista", "Trebuchet", "Hwach'a", "Cannon"];
 
     private static readonly string Pack = FindPack();
@@ -742,6 +742,23 @@ public sealed class UnitSilhouetteTests
                 var d = PictureDistance(group[i], group[j]);
                 if (d < MinT373PictureDistance) failures.Add(string.Create(CultureInfo.InvariantCulture, $"{group[i]} and {group[j]}: {d:0.000}, need {MinT373PictureDistance:0.00}"));
             }
+        Assert.True(failures.Count == 0, string.Join("\n", failures));
+    }
+
+    /// <summary>T382: Rifleman, Minuteman and Destroyer (small figures, a thin needle) cover at least this many mask pixels (40x56, mean of four views).</summary>
+    private const int MinT382FootCoverage = 520;
+    private const int MinT382ShipCoverage = 320;
+
+    [Fact]
+    public void TheSmallFiguresOfT382AreBigEnough()
+    {
+        var failures = new List<string>();
+        foreach (var name in new[] { "Rifleman", "Minuteman", "Destroyer" })
+        {
+            var pixels = Masks(name).Average(m => m.Count(on => on));
+            var need = name == "Destroyer" ? MinT382ShipCoverage : MinT382FootCoverage;
+            if (pixels < need) failures.Add(string.Create(CultureInfo.InvariantCulture, $"{name} covers only {pixels:0} pixels, need {need}"));
+        }
         Assert.True(failures.Count == 0, string.Join("\n", failures));
     }
 }

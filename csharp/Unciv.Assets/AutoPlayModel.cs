@@ -73,12 +73,6 @@ public static class AutoPlayModel
     /// <summary>T376: the speed multiplier while a run plays in <paramref name="mode"/>.</summary>
     public static float Speed(AutoPlayAnimations mode) => mode == AutoPlayAnimations.Fast ? FastSpeed : 1f;
 
-    /// <summary>T379: a run that skips animations redraws the whole map (tiles, overlays, minimap, units) only after every this many turns; the cost is per redraw, not per turn.</summary>
-    public const int SkipRefreshInterval = 10;
-
-    /// <summary>T379: whether the screen is fully redrawn after the run's <paramref name="turnsPlayed"/>th turn: always when the run animates (units must stand where the animations start), every <see cref="SkipRefreshInterval"/> turns when it skips them.</summary>
-    public static bool RefreshesAfter(int turnsPlayed, AutoPlayAnimations mode) => mode != AutoPlayAnimations.Skip || turnsPlayed % SkipRefreshInterval == 0;
-
     /// <summary>T376: how many frames one turn's animations may take before the next turn starts (and the rest is dropped); 0 when nothing is animated.</summary>
     public static int WaitFrames(AutoPlayAnimations mode) => mode switch
     {

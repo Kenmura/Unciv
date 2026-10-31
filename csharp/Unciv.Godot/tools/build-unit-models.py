@@ -597,7 +597,7 @@ def main(source, pack):
             continue
         doc, binary = read_glb(os.path.join(source, data["bodies"][unit["body"]]))
         if "style" in unit:  # T295: the gritty unit style (build-unit-style.py)
-            doc, binary = style_module().build(source, unit["body"], unit["keep"], clips_for(data, unit), unit["style"], look=unit.get("look"))
+            doc, binary = style_module().build(source, unit["body"], unit["keep"], clips_for(data, unit), unit["style"], look=unit.get("look"), height=unit.get("height", 0.85))  # T382: a small figure (Rifleman, Minuteman) can ask for more height
         else:
             doc, binary = reduce_body(doc, binary, set(unit["keep"]), clips_for(data, unit), data["height"])
         path = os.path.join(models, name + ".glb")

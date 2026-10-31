@@ -998,7 +998,7 @@ LOOKS = {
     "sword": {
         "swordsman": dict(paint=dict(metal=(0.18,0.34,0.72), iron=(0.5,0.55,0.62), wool=(0.15,0.3,0.62))),
         "great": dict(paint=dict(metal=(0.88,0.88,0.94), wool=(0.6,0.12,0.15), iron=(0.82,0.82,0.88)), hat="great", plume=False, tabard=0.4, sword2=0.85), "tiara": dict(paint=dict(wool=(0.12,0.16,0.55), metal=(0.15,0.2,0.65), iron=(0.85,0.7,0.22)), hat="tiara", plume=False, badge=1.45), "legion": dict(paint=dict(metal=(0.62,0.08,0.08), wool=(0.62,0.1,0.08), iron=(0.7,0.7,0.72)), hat="crest_stahl", plume=False, rect=1.5),
-        "lands": dict(paint=dict(metal=(0.92,0.76,0.1), wool=(0.85,0.7,0.1), iron=(0.5,0.5,0.55)), hat="kettle", plume=False, sword2=0.82, back="bedroll"), "samurai": dict(paint=dict(metal=(0.92,0.3,0.05), wool=(0.12,0.12,0.2), iron=(0.1,0.1,0.14)), hat="kabuto_crescent", plume=False, back="pole", sword2=0.82), "crest": dict(hat="crest_stahl", plume=False),
+        "lands": dict(paint=dict(metal=(0.92,0.76,0.1), wool=(0.85,0.7,0.1), iron=(0.5,0.5,0.55)), hat="kettle", plume=False, sword2=0.82, back="bedroll"), "samurai": dict(paint=dict(metal=(0.78,0.1,0.52), wool=(0.12,0.12,0.2), iron=(0.1,0.1,0.14)), hat="kabuto_crescent", plume=False, back="pole", sword2=0.82), "crest": dict(hat="crest_stahl", plume=False),
         "plain_cap": dict(hat="cap", plume_h=0.3), "conq": dict(hat="kettle", plume=True, plume_h=0.6), "sipahi": dict(hat="turban", plume=False), "hakka": dict(hat="slouch_plume", plume=False, back="bigpole"),
         "cav": dict(hat="kepi", plume=False, lance=2.2), "hussar": dict(hat="kalpak", plume=False), "cata": dict(hat="kabuto", plume_h=0.3),
     },

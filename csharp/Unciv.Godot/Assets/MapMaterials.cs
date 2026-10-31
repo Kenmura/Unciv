@@ -127,6 +127,23 @@ public static class MapMaterials
             banner.MaterialOverride = new StandardMaterial3D { AlbedoColor = civ, Roughness = 1f };
     }
 
+    /// <summary>T382: width of the dark rim round every unit figure, in the figure's own units (about 1.5 px at the game's default zoom).</summary>
+    public const float OutlineGrow = 0.03f;
+
+    /// <summary>T382: the rim colour (near black, a little blue so it does not read as a hole).</summary>
+    public static readonly Color OutlineColour = new(0.04f, 0.04f, 0.07f);
+
+    /// <summary>
+    /// T382: gives every mesh of a unit model a dark rim (an inverted hull drawn as the mesh's overlay material: front faces culled, the vertices pushed out along their normals, unshaded), so a white or yellow
+    /// figure keeps its outline on snow and desert and a dark one on grass. Works with skinned meshes because the push happens in the vertex shader.
+    /// </summary>
+    public static void OutlineUnit(Node3D unitModel)
+    {
+        var rim = new StandardMaterial3D { AlbedoColor = OutlineColour, ShadingMode = BaseMaterial3D.ShadingModeEnum.Unshaded, CullMode = BaseMaterial3D.CullModeEnum.Front, Grow = true, GrowAmount = OutlineGrow };
+        foreach (var mesh in unitModel.FindChildren("*", nameof(MeshInstance3D), true, false).OfType<MeshInstance3D>())
+            mesh.MaterialOverlay = rim;
+    }
+
     /// <summary>The colour a unit model wears: its <c>TeamColor</c> surfaces' albedo, else its <c>Banner</c>'s; null when it has neither (for tests).</summary>
     public static Color? TeamColourOf(Node3D unitModel)
     {

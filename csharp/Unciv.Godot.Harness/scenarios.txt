@@ -40,7 +40,6 @@ combat-presentation
 city-rename
 autoplay
 autoplay-animations
-autoplay-refresh
 audio
 console
 next-turn

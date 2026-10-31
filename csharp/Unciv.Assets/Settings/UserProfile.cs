@@ -82,9 +82,6 @@ public sealed class ProfileFiles(string root, string? profile)
 
     public string HostedGames => Path.Combine(folder, "hosted");
 
-    /// <summary>T378: one small file per game and viewer holding the tile owners that viewer last saw (<c>TileOwnerMemoryStore</c>).</summary>
-    public string OwnerMemory => Path.Combine(folder, "owner-memory");
-
     /// <summary>Shared by every profile: mods are content, not player state.</summary>
     public string Mods { get; } = Path.Combine(root, "mods");
 }

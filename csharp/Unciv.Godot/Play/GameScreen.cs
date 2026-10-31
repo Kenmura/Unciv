@@ -67,7 +67,6 @@ public partial class GameScreen : Control
 
     public MinimapView Minimap { get; private set; } = null!; // JUSTIFY: C014 assigned in _Ready before any use
 
-    private TileOwnerMemoryStore? ownerStore;
     private readonly TileOwnerMemory ownerMemory = new(); // what this screen has seen of tile ownership, so fogged tiles keep their last-known owner (T298)
 
     /// <summary>Cities, borders, roads and improvements drawn on the map (C041).</summary>
@@ -1086,7 +1085,6 @@ public partial class GameScreen : Control
         if (session != gameSession) ownerMemory.Clear(); // T298: what one game or viewer saw must never colour another's fog (hotseat hand-over, load)
         if (session != gameSession) sessionMarkers = ClientSettings.Default; // C089: in-memory markers belong to one game
         session = gameSession;
-        RestoreOwnerMemory(); // T378: a new session of a game this viewer played before (load, reconnect, restart) starts from what it saw
         assets = registry;
         queries = new GameQueries(session);
         ui?.Unbind();
@@ -1264,35 +1262,15 @@ public partial class GameScreen : Control
         SetStatus("Click one of your units.", quiet: true);
     }
 
-    /// <summary>T378: persists what this viewer saw of tile ownership under the store's folder (per game and viewer); a session without a key keeps it in memory only. Call before <see cref="Start"/> or after, in which case an earlier memory is restored now.</summary>
-    public void BindOwnerMemory(TileOwnerMemoryStore store)
-    {
-        ownerStore = store;
-        if (session == null) return;
-        bool restored = RestoreOwnerMemory();
-        if (ownerMemory.Remember(session.Snapshot.Tiles)) SaveOwnerMemory(); // the first look at this game, before the store was known
-        if (restored) Refresh();
-    }
-
-    private bool RestoreOwnerMemory() =>
-        ownerStore != null && session is { OwnerMemoryKey: { } key } && ownerStore.Load(key, session.ViewerCivId, session.Snapshot.Turn, session.Snapshot.Tiles, ownerMemory);
-
-    private void SaveOwnerMemory()
-    {
-        if (ownerStore != null && session is { OwnerMemoryKey: { } key }) ownerStore.Save(key, session.ViewerCivId, session.Snapshot.Turn, session.Snapshot.Tiles, ownerMemory);
-    }
-
     /// <summary>Redraws everything from the session's current snapshot (the screen does this itself after its own commands; a caller that changed the game another way calls it).</summary>
     public void Refresh()
     {
-        FullRefreshCount++;
-        autoPlayStale = false;
         snapshot = session.Snapshot;
         Map.Load(assets, snapshot.Tiles, keepCamera: mapLoaded);
         mapLoaded = true;
         Minimap.Update(snapshot.Tiles, OwnerColour);
         Layout();
-        if (ownerMemory.Remember(snapshot.Tiles)) SaveOwnerMemory();
+        ownerMemory.Remember(snapshot.Tiles);
         Overlays.UiScale = ui?.Scale ?? 1f;
         Overlays.Rebuild(assets, session.Ruleset, Map, snapshot.Tiles, snapshot.Cities, OwnerColour, ownerMemory, OwnerInnerColour);
         RefreshMarkers();
@@ -1307,12 +1285,6 @@ public partial class GameScreen : Control
         ApplySelectionScale();
         Run(RefreshSelection());
     }
-
-    /// <summary>T379: how many times <see cref="Refresh"/> rebuilt the whole screen (a run that skips animations must not do it every turn, see <see cref="AutoPlayModel.RefreshesAfter"/>).</summary>
-    public int FullRefreshCount { get; private set; }
-
-    /// <summary>T379: turns of the running AutoPlay were played since the map was last redrawn.</summary>
-    private bool autoPlayStale;
 
     private Rgb? OwnerInnerColour(string owner) => session.Ruleset.Nations.TryGetValue(owner, out var nation) ? ToRgb(nation.GetInnerColor()) : null;
 
@@ -2619,8 +2591,7 @@ public partial class GameScreen : Control
             }
             AutoPlay = AutoPlay.AfterTurn();
             Hud.SetAutoPlay(AutoPlay);
-            if (AutoPlayModel.RefreshesAfter(AutoPlay.TurnsPlayed, autoPlayAnimations)) Refresh();
-            else autoPlayStale = true; // T379: the HUD follows every turn through SnapshotChanged; the map, overlays and minimap catch up at the next redraw and when the run ends
+            Refresh();
             for (int i = 0; i < AutoPlayFramesPerTurn && AutoPlay.Active; i++)
             {
                 await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
@@ -2655,15 +2626,13 @@ public partial class GameScreen : Control
         if (AutoPlay == null) return;
         autoPlayGeneration++;
         var result = await session.SubmitAsync(new Unciv.Commands.Turn.StopAutoPlay());
-        if (!FinishAutoPlay(stoppedByPlayer: true, result.Accepted ? "" : result.Message)) Refresh();
+        FinishAutoPlay(stoppedByPlayer: true, result.Accepted ? "" : result.Message);
+        Refresh();
     }
 
-    /// <summary>Ends the run's bookkeeping; true when it redrew the screen because the last turns had not been drawn yet (T379).</summary>
-    private bool FinishAutoPlay(bool stoppedByPlayer, string refusal)
+    private void FinishAutoPlay(bool stoppedByPlayer, string refusal)
     {
-        if (AutoPlay == null) return false;
-        bool redrawn = autoPlayStale;
-        if (redrawn) Refresh(); // T379: the player takes over on the final state of the map, not on the last one that was drawn
+        if (AutoPlay == null) return;
         AutoPlayResult = AutoPlayModel.FinishedText(AutoPlay, stoppedByPlayer, refusal);
         AutoPlay = null;
         if (autoPlayAnimations == AutoPlayAnimations.Fast) Presenter.Complete(); // T376: the player takes over on the final state, not on a sped-up backlog
@@ -2671,7 +2640,6 @@ public partial class GameScreen : Control
         Hud.SetAutoPlay(null);
         SetStatus(AutoPlayResult);
         Run(RefreshHud());
-        return redrawn;
     }
 
     private async Task EndTurn()

@@ -91,7 +91,6 @@ public sealed class UserProfileTests
         Assert.Equal(Path.Combine("/data", "last-join.txt"), files.LastJoin);
         Assert.Equal(Path.Combine("/data", "relay.json"), files.Relay);
         Assert.Equal(Path.Combine("/data", "hosted"), files.HostedGames);
-        Assert.Equal(Path.Combine("/data", "owner-memory"), files.OwnerMemory);
         Assert.Equal(Path.Combine("/data", "mods"), files.Mods);
     }
 
@@ -100,7 +99,7 @@ public sealed class UserProfileTests
     {
         var files = new ProfileFiles("/data", "alice");
         string folder = Path.Combine("/data", "profiles", "alice");
-        Assert.All(new[] { files.Identity, files.Settings, files.Saves, files.HostKey, files.KnownHosts, files.LastJoin, files.HostedGames, files.OwnerMemory }, p => Assert.StartsWith(folder, p, StringComparison.Ordinal));
+        Assert.All(new[] { files.Identity, files.Settings, files.Saves, files.HostKey, files.KnownHosts, files.LastJoin, files.HostedGames }, p => Assert.StartsWith(folder, p, StringComparison.Ordinal));
         Assert.Equal(Path.Combine("/data", "mods"), files.Mods);
     }
 

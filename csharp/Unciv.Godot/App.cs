@@ -1,5 +1,4 @@
 using Godot;
-using Unciv.Assets;
 using Unciv.Assets.Localization;
 using Unciv.Client.Net.Hosting;
 using Unciv.Client.Net.Session;
@@ -322,7 +321,6 @@ public partial class App : Node
         screen.HasUnsavedProgress = () => saves.HasUnsavedProgress;
         hotseat.Present(session);
         screen.BindSettings(settings);
-        screen.BindOwnerMemory(new TileOwnerMemoryStore(UserPaths.OwnerMemory));
         saves.Attach(session);
     }
 

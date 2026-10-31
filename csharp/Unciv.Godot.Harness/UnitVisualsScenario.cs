@@ -106,6 +106,8 @@ public sealed class UnitVisualsScenario : Scenario
         .Select(mi => mi.Transform * mi.Mesh.GetAabb()).Aggregate((a, b) => a.Merge(b));
     private static bool RigidModelsAreClipless(List<UnitNode> nodes) =>
         nodes.Where(IsRigidModel).All(n => FigureModels(n).All(m => m.FindChildren("*", nameof(Skeleton3D), true, false).Count == 0 && MapMaterials.TeamColourOf(m) != null));
+    private static bool HasRim(UnitNode n) => FigureModels(n).All(m => m.FindChildren("*", nameof(MeshInstance3D), true, false).OfType<MeshInstance3D>()
+        .All(mi => mi.MaterialOverlay is StandardMaterial3D { Grow: true, CullMode: BaseMaterial3D.CullModeEnum.Front }));
     private static bool HasClips(UnitNode n) => n.Players.Count == n.FigureCount && n.Players.All(p => UnitModels.Clips(p).SequenceEqual(UnitModelContract.ClipNames));
     private static bool HoldsIdle(AnimationPlayer p) => p.AssignedAnimation == UnitModelContract.IdleClip && !p.IsPlaying() && p.CurrentAnimationPosition > 0f;
     private static bool Textured(UnitNode n) => FigureModels(n).SelectMany(m => m.FindChildren("*", nameof(MeshInstance3D), true, false).OfType<MeshInstance3D>())
@@ -188,7 +190,7 @@ public sealed class UnitVisualsScenario : Scenario
             new AssertQuery("the figure nodes equal the figure count, from the tier rule, for every unit", () =>
                 nodes.All(n => Figures(n) == n.FigureCount && n.FigureCount == UnitVisuals.FigureCount(Of(n.Unit.Name).Units[n.Unit.Name], Of(n.Unit.Name)))),
             new AssertQuery("a generated group has one initials billboard whatever its size; a model file carries none (its art identifies it)", () => nodes.All(n => Glyphs(n) == (IsModel(n) || IsRigidModel(n) ? 0 : 1))),
-            new AssertQuery("every figure of a unit carries its civ's colour", () => nodes.All(CivColoured)),
+            new AssertQuery("every figure of a unit carries its civ's colour and (T382) the dark rim", () => nodes.All(n => CivColoured(n) && HasRim(n))),
             new AssertQuery("the units pack's units are CC0 model files: a textured TeamColor material and an animation player with the six contract clips; no other unit has a player; the rigid models (T256) are model files with the TeamColor material but neither a player nor a skeleton", () =>
                 nodes.Where(IsModel).All(n => Textured(n) && HasClips(n)) && nodes.Where(n => !IsModel(n)).All(n => n.Players.Count == 0 && !Textured(n)) && RigidModelsAreClipless(nodes)),
             new AssertQuery("model figures hold their idle pose (paused, not at the first frame), at a different phase for (nearly) every unit", () =>

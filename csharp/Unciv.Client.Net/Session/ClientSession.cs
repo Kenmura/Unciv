@@ -177,9 +177,6 @@ public sealed class ClientSession : IAsyncDisposable
     private int knownEpoch;
     private int pendingEpoch;
     private string connectedHostFingerprint = "";
-
-    /// <summary>T378: the key fingerprint of the host this session is connected to (empty before the first welcome); stable across reconnects, so client-side per-game data can be keyed by it.</summary>
-    public string HostFingerprint => connectedHostFingerprint;
     private int connectionEpoch;
     private TaskCompletionSource? resyncWaiter;
 

@@ -67,8 +67,6 @@ public sealed class NetGameSession : IGameSession, ITurnRoster, IGameSocial, IAs
 
     public string ViewerCivId { get; }
 
-    public string? OwnerMemoryKey => session.HostFingerprint.Length > 0 ? "host:" + session.HostFingerprint : null;
-
     public Ruleset Ruleset { get; }
 
     public ClientSnapshot Snapshot => snapshot;
