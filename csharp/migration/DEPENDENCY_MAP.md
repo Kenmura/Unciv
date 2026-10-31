@@ -23,7 +23,7 @@ Work is completed phase by phase (`phases.txt`; `ticket.py ready`/`next` list ea
 | Phase | Done | Remaining | Ready | In flight | Remaining tickets |
 |---|---|---|---|---|---|
 | Phase 1: CLI (headless engine) | 231/231 | 0 | 0 | 0 | complete |
-| Phase 2: single player (Godot client) | 57/58 | 1 | 0 | 0 | [T375](backlog/T375.md) |
+| Phase 2: single player (Godot client) | 57/57 | 0 | 0 | 0 | complete |
 | Phase 3: multiplayer | 41/53 | 12 | 9 | 2 | [T339](backlog/T339.md) [T354](backlog/T354.md) [T355](backlog/T355.md) [T356](backlog/T356.md) [T357](backlog/T357.md) [T361](backlog/T361.md) [T366](backlog/T366.md) [T367](backlog/T367.md) [T371](backlog/T371.md) [T372](backlog/T372.md) [T373](backlog/T373.md) [T374](backlog/T374.md) |
 | Phase 4: queued plans (UI redesign, unit models, BNW) | 75/82 | 7 | 0 | 0 | [T317](backlog/T317.md) [T318](backlog/T318.md) [T321](backlog/T321.md) [T326](backlog/T326.md) [T327](backlog/T327.md) [T328](backlog/T328.md) [T329](backlog/T329.md) |
 | Phase 5: owner issue backlog (Android, performance, ultra graphics, dedicated server, resiliency) | 53/87 | 34 | 0 | 4 | [T274](backlog/T274.md) [T275](backlog/T275.md) [T278](backlog/T278.md) [T290](backlog/T290.md) [T300](backlog/T300.md) [T301](backlog/T301.md) [T303](backlog/T303.md) [T305](backlog/T305.md) [T306](backlog/T306.md) [T313](backlog/T313.md) [T314](backlog/T314.md) [T319](backlog/T319.md) [T325](backlog/T325.md) [T330](backlog/T330.md) [T331](backlog/T331.md) [T332](backlog/T332.md) [T333](backlog/T333.md) [T335](backlog/T335.md) [T340](backlog/T340.md) [T341](backlog/T341.md) [T342](backlog/T342.md) [T343](backlog/T343.md) [T344](backlog/T344.md) [T345](backlog/T345.md) [T346](backlog/T346.md) [T347](backlog/T347.md) [T348](backlog/T348.md) [T349](backlog/T349.md) [T350](backlog/T350.md) [T351](backlog/T351.md) [T352](backlog/T352.md) [T353](backlog/T353.md) [T362](backlog/T362.md) [T363](backlog/T363.md) |
@@ -72,7 +72,7 @@ flowchart TD
   classDef review fill:#cfe4ff,stroke:#1f6feb,color:#000
   classDef blocked fill:#ffd6d6,stroke:#c62828,color:#000
   classDef done fill:#eeeeee,stroke:#999999,color:#666,stroke-dasharray:4 3
-  class T339 review
+  class T339 prog
   class T356 ondeck
 ```
 
@@ -157,9 +157,10 @@ flowchart TD
 Unlinked tickets (no open dependency in either direction), by state:
 
 - ready: T354 T355 T357 T361 T366 T367 T371 T372 T373
-- in progress: T300 T301 T303 T374
+- in progress: T300 T301 T303
+- in review: T374
 - blocked: T290
-- waiting: T313 T314 T317 T318 T321 T326 T328 T329 T330 T331 T332 T333 T335 T341 T342 T343 T344 T345 T346 T348 T349 T350 T351 T352 T353 T362 T363 T375
+- waiting: T313 T314 T317 T318 T321 T326 T328 T329 T330 T331 T332 T333 T335 T341 T342 T343 T344 T345 T346 T348 T349 T350 T351 T352 T353 T362 T363
 
 ## Remaining tickets over time
 
@@ -177,7 +178,7 @@ xychart-beta
     title "Remaining tickets"
     x-axis ["Oct 24 00:00", "Oct 24 12:00", "Oct 25 00:00", "Oct 25 12:00", "Oct 26 00:00", "Oct 26 12:00", "Oct 27 00:00", "Oct 27 12:00", "Oct 28 00:00", "Oct 28 12:00", "Oct 29 00:00", "Oct 29 12:00", "Oct 30 00:00", "Oct 30 12:00", "Oct 31 00:00", "Oct 31 12:00"]
     y-axis "Tickets" 0 --> 55
-    line [5, 46, 2, 54, 39, 19, 11, 9, 9, 9, 9, 31, 14, 6, 48, 47]
+    line [5, 46, 2, 54, 39, 19, 11, 9, 9, 9, 9, 31, 14, 6, 48, 46]
     line [0, 11, 11, 0, 0, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1]
     line [1, 0, 4, 2, 6, 6, 3, 2, 2, 2, 2, 3, 5, 5, 4, 6]
 ```
@@ -194,9 +195,9 @@ xychart-beta
 xychart-beta
     title "Done vs total scope"
     x-axis ["Oct 24 00:00", "Oct 24 12:00", "Oct 25 00:00", "Oct 25 12:00", "Oct 26 00:00", "Oct 26 12:00", "Oct 27 00:00", "Oct 27 12:00", "Oct 28 00:00", "Oct 28 12:00", "Oct 29 00:00", "Oct 29 12:00", "Oct 30 00:00", "Oct 30 12:00", "Oct 31 00:00", "Oct 31 12:00"]
-    y-axis "Tickets" 0 --> 520
+    y-axis "Tickets" 0 --> 515
     line [0, 69, 153, 200, 246, 280, 294, 297, 297, 297, 297, 354, 413, 433, 456, 461]
-    line [6, 126, 170, 256, 291, 305, 309, 309, 309, 309, 309, 388, 433, 445, 509, 515]
+    line [6, 126, 170, 256, 291, 305, 309, 309, 309, 309, 309, 388, 433, 445, 509, 514]
 ```
 
 ## Incomplete tickets
@@ -219,7 +220,7 @@ xychart-beta
 | T278 | Available (waiting on ) | T260, T276 | 2 | Android on-device verification: TLS join, lifecycle reconnect, frame time and APK size on a mid-range phone |
 | T305 | Available (waiting on ) | T280 | 1 | Verify the Android APK job of the release workflow on a hosted runner (first tag push) |
 | T319 | Available (waiting on ) | none | 1 | Client scenario goldens phone-menus and flat-city fail locally at the base commit: find out whether stale or machine-dependent, then fix |
-| T339 | In-Review [Claude-reviewer] | T336, T337, T338 | 1 | Lobby browser screen: list public games from the relay directory, filter, join, password prompt, host a listed game |
+| T339 | In-Progress [Claude] | T336, T337, T338 | 1 | Lobby browser screen: list public games from the relay directory, filter, join, password prompt, host a listed game |
 | T290 | Blocked | T271 | 0 | Real-device frame-time pass: Windows, macOS, Android phone |
 | T300 | In-Progress [Claude] | none | 0 | Replace text-letter placeholder icons (resource chips etc.) with real pictorial icons |
 | T301 | In-Progress [Claude] | none | 0 | Maximizing a windowed game freaks out and may crash |
@@ -255,5 +256,4 @@ xychart-beta
 | T353 | Available (waiting on ) | none | 0 | Sound and music: effects and a soundtrack from CC0 or original sources (no Civ 5 audio) |
 | T362 | Available (waiting on ) | T334 | 0 | Two real client processes host and join on the real GPU (manual two-profile smoke) |
 | T363 | Available (waiting on ) | none | 0 | QuickStart and harness scenario games still start on Vanilla/Gods & Kings: move them to BNW and regenerate goldens |
-| T374 | In-Progress [Claude] | none | 0 | Relay server one-step Docker deployment from a GitHub clone: verified Dockerfile and compose with env vars, and a step-by-step setup guide incl. nginx |
-| T375 | Available (waiting on ) | none | 0 | Re-record stale phone-menus goldens (main-menu, new-game, host, lobby, options, modal differ from the committed images at base) |
+| T374 | Needs-Review [Claude] | none | 0 | Relay server one-step Docker deployment from a GitHub clone: verified Dockerfile and compose with env vars, and a step-by-step setup guide incl. nginx |
