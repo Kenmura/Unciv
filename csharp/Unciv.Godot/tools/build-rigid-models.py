@@ -237,10 +237,10 @@ def oared(m, length=1.0, beam=0.24, oars=6, mast=0.34, sail=0.3, ram=False, cast
 
 
 def work_boat(m):
-    m.add("Wood", hull(0.6, 0.26, 0.0, 0.1, keel=0.6))
-    m.add("DarkWood", block((0, 0.15, -0.12), (0.16, 0.1, 0.18)))
-    m.add("Sail", block((0, 0.13, 0.12), (0.14, 0.06, 0.14)))  # a heap of nets
-    flag(m, 0.0, 0.0, 0.1, 0.43)
+    m.add("Wood", hull(0.7, 0.5, 0.0, 0.11, keel=0.6))  # T324: 0.6 long was the smallest figure of the sheet
+    m.add("DarkWood", block((0, 0.16, -0.2), (0.24, 0.12, 0.26)))
+    m.add("Sail", block((0, 0.14, 0.18), (0.24, 0.07, 0.26)))  # a heap of nets
+    flag(m, 0.0, 0.0, 0.1, 0.5)
 
 
 def sailer(m, length=1.0, beam=0.26, masts=3, y1=0.15, tiers=2, gun_rows=0, hull_colour="Wood", castle=True, big_flag=False, sail_scale=1.0, sail_colour="Sail", stern_lantern=False):
@@ -380,16 +380,16 @@ def catapult(m):
 
 
 def ballista(m):
-    m.add("Green", block((0, 0.13, 0.0), (0.26, 0.05, 0.64)))
-    for x in (-0.18, 0.18):
-        for z in (-0.2, 0.2):
-            wheel(m, x, z, 0.1, "Wood", 0.06)
-    m.add("DarkWood", block((0, 0.24, 0.05), (0.07, 0.18, 0.07)))
-    m.add("Ash", block((0, 0.34, 0.0), (0.1, 0.07, 0.66)))  # the stock
-    for s in (-1, 1):  # the bow: two thick dark arms swept forward and a dark cord, about as wide as the engine is long
-        m.add("Iron", mov(rot(block((0, 0, 0), (0.4, 0.08, 0.09)), ry=s * 0.5), s * 0.2, 0.36, 0.18))
-        m.add("Iron", block((s * 0.38, 0.36, 0.0), (0.08, 0.1, 0.1)))
-        m.add("Dark", block((s * 0.19, 0.36, -0.14), (0.38, 0.02, 0.02)))
+    m.add("Green", block((0, 0.13, 0.0), (0.42, 0.07, 0.7)))  # T324: a broad bed (was 0.26 wide: the ballista read as a thin bat)
+    for x in (-0.26, 0.26):
+        for z in (-0.22, 0.22):
+            wheel(m, x, z, 0.12, "Wood", 0.07)
+    m.add("DarkWood", block((0, 0.24, 0.05), (0.1, 0.18, 0.1)))
+    m.add("Ash", block((0, 0.34, 0.0), (0.16, 0.09, 0.7)))  # the stock
+    for s in (-1, 1):  # the bow: two thick dark arms swept forward and a dark cord, wider than the engine is long
+        m.add("Iron", mov(rot(block((0, 0, 0), (0.56, 0.11, 0.12)), ry=s * 0.5), s * 0.28, 0.36, 0.2))
+        m.add("Iron", block((s * 0.52, 0.36, 0.0), (0.1, 0.13, 0.13)))
+        m.add("Dark", block((s * 0.26, 0.36, -0.16), (0.52, 0.025, 0.025)))
     m.add("Steel", block((0, 0.4, 0.34), (0.035, 0.035, 0.5)))  # the bolt
     m.add("Steel", tube((0, 0.4, 0.66), 0.14, 0.05, 0.0, n=6))
     for s in (-1, 1):
@@ -397,7 +397,7 @@ def ballista(m):
 
 
 def trebuchet(m):
-    m.add("Stone", block((0, 0.06, 0), (0.4, 0.05, 0.9)))  # a heavy plinth
+    m.add("Hide", block((0, 0.06, 0), (0.4, 0.05, 0.9)))  # a heavy plinth (T324: brown, no longer the grey of the Panzer and the robot)
     for s in (-1, 1):
         for z in (-0.38, 0.38):
             wheel(m, s * 0.24, z, 0.06, "Iron", 0.05)
@@ -405,7 +405,7 @@ def trebuchet(m):
             m.add("DarkWood", mov(rot(block((0, 0, 0), (0.05, 0.6, 0.05)), rx=-dz * 0.4, rz=s * 0.15), s * 0.17, 0.36, dz * 0.12))
     m.add("DarkWood", tube((0, 0.64, 0.0), 0.4, 0.03, axis="x", n=8))  # axle at the top
     m.add("Ash", mov(rot(block((0, 0, 0), (0.06, 0.06, 1.12)), rx=-0.5), 0, 0.64, 0.0))  # the long lever, short end down at the back
-    m.add("Stone", mov(rot(block((0, 0, 0), (0.28, 0.24, 0.28)), rx=0.0), 0, 0.28, -0.46))  # the counterweight box
+    m.add("Hide", mov(rot(block((0, 0, 0), (0.28, 0.24, 0.28)), rx=0.0), 0, 0.28, -0.46))  # the counterweight box
     m.add("Iron", block((0, 0.28, -0.46), (0.3, 0.06, 0.3)))
     m.add("Dark", block((0, 0.84, 0.46), (0.14, 0.05, 0.14)))
     m.add("Cream", tube((0, 0.84, 0.46), 0.14, 0.05, axis="y", n=6))  # the sling pouch
@@ -542,12 +542,12 @@ def modern_armor(m):
 
 def death_robot(m):
     for s in (-1, 1):
-        m.add("Grey", block((s * 0.14, 0.2, 0.0), (0.11, 0.3, 0.11)))
+        m.add("Crimson", block((s * 0.14, 0.2, 0.0), (0.11, 0.3, 0.11)))
         m.add("Dark", block((s * 0.14, 0.03, 0.04), (0.15, 0.06, 0.26)))
         m.add("TeamColor", block((s * 0.14, 0.17, 0.06), (0.116, 0.07, 0.03)))
     m.add("Dark", block((0, 0.38, 0.0), (0.4, 0.1, 0.22)))
     m.node("Part1", (0.0, 0.62, 0.0))
-    m.add("Grey", block((0, 0, 0), (0.36, 0.26, 0.24)), "Part1")
+    m.add("Yellow", block((0, 0, 0), (0.36, 0.26, 0.24)), "Part1")
     m.add("Dark", block((0, 0.19, 0.01), (0.12, 0.1, 0.11)), "Part1")
     m.add("TeamColor", block((0, 0.2, 0.068), (0.1, 0.03, 0.012)), "Part1")
     for s in (-1, 1):
@@ -666,15 +666,15 @@ def missile(m, scale=1.0, warhead="Steel"):
 
 def helicopter(m):
     y = 0.2
-    m.add("Iron", ellipsoid((0, y, 0.03), 0.15, 0.12, 0.27, n=8, m=6))
+    m.add("Olive", ellipsoid((0, y, 0.03), 0.17, 0.13, 0.3, n=8, m=6))
     m.add("Teal", ellipsoid((0, y + 0.02, 0.15), 0.08, 0.06, 0.1, n=8, m=4))
     m.add("Iron", tube((0, y + 0.02, -0.3), 0.36, 0.045, 0.014, n=8))
     m.add("TeamColor", tube((0, y + 0.02, -0.24), 0.05, 0.034, n=8))
     m.add("Iron", extrude_x([(-0.44, y + 0.02), (-0.4, y + 0.14), (-0.46, y + 0.14), (-0.48, y + 0.02)], -0.006, 0.006))
     m.add("Dark", tube((0.012, y + 0.12, -0.46), 0.012, 0.06, axis="x", n=10))
     m.add("Steel", tube((0, y + 0.15, 0.0), 0.12, 0.012, axis="y", n=6))
-    m.add("Steel", block((0, y + 0.215, 0.0), (0.9, 0.012, 0.09)))  # T307: broad rotor blades, visible from above
-    m.add("Steel", block((0, y + 0.215, 0.0), (0.09, 0.012, 0.9)))
+    m.add("Dark", block((0, y + 0.215, 0.0), (0.9, 0.012, 0.09)))  # T307: broad rotor blades, visible from above; T324: dark, so the gunship no longer reads as a white cross
+    m.add("Dark", block((0, y + 0.215, 0.0), (0.09, 0.012, 0.9)))
     m.add("Yellow", block((0.4, y + 0.222, 0.0), (0.1, 0.004, 0.09)))
     m.add("Yellow", block((0.0, y + 0.222, 0.4), (0.09, 0.004, 0.1)))
     for s in (-1, 1):

@@ -35,18 +35,18 @@ public sealed class UnitSilhouetteTests
     /// <summary>T315: the pike reaches this much further than the spear (the bind pose lays a held spear forward; before T315 the contract caps made it only 1.18 times).</summary>
     private const float PikeOverSpear = 1.3f;
 
-    /// <summary>T307: two rigid units (ships, siege, armour, aircraft, missiles) seen from the default view: the same bar as the foot units. Measured minimum when set: 0.188 (Zero and Great War Bomber).</summary>
-    private const float MinRigidDistance = 0.18f;
+    /// <summary>T307: two rigid units (ships, siege, armour, aircraft, missiles) seen from the default view: the same bar as the foot units. Measured minimum when set: 0.188 (Zero and Great War Bomber); T324 raised the bar from 0.18 to 0.185 (the aircraft stay close in outline, colour tells them apart).</summary>
+    private const float MinRigidDistance = 0.185f;
     /// <summary>T307: a siege engine fills at least this many pixels of the 40x56 mask (the old Cannon and Catapult were small bars of 300 to 400 pixels; the new ones 550 to 1100).</summary>
     private const int MinSiegeCoverage = 500;
     /// <summary>T309: the factor of <see cref="Masks"/>' resolution for the fine checks (120x168): thin props (a spear tip, an antenna, the Mohawk) survive it.</summary>
     private const int FineScale = 3;
     /// <summary>T309: a foot unit against any rider or rigid model (measured minimum 0.348: Battering Ram against the African Forest Elephant; foot against rider 0.378).</summary>
     private const float MinKindDistance = 0.34f;
-    /// <summary>T309: two rigid units at the fine resolution (measured minimum 0.175, Bomber and Fighter).</summary>
+    /// <summary>T309: two rigid units at the fine resolution (measured minimum 0.182 after T324).</summary>
     private const float MinFineRigidDistance = 0.17f;
     /// <summary>T309: the outline distance (fine masks) plus the distance of the mean material colours (civ colour left out): the mask is colour-blind, so two rigid units alike in outline must differ in colour.</summary>
-    private const float MinOutlinePlusColour = 0.20f;
+    private const float MinOutlinePlusColour = 0.23f;
     /// <summary>T307: the civ's colour may cover at most this share of a rigid model's surface (the old Battering Ram was a flat team-coloured roof seen from above).</summary>
     private const float MaxTeamColourShare = 0.35f;
     /// <summary>T369: any two foot units as pictures (z-buffered vertex colours at 40x56, the civ colour neutral; measured minimum 0.238, Archer and Composite Bowman).</summary>
