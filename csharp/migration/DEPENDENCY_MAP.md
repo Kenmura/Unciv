@@ -138,7 +138,8 @@ flowchart TD
 Unlinked tickets (no open dependency in either direction), by state:
 
 - ready: T355 T356 T357 T361 T366 T367 T372 T380 T381 T383
-- in progress: T300 T301 T303 T379
+- in progress: T300 T301 T303
+- in review: T379
 - blocked: T290
 - waiting: T313 T314 T317 T318 T321 T326 T328 T329 T330 T331 T332 T333 T335 T341 T342 T343 T344 T345 T346 T348 T349 T350 T351 T352 T353 T362 T363 T375
 
@@ -236,4 +237,4 @@ xychart-beta
 | T362 | Available (waiting on ) | T334 | 0 | Two real client processes host and join on the real GPU (manual two-profile smoke) |
 | T363 | Available (waiting on ) | none | 0 | QuickStart and harness scenario games still start on Vanilla/Gods & Kings: move them to BNW and regenerate goldens |
 | T375 | Available (waiting on ) | none | 0 | Re-record stale phone-menus goldens (main-menu, new-game, host, lobby, options, modal differ from the committed images at base) |
-| T379 | In-Progress [Claude] | none | 0 | AutoPlay Skip mode still costs 0.5-0.8 s per turn: GameScreen.Refresh() reloads the full map, overlays and minimap every turn |
+| T379 | Needs-Review [Claude] | none | 0 | AutoPlay Skip mode still costs 0.5-0.8 s per turn: GameScreen.Refresh() reloads the full map, overlays and minimap every turn |
