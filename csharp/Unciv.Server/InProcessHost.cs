@@ -317,8 +317,7 @@ public sealed class InProcessHost : IAsyncDisposable
             {
                 transport = await source.AcceptTransportAsync(token).ConfigureAwait(false);
             }
-            catch (OperationCanceledException) { return; }
-            catch (ObjectDisposedException) { return; }
+            catch (Exception e) when (e is OperationCanceledException or ObjectDisposedException) { return; }
             _ = AdmitAsync(transport, token);
         }
     }

@@ -786,8 +786,19 @@ public sealed class RelayClientTests
             var listed = await WaitForListingAsync(rig, g => g != null);
             Assert.Equal("Dedicated test", JsonNode.Parse(listed["body"]!.GetValue<string>())!["name"]!.GetValue<string>());
 
-            await using var transport = await TcpTlsClientTransport.ConnectViaRelayAsync(EndpointOf(rig), invite.Room!, invite.Fingerprint, dial: DialOf(rig));
-            Assert.NotNull(transport);
+            using var identity = ClientIdentity.Generate();
+            await using var friend = new ClientSession(token => TcpTlsClientTransport.ConnectViaRelayAsync(EndpointOf(rig), invite.Room!, invite.Fingerprint, dial: DialOf(rig), cancellationToken: token), new ClientSessionOptions
+            {
+                Identity = identity,
+                DisplayName = "Friend",
+                RulesetHash = "",
+                ExpectedFingerprint = invite.Fingerprint,
+                Password = "wrong-password",
+                MaxReconnectAttempts = 0,
+            });
+            var result = await friend.JoinAsync().WaitAsync(Bound); // the server answers through the relay: whatever it says, the lobby saw the connection
+            Assert.False(result.Joined);
+            Assert.NotEqual(RelayCodes.Failed, result.Code);
             await stop.CancelAsync();
             await server.WaitAsync(Bound);
             await WaitForListingAsync(rig, g => g == null); // the dedicated server's exit unlists it
