@@ -13,15 +13,17 @@ using RulesetClass = Unciv.Models.Ruleset.Ruleset;
 namespace Unciv.GodotHarness;
 
 /// <summary>
-/// T295: the recognisability sheet. Every unit of the gallery side by side on plain grass, through the real <see cref="UnitNode"/>, at the game's DEFAULT zoom (<see cref="MapView.DefaultZoom"/>), in pages of
-/// <see cref="PerPage"/> units, each with its name under it; the owner's top priority is that every unit is easily recognised at the zoom the game is played at (a Settler must never be taken for an Archer).
-/// Not part of CI and never compared to goldens (a real GPU draws it): <c>tools/unit-sheet.sh</c> runs it on the host and writes <c>unit-sheet-N.png</c>. Environment: <c>UNCIV_SHEET_OUT</c> (folder, required),
-/// <c>UNCIV_SHEET_RES</c> (WxH, default 1920x1080), <c>UNCIV_SHEET_ZOOM</c> (default the game's), <c>UNCIV_SHEET_YAW</c> (degrees the units face, default 0).
+/// T295/T309: the recognisability sheet. Every unit of the gallery side by side on plain grass, through the real <see cref="UnitNode"/>, in pages of at most <see cref="MaxColumns"/> x <see cref="MaxRows"/> units
+/// (the units split evenly over the pages, the camera fits each page, the grid has exactly the tiles of one page), each with its name under it. The owner's top priority is that every unit is easily recognised
+/// (a Settler must never be taken for an Archer). One figure per unit by default (the far-zoom lone figure: a pair or trio of figures is how the game draws a strong unit, not what tells units apart), the
+/// formations on request. Not part of CI and never compared to goldens (a real GPU draws it): <c>tools/unit-sheet.sh</c> runs it on the host and writes <c>unit-sheet-N.png</c>. Environment: <c>UNCIV_SHEET_OUT</c>
+/// (folder, required), <c>UNCIV_SHEET_RES</c> (WxH, default 1920x1080), <c>UNCIV_SHEET_ZOOM</c> (camera size in world units, default fitted to the page; <see cref="MapView.DefaultZoom"/> is the game's),
+/// <c>UNCIV_SHEET_YAW</c> (degrees the units face, default 0), <c>UNCIV_SHEET_FORMATIONS</c> (1: draw the formations of the game).
 /// </summary>
 public sealed class UnitSheetScenario : Scenario
 {
-    private const int Columns = 10;
-    private const int PerPage = 40;
+    private const int MaxColumns = 12;
+    private const int MaxRows = 6;
 
     public override string Name => "unit-sheet";
 
@@ -37,7 +39,6 @@ public sealed class UnitSheetScenario : Scenario
     {
         string outDir = GpuBenchScenario.Bench("UNCIV_SHEET_OUT") ?? throw new InvalidOperationException("UNCIV_SHEET_OUT is not set");
         Directory.CreateDirectory(outDir);
-        float zoom = float.TryParse(GpuBenchScenario.Bench("UNCIV_SHEET_ZOOM"), NumberStyles.Float, CultureInfo.InvariantCulture, out float z) ? z : MapView.DefaultZoom;
         float yaw = float.TryParse(GpuBenchScenario.Bench("UNCIV_SHEET_YAW"), NumberStyles.Float, CultureInfo.InvariantCulture, out float yw) ? yw : 0f;
         var ruleset = session.Game.Ruleset;
         var registry = AssetRegistry.ForRuleset(ruleset);
@@ -45,21 +46,31 @@ public sealed class UnitSheetScenario : Scenario
         RulesetClass Of(string unit) => ruleset.Units.ContainsKey(unit) ? ruleset : gods;
         var colours = new[] { PlaceholderPalette.AttackTint, PlaceholderPalette.ReachableTint };
         var units = UnitVisualsScenario.SheetUnits;
-        int pages = (units.Count + PerPage - 1) / PerPage;
+        bool formations = GpuBenchScenario.Bench("UNCIV_SHEET_FORMATIONS") == "1";
+        int pages = (units.Count + MaxColumns * MaxRows - 1) / (MaxColumns * MaxRows);
+        int perPage = (units.Count + pages - 1) / pages;
+        int rowCount = (perPage + MaxColumns - 1) / MaxColumns;
+        int columns = (perPage + rowCount - 1) / rowCount; // as many columns as the rows need: the last row is as full as it can be
 
-        // a straight staggered grid: column c of row r
-        HexCoord Coord(int c, int r) => new(c / 2 + c % 2 + r + 0, -(c / 2) + r);
-        var tiles = units.Select((u, i) => new TileDto { X = Coord(i % Columns, i / Columns).X, Y = Coord(i % Columns, i / Columns).Y, Visible = true, BaseTerrain = u.Terrain ?? "Grassland", Features = [], Resource = null, RiverBottom = false, RiverBottomLeft = false, RiverBottomRight = false }).ToList();
+        // a straight staggered grid: column c of row r; every page uses the same tiles (slot = index within its page), all of them plain grass (a ship on grass is fine for telling shapes apart)
+        // reading order is left to right, top to bottom on the screen (the engine's x grows to the left and y towards the camera)
+        HexCoord Coord(int slot)
+        {
+            int c = columns - 1 - slot % columns, r = rowCount - 1 - slot / columns;
+            return new(c / 2 + c % 2 + r, -(c / 2) + r);
+        }
+        var tiles = Enumerable.Range(0, perPage).Select(s => new TileDto { X = Coord(s).X, Y = Coord(s).Y, Visible = true, BaseTerrain = "Grassland", Features = [], Resource = null, RiverBottom = false, RiverBottomLeft = false, RiverBottomRight = false }).ToList();
         var view = new MapView();
         host.AddChild(view);
         view.Load(registry, tiles);
 
         var steps = new List<ScenarioStep> { new WaitFrames(3) };
-        var pageNodes = new List<Node3D>();
+        var pageNodes = new List<(Node3D Node, int Page)>();
         for (int i = 0; i < units.Count; i++)
         {
             var (name, _) = units[i];
-            var c = Coord(i % Columns, i / Columns);
+            int page = i / perPage;
+            var c = Coord(i % perPage);
             var dto = new UnitDto { Id = i + 1, Name = name, Owner = i % 2 == 0 ? "Rome" : "Egypt", X = c.X, Y = c.Y, HealthBucket = 4, IsEmbarked = false, IsFortified = false, Own = null };
             var node = new UnitNode { Name = "Unit_" + dto.Id, Unit = dto };
             var top = MapLayout.TileTop(c.X, c.Y, view.TileNodeAt(c)?.Elevation ?? 1f);
@@ -67,22 +78,30 @@ public sealed class UnitSheetScenario : Scenario
             var col = colours[i % 2];
             node.Build(registry, Of(name), Of(name).Units[name], (col.R / 255f, col.G / 255f, col.B / 255f));
             node.Face(yaw * MathF.PI / 180f);
+            if (!formations) node.ApplyLod(true);
             view.AddChild(node);
-            pageNodes.Add(node);
-            var label = new Label3D { Text = name, PixelSize = 0.006f, Billboard = BaseMaterial3D.BillboardModeEnum.Enabled, NoDepthTest = true, Modulate = Colors.White, OutlineSize = 12, Position = top + new Vector3(0f, 0.02f, 0.75f) };
+            pageNodes.Add((node, page));
+            var label = new Label3D
+            {
+                Text = name, FontSize = 36, PixelSize = 0.0042f, Width = 380f, AutowrapMode = TextServer.AutowrapMode.WordSmart, VerticalAlignment = VerticalAlignment.Top, Billboard = BaseMaterial3D.BillboardModeEnum.Enabled,
+                NoDepthTest = true, Modulate = Colors.White, OutlineSize = 10, Position = top + new Vector3(0f, 0.02f, 0.62f),
+            };
             view.AddChild(label);
-            pageNodes.Add(label);
+            pageNodes.Add((label, page));
         }
+        var tops = Enumerable.Range(0, perPage).Select(s => MapLayout.TileTop(Coord(s).X, Coord(s).Y, 0f)).ToList();
+        var (min, max) = (new Vector3(tops.Min(t => t.X), 0f, tops.Min(t => t.Z)), new Vector3(tops.Max(t => t.X), 0f, tops.Max(t => t.Z)));
+        var size = Viewport;
+        // the camera's vertical size shows the ground foreshortened by the tilt; the margins hold the figures above the first row and the labels under the last
+        float fit = MathF.Max((max.Z - min.Z) * MathF.Sin(MapView.TiltDegrees * MathF.PI / 180f) + 2.6f, (max.X - min.X + 1.8f) * size.Y / size.X);
+        if (!float.TryParse(GpuBenchScenario.Bench("UNCIV_SHEET_ZOOM"), NumberStyles.Float, CultureInfo.InvariantCulture, out float zoom)) zoom = fit;
         for (int p = 0; p < pages; p++)
         {
             int page = p;
-            int first = page * PerPage, last = Math.Min(units.Count, first + PerPage) - 1;
             steps.Add(new Act($"frame page {page + 1}", () =>
             {
-                for (int k = 0; k < pageNodes.Count; k++) pageNodes[k].Visible = k / 2 >= first && k / 2 <= last;
-                var a = MapLayout.TileTop(Coord(0, first / Columns).X, Coord(0, first / Columns).Y, 0f);
-                var b = MapLayout.TileTop(Coord(Columns - 1, last / Columns).X, Coord(Columns - 1, last / Columns).Y, 0f);
-                view.FocusOn((a + b) / 2f);
+                foreach (var (node, nodePage) in pageNodes) node.Visible = nodePage == page;
+                view.FocusOn(new Vector3((min.X + max.X) / 2f, 0f, (min.Z + max.Z) / 2f + 0.35f));
                 view.SetZoom(zoom);
             }));
             steps.Add(new WaitFrames(4));

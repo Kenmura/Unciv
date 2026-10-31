@@ -40,6 +40,14 @@ public sealed class UnitSilhouetteTests
     /// <summary>T307: a siege engine fills at least this many pixels of the 40x56 mask (the old Cannon and Catapult were small bars of 300 to 400 pixels; the new ones 550 to 1100).</summary>
     private const int MinSiegeCoverage = 500;
     /// <summary>T307: the civ's colour may cover at most this share of a rigid model's surface (the old Battering Ram was a flat team-coloured roof seen from above).</summary>
+    /// <summary>T309: the factor of <see cref="Masks"/>' resolution for the fine checks (120x168): thin props (a spear tip, an antenna, the Mohawk) survive it.</summary>
+    private const int FineScale = 3;
+    /// <summary>T309: a foot unit against any rider or rigid model (measured minimum 0.348: Battering Ram against the African Forest Elephant; foot against rider 0.378).</summary>
+    private const float MinKindDistance = 0.34f;
+    /// <summary>T309: two rigid units at the fine resolution (measured minimum 0.175, Bomber and Fighter).</summary>
+    private const float MinFineRigidDistance = 0.17f;
+    /// <summary>T309: the outline distance (fine masks) plus the distance of the mean material colours (civ colour left out): the mask is colour-blind, so two rigid units alike in outline must differ in colour.</summary>
+    private const float MinOutlinePlusColour = 0.20f;
     private const float MaxTeamColourShare = 0.35f;
     private static readonly string[] Siege = ["Battering Ram", "Catapult", "Ballista", "Trebuchet", "Hwach'a", "Cannon"];
 
@@ -78,7 +86,19 @@ public sealed class UnitSilhouetteTests
         return (Of(root.GetProperty("units")), Of(root.GetProperty("mounted").GetProperty("units")));
     }
 
-    private static bool[][] Masks(string unit)
+    private static readonly Dictionary<(string, int), bool[][]> MaskCache = [];
+
+    /// <summary>The four masks of a unit, at <paramref name="scale"/> times the 40x56 base resolution (T309: the 3x masks see the thin props, spear tips, antennas and the Mohawk, that 40x56 smears away). Cached: the tests share them.</summary>
+    private static bool[][] Masks(string unit, int scale = 1)
+    {
+        lock (MaskCache)
+        {
+            if (!MaskCache.TryGetValue((unit, scale), out var masks)) MaskCache[(unit, scale)] = masks = BuildMasks(unit, scale);
+            return masks;
+        }
+    }
+
+    private static bool[][] BuildMasks(string unit, int scale)
     {
         var glb = File.ReadAllBytes(Path.Combine(Pack, "models", "unit", unit + ".glb"));
         var jsonLength = BinaryPrimitives.ReadInt32LittleEndian(glb.AsSpan(12));
@@ -90,28 +110,29 @@ public sealed class UnitSilhouetteTests
         for (var side = 0; side < 4; side++)
         {
             var yaw = Matrix4x4.CreateRotationY(side * MathF.PI / 2f);
-            masks[side] = Rasterise(triangles.Select(t => (Project(Vector3.Transform(t.A, yaw)), Project(Vector3.Transform(t.B, yaw)), Project(Vector3.Transform(t.C, yaw)))));
+            masks[side] = Rasterise(triangles.Select(t => (Project(Vector3.Transform(t.A, yaw)), Project(Vector3.Transform(t.B, yaw)), Project(Vector3.Transform(t.C, yaw)))), scale);
         }
         return masks;
     }
 
     private static Vector2 Project(Vector3 p) => new(p.X, p.Y * MathF.Cos(Pitch) - p.Z * MathF.Sin(Pitch));
 
-    private static bool[] Rasterise(IEnumerable<(Vector2 A, Vector2 B, Vector2 C)> tris)
+    private static bool[] Rasterise(IEnumerable<(Vector2 A, Vector2 B, Vector2 C)> tris, int scale)
     {
+        int w = W * scale, h = H * scale;
         // a fixed scale: one world unit is 1/1.15 of the mask's height, so a taller or wider unit really covers more of it; the origin is the middle of the feet
-        var mask = new bool[W * H];
-        float Sx(float x) => W / 2f + x * (H / 1.15f);
-        float Sy(float y) => H * 0.78f - y * (H / 1.15f);
+        var mask = new bool[w * h];
+        float Sx(float x) => w / 2f + x * (h / 1.15f);
+        float Sy(float y) => h * 0.78f - y * (h / 1.15f);
         foreach (var (a, b, c) in tris)
         {
             var pa = new Vector2(Sx(a.X), Sy(a.Y));
             var pb = new Vector2(Sx(b.X), Sy(b.Y));
             var pc = new Vector2(Sx(c.X), Sy(c.Y));
             var x0 = global::System.Math.Max(0, (int)MathF.Floor(MathF.Min(pa.X, MathF.Min(pb.X, pc.X))));
-            var x1 = global::System.Math.Min(W - 1, (int)MathF.Ceiling(MathF.Max(pa.X, MathF.Max(pb.X, pc.X))));
+            var x1 = global::System.Math.Min(w - 1, (int)MathF.Ceiling(MathF.Max(pa.X, MathF.Max(pb.X, pc.X))));
             var y0 = global::System.Math.Max(0, (int)MathF.Floor(MathF.Min(pa.Y, MathF.Min(pb.Y, pc.Y))));
-            var y1 = global::System.Math.Min(H - 1, (int)MathF.Ceiling(MathF.Max(pa.Y, MathF.Max(pb.Y, pc.Y))));
+            var y1 = global::System.Math.Min(h - 1, (int)MathF.Ceiling(MathF.Max(pa.Y, MathF.Max(pb.Y, pc.Y))));
             for (var y = y0; y <= y1; y++)
                 for (var x = x0; x <= x1; x++)
                 {
@@ -120,7 +141,7 @@ public sealed class UnitSilhouetteTests
                     var d2 = Edge(pb, pc, p);
                     var d3 = Edge(pc, pa, p);
                     var inside = !((d1 < 0 || d2 < 0 || d3 < 0) && (d1 > 0 || d2 > 0 || d3 > 0));
-                    if (inside || TouchesPixel(pa, pb, pc, x, y)) mask[y * W + x] = true;
+                    if (inside || TouchesPixel(pa, pb, pc, x, y)) mask[y * w + x] = true;
                 }
         }
         return mask;
@@ -197,7 +218,7 @@ public sealed class UnitSilhouetteTests
     {
         var inter = 0;
         var union = 0;
-        for (var i = 0; i < W * H; i++)
+        for (var i = 0; i < a[side].Length; i++)
         {
             if (a[side][i] && b[side][i]) inter++;
             if (a[side][i] || b[side][i]) union++;
@@ -205,9 +226,9 @@ public sealed class UnitSilhouetteTests
         return union == 0 ? 0f : 1f - (float)inter / union;
     });
 
-    private static List<string> Failures(List<Unit> units, Func<Unit, Unit, float> need)
+    private static List<string> Failures(List<Unit> units, Func<Unit, Unit, float> need, int scale = 1)
     {
-        var masks = units.ToDictionary(u => u.Name, u => Masks(u.Name));
+        var masks = units.ToDictionary(u => u.Name, u => Masks(u.Name, scale));
         var failures = new List<string>();
         foreach (var a in units)
             foreach (var b in units.Where(b => string.CompareOrdinal(b.Name, a.Name) > 0))
@@ -230,7 +251,7 @@ public sealed class UnitSilhouetteTests
     public void EveryFootUnitIsToldApartFromEveryOtherAndCiviliansAreNotSoldiers()
     {
         var (foot, _) = Units();
-        Assert.True(foot.Count >= 55, "the styled foot units");
+        Assert.Equal(57, foot.Count);
         var failures = Failures(foot, (a, b) =>
             IsCivilian(a.Style) != IsCivilian(b.Style) ? MinCivilianDistance : a.Style != b.Style ? MinDistance : MinLookDistance);
         Assert.True(failures.Count == 0, "silhouettes too alike:\n" + string.Join("\n", failures));
@@ -248,7 +269,7 @@ public sealed class UnitSilhouetteTests
     public void ARiderIsRecognisedByHisGearAndHisMountAmongRiders()
     {
         var (_, mounted) = Units();
-        Assert.True(mounted.Count >= 15, "the styled riders");
+        Assert.Equal(21, mounted.Count);
         Assert.True(mounted.Select(u => u.Style + "/" + u.Mount).Distinct().Count() >= 15, "each trapping of a mount is a class of its own");
         var failures = Failures(mounted, (_, _) => MinRiderDistance);
         Assert.True(failures.Count == 0, "rider silhouettes too alike:\n" + string.Join("\n", failures));
@@ -360,6 +381,32 @@ public sealed class UnitSilhouetteTests
         return areas;
     }
 
+    /// <summary>T309: the area-weighted mean base colour of a model's materials without the civ colour (a colour-aware companion of the colour-blind mask).</summary>
+    private static Vector3 MeanColour(string unit)
+    {
+        var glb = File.ReadAllBytes(Path.Combine(Pack, "models", "unit", unit + ".glb"));
+        var jsonLength = BinaryPrimitives.ReadInt32LittleEndian(glb.AsSpan(12));
+        using var doc = JsonDocument.Parse(glb.AsMemory(20, jsonLength));
+        var root = doc.RootElement;
+        var binStart = 20 + jsonLength + 8;
+        var sum = Vector3.Zero;
+        var total = 0f;
+        foreach (var mesh in root.GetProperty("meshes").EnumerateArray())
+            foreach (var prim in mesh.GetProperty("primitives").EnumerateArray())
+            {
+                var material = root.GetProperty("materials")[prim.GetProperty("material").GetInt32()];
+                if (material.GetProperty("name").GetString() == "TeamColor") continue;
+                var factor = material.TryGetProperty("pbrMetallicRoughness", out var pbr) && pbr.TryGetProperty("baseColorFactor", out var f) ? new Vector3(f[0].GetSingle(), f[1].GetSingle(), f[2].GetSingle()) : Vector3.One;
+                var pos = ReadVec3(root.GetProperty("accessors")[prim.GetProperty("attributes").GetProperty("POSITION").GetInt32()], root.GetProperty("bufferViews"), glb, binStart);
+                var idx = ReadIndices(root.GetProperty("accessors")[prim.GetProperty("indices").GetInt32()], root.GetProperty("bufferViews"), glb, binStart);
+                var area = 0f;
+                for (var i = 0; i + 2 < idx.Length; i += 3) area += Vector3.Cross(pos[idx[i + 1]] - pos[idx[i]], pos[idx[i + 2]] - pos[idx[i]]).Length() / 2f;
+                sum += factor * area;
+                total += area;
+            }
+        return total == 0f ? Vector3.Zero : sum / total;
+    }
+
     [Fact]
     public void EveryRigidUnitIsToldApartFromEveryOther()
     {
@@ -408,5 +455,71 @@ public sealed class UnitSilhouetteTests
         Assert.True(Distance(masks, masks) < MinLookDistance);
         Assert.True(Distance(masks, Masks("Archer")) > 0f);
         Assert.True(Distance(Masks("Rifleman"), Masks("Marine")) >= MinLookDistance, "two units of one style are told apart");
+        // the fine and foot-against-rider checks can fail too: a unit is as far from itself as a flat colour from itself, and the thin-prop masks differ from the coarse ones
+        Assert.True(Distance(Masks("Settler", FineScale), Masks("Settler", FineScale)) + Vector3.Distance(MeanColour("Settler"), MeanColour("Settler")) < MinOutlinePlusColour);
+        Assert.True(Distance(Masks("Settler"), Masks("Settler")) < MinKindDistance);
+        Assert.NotEqual(Masks("Mohawk Warrior")[0].Length, Masks("Mohawk Warrior", FineScale)[0].Length);
+    }
+
+    /// <summary>T309: the contents of attachments.json by group (humanoids, riders, rigid models).</summary>
+    private static (JsonElement Foot, JsonElement Mounted, JsonElement Rigid) Groups(JsonDocument data)
+    {
+        var root = data.RootElement;
+        return (root.GetProperty("units"), root.GetProperty("mounted").GetProperty("units"), root.GetProperty("rigid").GetProperty("units"));
+    }
+
+    [Fact]
+    public void EveryHumanoidAndMountedUnitHasAStyleAndEveryModelBelongsToOneUnit()
+    {
+        using var data = JsonDocument.Parse(File.ReadAllText(Path.Combine(Pack, "attachments.json")));
+        var (foot, mounted, rigid) = Groups(data);
+        var unstyled = foot.EnumerateObject().Concat(mounted.EnumerateObject()).Where(it => !it.Value.TryGetProperty("style", out var st) || string.IsNullOrEmpty(st.GetString())).Select(it => it.Name).ToList();
+        Assert.True(unstyled.Count == 0, "humanoid or mounted units without a style (the silhouette tests would skip them): " + string.Join(", ", unstyled));
+        Assert.Equal(57, foot.EnumerateObject().Count());
+        Assert.Equal(21, mounted.EnumerateObject().Count());
+        Assert.Equal(45, rigid.EnumerateObject().Count());
+        var named = foot.EnumerateObject().Concat(mounted.EnumerateObject()).Concat(rigid.EnumerateObject()).Select(it => it.Name).ToList();
+        Assert.Equal(named.Count, named.Distinct().Count());
+        var models = Directory.GetFiles(Path.Combine(Pack, "models", "unit"), "*.glb").Select(f => Path.GetFileNameWithoutExtension(f)).OrderBy(n => n, StringComparer.Ordinal).ToList();
+        Assert.Equal([.. named.OrderBy(n => n, StringComparer.Ordinal)], models);
+    }
+
+    [Fact]
+    public void EveryFootUnitIsToldApartFromEveryRiderAndRigidUnit()
+    {
+        var (foot, mounted) = Units();
+        var failures = new List<string>();
+        foreach (var a in foot)
+            foreach (var b in mounted.Concat(RigidUnits()))
+            {
+                var d = Distance(Masks(a.Name), Masks(b.Name));
+                if (d < MinKindDistance) failures.Add(string.Create(CultureInfo.InvariantCulture, $"{a.Name} (on foot) and {b.Name} differ by {d:0.000}, need {MinKindDistance:0.00}"));
+            }
+        Assert.True(failures.Count == 0, "a foot unit that looks like a rider or a machine:\n" + string.Join("\n", failures));
+    }
+
+    [Fact]
+    public void ThinPropsStillTellUnitsApartAtThreeTimesTheResolution()
+    {
+        var (foot, mounted) = Units();
+        var failures = Failures(foot, (a, b) => IsCivilian(a.Style) != IsCivilian(b.Style) ? MinCivilianDistance : a.Style != b.Style ? MinDistance : MinLookDistance, FineScale);
+        failures.AddRange(Failures(mounted, (_, _) => MinRiderDistance, FineScale));
+        failures.AddRange(Failures(RigidUnits(), (_, _) => MinFineRigidDistance, FineScale));
+        Assert.True(failures.Count == 0, "silhouettes too alike at 120x168:\n" + string.Join("\n", failures));
+    }
+
+    [Fact]
+    public void RigidUnitsAreToldApartByOutlineAndColourTogether()
+    {
+        var rigid = RigidUnits();
+        var failures = new List<string>();
+        foreach (var a in rigid)
+            foreach (var b in rigid.Where(b => string.CompareOrdinal(b.Name, a.Name) > 0))
+            {
+                var outline = Distance(Masks(a.Name, FineScale), Masks(b.Name, FineScale));
+                var colour = Vector3.Distance(MeanColour(a.Name), MeanColour(b.Name));
+                if (outline + colour < MinOutlinePlusColour) failures.Add(string.Create(CultureInfo.InvariantCulture, $"{a.Name} and {b.Name}: outline {outline:0.000} plus colour {colour:0.000}, need {MinOutlinePlusColour:0.00}"));
+            }
+        Assert.True(failures.Count == 0, string.Join("\n", failures));
     }
 }
