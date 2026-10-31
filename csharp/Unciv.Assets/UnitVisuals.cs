@@ -48,6 +48,9 @@ public static class UnitVisuals
         return FigureCount(unit.Strength, unit.RangedStrength, unit.IsMilitary && type != null && !type.IsWaterUnit() && !type.IsAirUnit());
     }
 
+    /// <summary>T383: factor on the scale of every humanoid (skeleton) figure: foot soldiers were about 40 px high at the game's default zoom and the owner wants every unit recognised at any view. Rigid models (ships, armour, aircraft) are modelled to size and keep 1.</summary>
+    public const float FootFigureBoost = 1.3f;
+
     /// <summary>The arrangement of <paramref name="count"/> figures (clamped to 1..<see cref="MaxFigures"/>) on a tile: a lone figure in the middle, a pair side by side, a triangle, a square. Figures shrink as they multiply so the group stays inside the tile.</summary>
     public static IReadOnlyList<FigurePlacement> Formation(int count) => Math.Clamp(count, 1, MaxFigures) switch
     {

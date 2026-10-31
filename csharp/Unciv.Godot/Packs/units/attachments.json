@@ -137,7 +137,7 @@
       "Rocket Artillery": {"build": "rocket_artillery"},
       "Landship": {"build": "landship"},
       "Tank": {"build": "tank", "args": {"length": 0.7, "x": 0.19, "barrel": 0.5, "turret": 0.17, "turret_colour": "Steel", "gun": 0.04, "brake": true}},
-      "Panzer": {"build": "tank", "args": {"hull_colour": "Iron", "turret_colour": "Sand", "barrel": 0.7, "flat": true, "stripe": true, "length": 0.96, "x": 0.25, "deck": true, "brake": true, "turret": 0.2}},
+      "Panzer": {"build": "panzer", "args": {}},
       "Modern Armor": {"build": "modern_armor"},
       "Giant Death Robot": {"build": "death_robot"},
       "Triplane": {"build": "propeller", "args": {"wing_levels": [-0.05, 0.0, 0.05], "length": 0.7, "span": 0.7, "shape": "straight", "body": "Crimson", "wing_material": "Crimson", "root": 0.3}},

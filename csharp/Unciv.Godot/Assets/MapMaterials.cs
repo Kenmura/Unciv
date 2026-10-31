@@ -130,16 +130,33 @@ public static class MapMaterials
     /// <summary>T382: width of the dark rim round every unit figure, in the figure's own units (about 1.5 px at the game's default zoom).</summary>
     public const float OutlineGrow = 0.03f;
 
+    /// <summary>T383: width of the light halo outside the dark rim (total 0.05 from the figure), so a dark figure on dark ground (Archer on Forest, Warrior on Mountain) still has a light outline.</summary>
+    public const float HaloGrow = 0.05f;
+
     /// <summary>T382: the rim colour (near black, a little blue so it does not read as a hole).</summary>
     public static readonly Color OutlineColour = new(0.04f, 0.04f, 0.07f);
 
+    /// <summary>T383: the halo colour (warm off-white: it holds on forest, jungle, mountain and marsh, and merges harmlessly with snow and desert, where the dark rim does the work).</summary>
+    public static readonly Color HaloColour = new(0.93f, 0.9f, 0.78f);
+
+    private static StandardMaterial3D? sharedRim;
+
+    /// <summary>T383: the one rim material every figure of every unit shares (T382 built one per figure): the dark inverted hull, its <c>NextPass</c> the light halo, both unshaded with front faces culled.</summary>
+    public static StandardMaterial3D SharedRim => sharedRim ??= BuildRim();
+
+    private static StandardMaterial3D BuildRim()
+    {
+        var halo = new StandardMaterial3D { AlbedoColor = HaloColour, ShadingMode = BaseMaterial3D.ShadingModeEnum.Unshaded, CullMode = BaseMaterial3D.CullModeEnum.Front, Grow = true, GrowAmount = HaloGrow };
+        return new StandardMaterial3D { AlbedoColor = OutlineColour, ShadingMode = BaseMaterial3D.ShadingModeEnum.Unshaded, CullMode = BaseMaterial3D.CullModeEnum.Front, Grow = true, GrowAmount = OutlineGrow, NextPass = halo };
+    }
+
     /// <summary>
-    /// T382: gives every mesh of a unit model a dark rim (an inverted hull drawn as the mesh's overlay material: front faces culled, the vertices pushed out along their normals, unshaded), so a white or yellow
-    /// figure keeps its outline on snow and desert and a dark one on grass. Works with skinned meshes because the push happens in the vertex shader.
+    /// T382/T383: gives every mesh of a unit model a dark rim with a light halo outside it (inverted hulls drawn as the mesh's overlay material: front faces culled, the vertices pushed out along their normals, unshaded), so a white
+    /// or yellow figure keeps its outline on snow and desert and a dark one on grass or forest. Works with skinned meshes because the push happens in the vertex shader. All figures share <see cref="SharedRim"/>.
     /// </summary>
     public static void OutlineUnit(Node3D unitModel)
     {
-        var rim = new StandardMaterial3D { AlbedoColor = OutlineColour, ShadingMode = BaseMaterial3D.ShadingModeEnum.Unshaded, CullMode = BaseMaterial3D.CullModeEnum.Front, Grow = true, GrowAmount = OutlineGrow };
+        var rim = SharedRim;
         foreach (var mesh in unitModel.FindChildren("*", nameof(MeshInstance3D), true, false).OfType<MeshInstance3D>())
             mesh.MaterialOverlay = rim;
     }

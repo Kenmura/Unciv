@@ -107,7 +107,10 @@ public sealed class UnitVisualsScenario : Scenario
     private static bool RigidModelsAreClipless(List<UnitNode> nodes) =>
         nodes.Where(IsRigidModel).All(n => FigureModels(n).All(m => m.FindChildren("*", nameof(Skeleton3D), true, false).Count == 0 && MapMaterials.TeamColourOf(m) != null));
     private static bool HasRim(UnitNode n) => FigureModels(n).All(m => m.FindChildren("*", nameof(MeshInstance3D), true, false).OfType<MeshInstance3D>()
-        .All(mi => mi.MaterialOverlay is StandardMaterial3D { Grow: true, CullMode: BaseMaterial3D.CullModeEnum.Front }));
+        .All(mi => ReferenceEquals(mi.MaterialOverlay, MapMaterials.SharedRim) && mi.MaterialOverlay is StandardMaterial3D { Grow: true, CullMode: BaseMaterial3D.CullModeEnum.Front, NextPass: StandardMaterial3D { Grow: true } }));
+    /// <summary>T383: a foot figure (skeleton, no mount) is drawn at the formation scale times <see cref="UnitVisuals.FootFigureBoost"/>.</summary>
+    private static bool FootBoosted(UnitNode n) => n.GetChildren().OfType<Node3D>().Where(f => f.Name.ToString().StartsWith("Figure", StringComparison.Ordinal))
+        .All(f => f.GetChild<Node3D>(0).FindChild("HorseMesh", true, false) != null || IsRigidModel(n) || !IsModel(n) || f.Scale.X > UnitVisuals.Formation(n.FigureCount)[0].Scale * 1.2f);
     private static bool HasClips(UnitNode n) => n.Players.Count == n.FigureCount && n.Players.All(p => UnitModels.Clips(p).SequenceEqual(UnitModelContract.ClipNames));
     private static bool HoldsIdle(AnimationPlayer p) => p.AssignedAnimation == UnitModelContract.IdleClip && !p.IsPlaying() && p.CurrentAnimationPosition > 0f;
     private static bool Textured(UnitNode n) => FigureModels(n).SelectMany(m => m.FindChildren("*", nameof(MeshInstance3D), true, false).OfType<MeshInstance3D>())
@@ -190,7 +193,7 @@ public sealed class UnitVisualsScenario : Scenario
             new AssertQuery("the figure nodes equal the figure count, from the tier rule, for every unit", () =>
                 nodes.All(n => Figures(n) == n.FigureCount && n.FigureCount == UnitVisuals.FigureCount(Of(n.Unit.Name).Units[n.Unit.Name], Of(n.Unit.Name)))),
             new AssertQuery("a generated group has one initials billboard whatever its size; a model file carries none (its art identifies it)", () => nodes.All(n => Glyphs(n) == (IsModel(n) || IsRigidModel(n) ? 0 : 1))),
-            new AssertQuery("every figure of a unit carries its civ's colour and (T382) the dark rim", () => nodes.All(n => CivColoured(n) && HasRim(n))),
+            new AssertQuery("every figure of a unit carries its civ's colour and (T382) the dark rim, (T383) one shared rim material and bigger foot figures", () => nodes.All(n => CivColoured(n) && HasRim(n) && FootBoosted(n))),
             new AssertQuery("the units pack's units are CC0 model files: a textured TeamColor material and an animation player with the six contract clips; no other unit has a player; the rigid models (T256) are model files with the TeamColor material but neither a player nor a skeleton", () =>
                 nodes.Where(IsModel).All(n => Textured(n) && HasClips(n)) && nodes.Where(n => !IsModel(n)).All(n => n.Players.Count == 0 && !Textured(n)) && RigidModelsAreClipless(nodes)),
             new AssertQuery("model figures hold their idle pose (paused, not at the first frame), at a different phase for (nearly) every unit", () =>
@@ -468,7 +471,7 @@ public sealed class UnitVisualsScenario : Scenario
             new WaitFrames(2),
             new AssertQuery("far out every unit that is drawn shows one figure, the lead enlarged to a lone figure in the tile's middle; most of the gallery is in view", () =>
                 nodes.Count(it => !it.Culled) > Slots.Length / 2
-                && nodes.Where(it => !it.Culled).All(it => it.FarLod && it.FiguresDrawn == 1 && (it.FigureCount == 1 || it.GetNode<Node3D>("Figure0").Scale.X == 1f && it.GetNode<Node3D>("Figure0").Position == Vector3.Zero))
+                && nodes.Where(it => !it.Culled).All(it => it.FarLod && it.FiguresDrawn == 1 && (it.FigureCount == 1 || it.GetNode<Node3D>("Figure0").Scale.X is 1f or UnitVisuals.FootFigureBoost && it.GetNode<Node3D>("Figure0").Position == Vector3.Zero))
                 && nodes.Where(it => !it.Culled).Any(it => it.FigureCount > 1)),
             new AssertQuery("the hidden figures are hidden, not freed, and a clip or rigid pose still reaches the lead", () =>
                 node("Tank", null).GetChildren().OfType<Node3D>().Count(f => f.Name.ToString().StartsWith("Figure", StringComparison.Ordinal)) == 4

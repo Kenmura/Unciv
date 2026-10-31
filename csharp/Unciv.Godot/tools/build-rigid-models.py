@@ -41,6 +41,8 @@ MATERIALS = {
     "Stone": [0.40, 0.40, 0.42, 1.0],
     "Teal": [0.10, 0.50, 0.52, 1.0],
     "Iron": [0.17, 0.18, 0.20, 1.0],
+    "Rust": [0.45, 0.20, 0.10, 1.0],  # T383: the Panzer's hull (brick brown: not the grey of a dark unit on dark ground, not the sand of Modern Armor, the blue of Tank or the olive of the Landship)
+    "RustDark": [0.32, 0.14, 0.08, 1.0],
     "Hide": [0.50, 0.30, 0.14, 1.0],
     "Thatch": [0.36, 0.26, 0.10, 1.0],
     "Yellow": [0.92, 0.74, 0.10, 1.0],
@@ -528,6 +530,31 @@ def tank(m, hull_colour="Blue", barrel=0.5, flat=False, stripe=False, length=0.8
     flag(m, 0.14, -length * 0.42, 0.27, 0.46, 0.1, 0.06)
 
 
+def panzer(m):
+    """T383: a WW2 medium tank, not a box: rust-brown hull with sloped nose, narrow fenders over the tracks, road wheels, an angular turret with a rear bustle, mantlet, a tall cupola, a stowage box, long gun with muzzle brake."""
+    length, x = 0.8, 0.22
+    tracks(m, length, x, 0.1, 0.17, "Dark")
+    h = length / 2
+    for s in (-1, 1):
+        for k in range(5):  # road wheels on the outer track face
+            m.add("Steel", tube((s * (x + 0.055), 0.095, -h * 0.72 + k * h * 0.36), 0.025, 0.07, axis="x", n=10))
+        m.add("Steel", tube((s * (x + 0.055), 0.13, h * 0.84), 0.025, 0.09, axis="x", n=10))  # drive sprocket
+        m.add("Rust", slab([(s * 0.18, -h * 0.9), (s * 0.31, -h * 0.9), (s * 0.31, h * 0.5), (s * 0.18, h * 0.5)], 0.255, 0.28))  # the narrow fender
+    tank_body(m, "Rust", hull_top=0.3, rear=-h * 0.92, glacis=h * 1.04, length=length)
+    m.add("Dark", block((0, 0.31, -h * 0.6), (0.26, 0.03, 0.2)))  # engine deck grille
+    for k in range(3):
+        m.add("Steel", block((0, 0.33, -h * 0.74 + k * 0.05), (0.22, 0.008, 0.012)))
+    m.add("RustDark", block((0.0, 0.335, -h * 0.98), (0.3, 0.08, 0.08)))  # a stowage box on the rear deck
+    m.node("Part1", (0.0, 0.3, 0.0))
+    m.add("RustDark", slab([(-0.08, 0.15), (0.08, 0.15), (0.14, 0.02), (0.13, -0.1), (0.07, -0.2), (-0.07, -0.2), (-0.13, -0.1), (-0.14, 0.02)], 0.0, 0.15), "Part1")  # angular turret with a bustle
+    m.add("RustDark", block((0, 0.075, 0.17), (0.13, 0.11, 0.05)), "Part1")  # mantlet
+    m.add("Dark", tube((-0.06, 0.19, -0.04), 0.1, 0.045, axis="y", n=8), "Part1")  # a tall commander's cupola
+    m.add("TeamColor", block((0, 0.152, 0.0), (0.18, 0.004, 0.1)), "Part1")
+    gun_node(m, 0.375, 0.1 + 0.34, 0.68, 0.022)
+    m.add("Dark", block((0, 0, 0.35), (0.09, 0.07, 0.07)), "Part2")  # muzzle brake
+    flag(m, 0.16, -h * 0.9, 0.3, 0.54, 0.1, 0.06)
+
+
 def landship(m):
     h = 0.5
     for s in (-1, 1):
@@ -710,7 +737,7 @@ def helicopter(m):
 ARCHETYPES = {
     "oared": oared, "work_boat": work_boat, "sailer": sailer, "ironclad": ironclad, "warship": warship, "carrier": carrier, "submarine": submarine, "great_admiral": great_admiral,
     "ram": ram, "catapult": catapult, "ballista": ballista, "trebuchet": trebuchet, "hwacha": hwacha, "cannon": cannon, "artillery": artillery, "rocket_artillery": rocket_artillery,
-    "tank": tank, "landship": landship, "modern_armor": modern_armor, "death_robot": death_robot,
+    "tank": tank, "panzer": panzer, "landship": landship, "modern_armor": modern_armor, "death_robot": death_robot,
     "propeller": propeller, "twin_boom": twin_boom, "jet": jet, "stealth": stealth, "bomb": bomb, "missile": missile, "helicopter": helicopter,
 }
 

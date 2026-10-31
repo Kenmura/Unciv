@@ -761,4 +761,43 @@ public sealed class UnitSilhouetteTests
         }
         Assert.True(failures.Count == 0, string.Join("\n", failures));
     }
+
+    /// <summary>T383: the Panzer's mean colour at least this far (linear RGB) from the other tanks (Tank, Modern Armor, Landship) and from Rocket Artillery (measured minimum 0.129, Landship).</summary>
+    private const float MinT383PanzerColourDistance = 0.12f;
+
+    /// <summary>T383: a Panzer is built of at least this many materials (hull, turret, tracks, wheels, deck: the T373 slab had two).</summary>
+    private const int MinT383PanzerMaterials = 5;
+
+    [Fact]
+    public void ThePanzerOfT383IsABrownTankWithDetailNotAGreyAndSandSlab()
+    {
+        var failures = new List<string>();
+        foreach (var other in new[] { "Tank", "Modern Armor", "Landship", "Rocket Artillery" })
+        {
+            var d = Vector3.Distance(MeanColour("Panzer"), MeanColour(other));
+            if (d < MinT383PanzerColourDistance) failures.Add(string.Create(CultureInfo.InvariantCulture, $"Panzer and {other} share a colour: {d:0.000}, need {MinT383PanzerColourDistance:0.00}"));
+        }
+        var materials = MaterialAreas("Panzer").Count;
+        if (materials < MinT383PanzerMaterials) failures.Add($"Panzer has only {materials} materials, need {MinT383PanzerMaterials}");
+        Assert.True(failures.Count == 0, string.Join("\n", failures));
+    }
+
+    /// <summary>T383: foot figures (skeleton, no mount) are drawn at least this much larger than their modelled size (UnitNode applies it; the harness unit-visuals scenario checks the nodes).</summary>
+    [Fact]
+    public void FootFiguresAreDrawnLargerThanTheyAreModelled() => Assert.True(Unciv.Assets.UnitVisuals.FootFigureBoost >= 1.25f);
+
+    /// <summary>T383: every foot figure, as drawn (mask pixels of the model times the square of <see cref="Unciv.Assets.UnitVisuals.FootFigureBoost"/>), covers at least this many pixels of the 40x56 frame (measured minimum 634, Crossbowman).</summary>
+    private const int MinT383DrawnFootCoverage = 600;
+
+    [Fact]
+    public void EveryFootFigureAsDrawnIsBigEnough()
+    {
+        var failures = new List<string>();
+        foreach (var name in Units().Foot.Select(it => it.Name).Concat(["Rifleman", "Minuteman", "Musketman"]).Distinct())
+        {
+            var pixels = Masks(name).Average(m => m.Count(on => on)) * Unciv.Assets.UnitVisuals.FootFigureBoost * Unciv.Assets.UnitVisuals.FootFigureBoost;
+            if (pixels < MinT383DrawnFootCoverage) failures.Add(string.Create(CultureInfo.InvariantCulture, $"{name} covers {pixels:0} pixels as drawn, need {MinT383DrawnFootCoverage}"));
+        }
+        Assert.True(failures.Count == 0, string.Join("\n", failures));
+    }
 }

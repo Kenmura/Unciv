@@ -19,7 +19,7 @@ namespace Unciv.GodotHarness;
 /// formations on request. Not part of CI and never compared to goldens (a real GPU draws it): <c>tools/unit-sheet.sh</c> runs it on the host and writes <c>unit-sheet-N.png</c>. Environment: <c>UNCIV_SHEET_OUT</c>
 /// (folder, required), <c>UNCIV_SHEET_RES</c> (WxH, default 1920x1080), <c>UNCIV_SHEET_ZOOM</c> (camera size in world units, default fitted to the page; <see cref="MapView.DefaultZoom"/> is the game's),
 /// <c>UNCIV_SHEET_ONLY</c> (comma separated unit names: only those), <c>UNCIV_SHEET_TERRAIN</c> (T373, comma separated base terrains cycled over the tiles instead of plain grass, so units can be judged on real ground; a ship needs "Coast")
-/// and <c>UNCIV_SHEET_NATIONS</c> (T373, comma separated nations whose real outer colours are cycled over the units instead of the two placeholder tints), <c>UNCIV_SHEET_YAW</c> (degrees the units face, default 0), <c>UNCIV_SHEET_FORMATIONS</c> (1: draw the formations of the game).
+/// <c>UNCIV_SHEET_FEATURES</c> (T383, comma separated terrain features such as Forest or Jungle cycled over the tiles in step with the terrains; "-" is none), and <c>UNCIV_SHEET_NATIONS</c> (T373, comma separated nations whose real outer colours are cycled over the units instead of the two placeholder tints), <c>UNCIV_SHEET_YAW</c> (degrees the units face, default 0), <c>UNCIV_SHEET_FORMATIONS</c> (1: draw the formations of the game).
 /// </summary>
 public sealed class UnitSheetScenario : Scenario
 {
@@ -48,6 +48,8 @@ public sealed class UnitSheetScenario : Scenario
         var colours = new[] { PlaceholderPalette.AttackTint, PlaceholderPalette.ReachableTint };
         var nations = (GpuBenchScenario.Bench("UNCIV_SHEET_NATIONS") ?? "").Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).Where(n => ruleset.Nations.ContainsKey(n)).ToArray();
         var terrains = (GpuBenchScenario.Bench("UNCIV_SHEET_TERRAIN") ?? "").Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        // T383: terrain features (Forest, Jungle, ...) cycled over the tiles like the terrains (same index; "-" is no feature), so dark units can be judged on wooded ground
+        var features = (GpuBenchScenario.Bench("UNCIV_SHEET_FEATURES") ?? "").Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
         var units = UnitVisualsScenario.SheetUnits;
         if (GpuBenchScenario.Bench("UNCIV_SHEET_ONLY") is { Length: > 0 } only) // T369: a focused sheet of the named units (comma separated), for judging one group at the real zoom
             units = [.. only.Split(',').Select(n => units.First(u => u.Unit == n.Trim()))];
@@ -64,7 +66,7 @@ public sealed class UnitSheetScenario : Scenario
             int c = columns - 1 - slot % columns, r = rowCount - 1 - slot / columns;
             return new(c / 2 + c % 2 + r, -(c / 2) + r);
         }
-        var tiles = Enumerable.Range(0, perPage).Select(s => new TileDto { X = Coord(s).X, Y = Coord(s).Y, Visible = true, BaseTerrain = terrains.Length > 0 ? terrains[s % terrains.Length] : "Grassland", Features = [], Resource = null, RiverBottom = false, RiverBottomLeft = false, RiverBottomRight = false }).ToList();
+        var tiles = Enumerable.Range(0, perPage).Select(s => new TileDto { X = Coord(s).X, Y = Coord(s).Y, Visible = true, BaseTerrain = terrains.Length > 0 ? terrains[s % terrains.Length] : "Grassland", Features = features.Length > 0 && features[s % features.Length] is { Length: > 0 } f && f != "-" ? [f] : [], Resource = null, RiverBottom = false, RiverBottomLeft = false, RiverBottomRight = false }).ToList();
         var view = new MapView();
         host.AddChild(view);
         view.Load(registry, tiles);
@@ -99,7 +101,7 @@ public sealed class UnitSheetScenario : Scenario
         var (min, max) = (new Vector3(tops.Min(t => t.X), 0f, tops.Min(t => t.Z)), new Vector3(tops.Max(t => t.X), 0f, tops.Max(t => t.Z)));
         var size = Viewport;
         // the camera's vertical size shows the ground foreshortened by the tilt; the margins hold the figures above the first row and the labels under the last
-        float fit = MathF.Max((max.Z - min.Z) * MathF.Sin(MapView.TiltDegrees * MathF.PI / 180f) + 2.6f, (max.X - min.X + 1.8f) * size.Y / size.X);
+        float fit = MathF.Max((max.Z - min.Z) * MathF.Sin(MapView.TiltDegrees * MathF.PI / 180f) + 3.0f, (max.X - min.X + 1.8f) * size.Y / size.X);
         if (!float.TryParse(GpuBenchScenario.Bench("UNCIV_SHEET_ZOOM"), NumberStyles.Float, CultureInfo.InvariantCulture, out float zoom)) zoom = fit;
         for (int p = 0; p < pages; p++)
         {
