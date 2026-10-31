@@ -182,7 +182,7 @@ docker compose ps
 docker compose logs relay
 ```
 
-`ps` shows the container `Up ... (healthy)` after about 40 seconds (`starting` until then). The log shows `LISTENING tunnel 47830` and `LISTENING http 47831` (and, in setup C, `RELAY-FINGERPRINT ...`).
+`ps` shows the container `Up ... (healthy)` after about 40 seconds (`starting` until then). The log shows `LISTENING tunnel 47830` and `LISTENING http 47831` (and, in setup C, `RELAY-FINGERPRINT ...`). With Podman, `compose ps` shows only `Up`; `podman healthcheck run unciv-relay-relay-1` or `podman inspect` shows the health.
 If the container keeps restarting, the log says why in plain words (for example `choose a TLS mode`, or a typo in a variable): fix `.env` and run `docker compose up -d` again.
 
 Quick local check (works in every setup):
