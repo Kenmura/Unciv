@@ -1285,6 +1285,8 @@ public partial class GameScreen : Control
     /// <summary>Redraws everything from the session's current snapshot (the screen does this itself after its own commands; a caller that changed the game another way calls it).</summary>
     public void Refresh()
     {
+        FullRefreshCount++;
+        autoPlayStale = false;
         snapshot = session.Snapshot;
         Map.Load(assets, snapshot.Tiles, keepCamera: mapLoaded);
         mapLoaded = true;
@@ -1305,6 +1307,12 @@ public partial class GameScreen : Control
         ApplySelectionScale();
         Run(RefreshSelection());
     }
+
+    /// <summary>T379: how many times <see cref="Refresh"/> rebuilt the whole screen (a run that skips animations must not do it every turn, see <see cref="AutoPlayModel.RefreshesAfter"/>).</summary>
+    public int FullRefreshCount { get; private set; }
+
+    /// <summary>T379: turns of the running AutoPlay were played since the map was last redrawn.</summary>
+    private bool autoPlayStale;
 
     private Rgb? OwnerInnerColour(string owner) => session.Ruleset.Nations.TryGetValue(owner, out var nation) ? ToRgb(nation.GetInnerColor()) : null;
 
@@ -2611,7 +2619,8 @@ public partial class GameScreen : Control
             }
             AutoPlay = AutoPlay.AfterTurn();
             Hud.SetAutoPlay(AutoPlay);
-            Refresh();
+            if (AutoPlayModel.RefreshesAfter(AutoPlay.TurnsPlayed, autoPlayAnimations)) Refresh();
+            else autoPlayStale = true; // T379: the HUD follows every turn through SnapshotChanged; the map, overlays and minimap catch up at the next redraw and when the run ends
             for (int i = 0; i < AutoPlayFramesPerTurn && AutoPlay.Active; i++)
             {
                 await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
@@ -2646,13 +2655,15 @@ public partial class GameScreen : Control
         if (AutoPlay == null) return;
         autoPlayGeneration++;
         var result = await session.SubmitAsync(new Unciv.Commands.Turn.StopAutoPlay());
-        FinishAutoPlay(stoppedByPlayer: true, result.Accepted ? "" : result.Message);
-        Refresh();
+        if (!FinishAutoPlay(stoppedByPlayer: true, result.Accepted ? "" : result.Message)) Refresh();
     }
 
-    private void FinishAutoPlay(bool stoppedByPlayer, string refusal)
+    /// <summary>Ends the run's bookkeeping; true when it redrew the screen because the last turns had not been drawn yet (T379).</summary>
+    private bool FinishAutoPlay(bool stoppedByPlayer, string refusal)
     {
-        if (AutoPlay == null) return;
+        if (AutoPlay == null) return false;
+        bool redrawn = autoPlayStale;
+        if (redrawn) Refresh(); // T379: the player takes over on the final state of the map, not on the last one that was drawn
         AutoPlayResult = AutoPlayModel.FinishedText(AutoPlay, stoppedByPlayer, refusal);
         AutoPlay = null;
         if (autoPlayAnimations == AutoPlayAnimations.Fast) Presenter.Complete(); // T376: the player takes over on the final state, not on a sped-up backlog
@@ -2660,6 +2671,7 @@ public partial class GameScreen : Control
         Hud.SetAutoPlay(null);
         SetStatus(AutoPlayResult);
         Run(RefreshHud());
+        return redrawn;
     }
 
     private async Task EndTurn()

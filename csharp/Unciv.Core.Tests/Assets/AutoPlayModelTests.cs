@@ -174,4 +174,13 @@ public sealed class AutoPlayModelTests
         Assert.Equal(AutoPlayModel.FastWaitFrames, AutoPlayModel.WaitFrames(AutoPlayAnimations.Fast));
         Assert.Equal(AutoPlayModel.NormalWaitFrames, AutoPlayModel.WaitFrames(AutoPlayAnimations.Normal));
     }
+
+    [Fact]
+    public void ASkipRunRedrawsTheScreenEveryTenthTurnAnAnimatedRunAfterEach()
+    {
+        var skipped = Enumerable.Range(1, 25).Where(turn => AutoPlayModel.RefreshesAfter(turn, AutoPlayAnimations.Skip)).ToArray();
+        Assert.Equal(new[] { 10, 20 }, skipped);
+        foreach (var mode in new[] { AutoPlayAnimations.Fast, AutoPlayAnimations.Normal })
+            Assert.All(Enumerable.Range(1, 12), turn => Assert.True(AutoPlayModel.RefreshesAfter(turn, mode)));
+    }
 }
