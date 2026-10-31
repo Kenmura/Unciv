@@ -21,9 +21,9 @@ Work is completed phase by phase (`phases.txt`; `ticket.py ready`/`next` list ea
 
 | Phase | Done | Remaining | Ready | In flight | Remaining tickets |
 |---|---|---|---|---|---|
-| Phase 1: CLI (headless engine) | 231/232 | 1 | 1 | 0 | [T379](backlog/T379.md) |
+| Phase 1: CLI (headless engine) | 231/231 | 0 | 0 | 0 | complete |
 | Phase 2: single player (Godot client) | 57/58 | 1 | 0 | 0 | [T375](backlog/T375.md) |
-| Phase 3: multiplayer | 44/56 | 12 | 10 | 2 | [T354](backlog/T354.md) [T355](backlog/T355.md) [T356](backlog/T356.md) [T357](backlog/T357.md) [T361](backlog/T361.md) [T366](backlog/T366.md) [T367](backlog/T367.md) [T371](backlog/T371.md) [T372](backlog/T372.md) [T373](backlog/T373.md) [T377](backlog/T377.md) [T378](backlog/T378.md) |
+| Phase 3: multiplayer | 45/57 | 12 | 11 | 1 | [T354](backlog/T354.md) [T355](backlog/T355.md) [T356](backlog/T356.md) [T357](backlog/T357.md) [T361](backlog/T361.md) [T366](backlog/T366.md) [T367](backlog/T367.md) [T372](backlog/T372.md) [T373](backlog/T373.md) [T377](backlog/T377.md) [T378](backlog/T378.md) [T379](backlog/T379.md) |
 | Phase 4: queued plans (UI redesign, unit models, BNW) | 75/82 | 7 | 0 | 0 | [T317](backlog/T317.md) [T318](backlog/T318.md) [T321](backlog/T321.md) [T326](backlog/T326.md) [T327](backlog/T327.md) [T328](backlog/T328.md) [T329](backlog/T329.md) |
 | Phase 5: owner issue backlog (Android, performance, ultra graphics, dedicated server, resiliency) | 53/87 | 34 | 0 | 4 | [T274](backlog/T274.md) [T275](backlog/T275.md) [T278](backlog/T278.md) [T290](backlog/T290.md) [T300](backlog/T300.md) [T301](backlog/T301.md) [T303](backlog/T303.md) [T305](backlog/T305.md) [T306](backlog/T306.md) [T313](backlog/T313.md) [T314](backlog/T314.md) [T319](backlog/T319.md) [T325](backlog/T325.md) [T330](backlog/T330.md) [T331](backlog/T331.md) [T332](backlog/T332.md) [T333](backlog/T333.md) [T335](backlog/T335.md) [T340](backlog/T340.md) [T341](backlog/T341.md) [T342](backlog/T342.md) [T343](backlog/T343.md) [T344](backlog/T344.md) [T345](backlog/T345.md) [T346](backlog/T346.md) [T347](backlog/T347.md) [T348](backlog/T348.md) [T349](backlog/T349.md) [T350](backlog/T350.md) [T351](backlog/T351.md) [T352](backlog/T352.md) [T353](backlog/T353.md) [T362](backlog/T362.md) [T363](backlog/T363.md) |
 
@@ -140,7 +140,6 @@ Unlinked tickets (no open dependency in either direction), by state:
 
 - ready: T354 T355 T356 T357 T361 T366 T367 T372 T373 T378 T379
 - in progress: T300 T301 T303 T377
-- in review: T371
 - blocked: T290
 - waiting: T313 T314 T317 T318 T321 T326 T328 T329 T330 T331 T332 T333 T335 T341 T342 T343 T344 T345 T346 T348 T349 T350 T351 T352 T353 T362 T363 T375
 
@@ -162,7 +161,7 @@ xychart-beta
     y-axis "Tickets" 0 --> 55
     line [5, 46, 2, 54, 39, 19, 11, 9, 9, 9, 9, 31, 14, 6, 48, 48]
     line [0, 11, 11, 0, 0, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1]
-    line [1, 0, 4, 2, 6, 6, 3, 2, 2, 2, 2, 3, 5, 5, 4, 6]
+    line [1, 0, 4, 2, 6, 6, 3, 2, 2, 2, 2, 3, 5, 5, 4, 5]
 ```
 
 ## Progress and scope over time
@@ -178,7 +177,7 @@ xychart-beta
     title "Done vs total scope"
     x-axis ["Oct 24 00:00", "Oct 24 12:00", "Oct 25 00:00", "Oct 25 12:00", "Oct 26 00:00", "Oct 26 12:00", "Oct 27 00:00", "Oct 27 12:00", "Oct 28 00:00", "Oct 28 12:00", "Oct 29 00:00", "Oct 29 12:00", "Oct 30 00:00", "Oct 30 12:00", "Oct 31 00:00", "Oct 31 12:00"]
     y-axis "Tickets" 0 --> 520
-    line [0, 69, 153, 200, 246, 280, 294, 297, 297, 297, 297, 354, 413, 433, 456, 464]
+    line [0, 69, 153, 200, 246, 280, 294, 297, 297, 297, 297, 354, 413, 433, 456, 465]
     line [6, 126, 170, 256, 291, 305, 309, 309, 309, 309, 309, 388, 433, 445, 509, 519]
 ```
 
@@ -238,6 +237,5 @@ xychart-beta
 | T353 | Available (waiting on ) | none | 0 | Sound and music: effects and a soundtrack from CC0 or original sources (no Civ 5 audio) |
 | T362 | Available (waiting on ) | T334 | 0 | Two real client processes host and join on the real GPU (manual two-profile smoke) |
 | T363 | Available (waiting on ) | none | 0 | QuickStart and harness scenario games still start on Vanilla/Gods & Kings: move them to BNW and regenerate goldens |
-| T371 | Needs-Review [Claude] | T338 | 0 | Relay settings screen and relay trust prompt: relay URL, pinned fingerprint, Reach-me-through-relay toggle, ask once before using an invite's unknown relay |
 | T375 | Available (waiting on ) | none | 0 | Re-record stale phone-menus goldens (main-menu, new-game, host, lobby, options, modal differ from the committed images at base) |
 | T377 | In-Progress [Claude] | none | 0 | Border rendering review and fix: borders have gaps, do not join at corners and are drawn partially (see owner screenshot) |
