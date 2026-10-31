@@ -20,6 +20,24 @@ _owned = None
 _saved = None  # (TMPDIR, tempfile.tempdir) from before acquire()
 
 
+def force_rmtree(path):
+    """shutil.rmtree that also removes read-only folders (a test leaves dr-x folders behind on purpose, which plain rmtree cannot enter)."""
+    def fix(func, p, _exc):
+        try:
+            os.chmod(os.path.dirname(p), 0o700)
+            os.chmod(p, 0o700)
+            func(p)
+        except OSError:
+            pass
+    for _ in range(2):  # the second pass handles folders that only became removable after their parent was fixed
+        if sys.version_info >= (3, 12):
+            shutil.rmtree(path, onexc=fix)
+        else:
+            shutil.rmtree(path, onerror=fix)
+        if not os.path.exists(path):
+            return
+
+
 def keep_requested(argv=None):
     return os.environ.get(ENV_KEEP, "") not in ("", "0") or "--keep-tmp" in (sys.argv if argv is None else argv)
 
@@ -54,4 +72,4 @@ def release(keep=False):
     if keep or keep_requested():
         print("tmp: kept %s" % path, file=sys.stderr)
         return
-    shutil.rmtree(path, ignore_errors=True)
+    force_rmtree(path)

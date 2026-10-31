@@ -182,6 +182,14 @@ class Scratch(unittest.TestCase):
         self.assertTrue(os.path.exists(os.path.join(self.root, "unciv-relay-new")))
         self.assertTrue(os.path.isdir("/usr"))
 
+    def test_read_only_folders_are_removed_too(self):
+        import os
+        d = self.mk("unciv-run-333-abc/inner/ro", 10)
+        os.chmod(d, 0o500)
+        n, _ = reap.remove_scratch(reap.scratch_candidates(self.root, self.NOW, self.uid, "", lambda pid: False, 6 * self.HOUR, 24 * self.HOUR), self.root)
+        self.assertEqual(n, 1)
+        self.assertFalse(os.path.exists(os.path.join(self.root, "unciv-run-333-abc")))
+
     def test_symlink_is_never_followed(self):
         import os
         target = self.mk("real", 99)

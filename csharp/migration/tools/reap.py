@@ -33,13 +33,15 @@ A live session's scratchpad is never listed as stale: fresh files, an open cwd o
 import argparse
 import os
 import re
-import shutil
 import signal
 import sys
 import time
 
 KILLABLE = {"msbuild-node", "vbcscompiler", "testhost", "datacollector", "vstest", "dotnet-cli", "msbuild-main"}
 WT_RE = re.compile(r"(/[^\s:=]*?/\.worktrees/[^/\s]+|/[^\s:=]*?/Unciv-wt-[^/\s]+)")
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import runtmp  # noqa: E402
+
 TICKS = os.sysconf("SC_CLK_TCK")
 PAGE = os.sysconf("SC_PAGE_SIZE")
 
@@ -333,7 +335,7 @@ def remove_scratch(rows, root):
         real = os.path.realpath(r["path"])
         if os.path.islink(r["path"]) or not real.startswith(root + os.sep) or real == root:
             continue
-        shutil.rmtree(real, ignore_errors=True)
+        runtmp.force_rmtree(real)
         if not os.path.exists(real):
             n += 1
             freed += r["bytes"]
