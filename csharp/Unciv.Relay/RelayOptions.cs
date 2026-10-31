@@ -220,16 +220,67 @@ public sealed record RelayOptions
         return BindOptions(raw);
     }
 
-    /// <summary>Applies the options of a <c>relay.json</c> object (key = option name, bool for flags, array for repeatable options) below the ones already set.</summary>
-    public static RelayOptions ParseWithConfig(IReadOnlyList<string> args, Func<string, string?> readFile)
+    /// <summary>Prefix of the environment variables that set an option (T374): <c>UNCIV_RELAY_</c> plus the option name in upper case with <c>-</c> as <c>_</c>.</summary>
+    public const string EnvPrefix = "UNCIV_RELAY_";
+
+    /// <summary>Every option name the command line and <c>relay.json</c> accept (without the <c>--</c>).</summary>
+    public static IReadOnlyList<string> OptionNames => [.. Flags, .. Texts, .. Numbers.Select(n => n.Name)];
+
+    /// <summary>The environment variable that sets the option <paramref name="optionName"/>, for example <c>max-rooms</c> gives <c>UNCIV_RELAY_MAX_ROOMS</c>.</summary>
+    public static string EnvName(string optionName) => EnvPrefix + optionName.ToUpperInvariant().Replace('-', '_');
+
+    /// <summary>
+    /// Applies the options of a <c>relay.json</c> object (key = option name, bool for flags, array for repeatable options) below the ones already set. With <paramref name="readEnv"/>
+    /// (T374) the environment is a third, lowest layer: command line over <c>relay.json</c> over <c>UNCIV_RELAY_*</c> variables over defaults. An unset or empty variable is ignored; a flag is on for
+    /// <c>true</c> or <c>1</c> (any case) and off for <c>false</c>, <c>0</c> or empty; a repeatable option takes a comma-separated list.
+    /// </summary>
+    public static RelayOptions ParseWithConfig(IReadOnlyList<string> args, Func<string, string?> readFile, Func<string, string?>? readEnv = null)
     {
         if (args.Any(a => a is "--help" or "-h")) return new RelayOptions { Help = true };
-        var configPath = FindOption(args, "config") ?? Path.Combine(FindOption(args, "data-dir") ?? new RelayOptions().DataDir, "relay.json");
-        var explicitConfig = FindOption(args, "config") != null;
+        var env = ReadEnvironment(readEnv);
+        var configPath = FindOption(args, "config") ?? env.GetValueOrDefault("config")?[0] ?? Path.Combine(FindOption(args, "data-dir") ?? env.GetValueOrDefault("data-dir")?[0] ?? new RelayOptions().DataDir, "relay.json");
+        var explicitConfig = FindOption(args, "config") != null || env.ContainsKey("config");
         var text = readFile(configPath);
-        if (text == null)
-            return explicitConfig ? throw new RelayUsageException($"config file '{configPath}' cannot be read") : Parse(args);
+        if (text == null && explicitConfig) throw new RelayUsageException($"config file '{configPath}' cannot be read");
         var raw = new Dictionary<string, List<string>>(StringComparer.Ordinal);
+        if (text != null) ReadConfigFile(text, configPath, raw);
+        // the command line wins over the file, the file over the environment: drop every key a higher layer set, then re-parse the layers in order
+        var merged = new Dictionary<string, List<string>>(env, StringComparer.Ordinal);
+        foreach (var (key, values) in raw) merged[key] = values;
+        foreach (var key in CliKeys(args)) merged.Remove(key);
+        merged.Remove("config");
+        if (merged.Count == 0) return Parse(args);
+        var layered = new List<string>();
+        foreach (var (key, values) in merged)
+        {
+            if (Flags.Contains(key)) { if (values[0] == "true") layered.Add("--" + key); continue; }
+            foreach (var value in values) { layered.Add("--" + key); layered.Add(value); }
+        }
+        layered.AddRange(args);
+        return Parse(layered);
+    }
+
+    private static Dictionary<string, List<string>> ReadEnvironment(Func<string, string?>? readEnv)
+    {
+        var result = new Dictionary<string, List<string>>(StringComparer.Ordinal);
+        if (readEnv == null) return result;
+        foreach (var name in OptionNames)
+        {
+            var value = readEnv(EnvName(name))?.Trim();
+            if (string.IsNullOrEmpty(value)) continue;
+            if (Flags.Contains(name))
+            {
+                if (value.Equals("true", StringComparison.OrdinalIgnoreCase) || value == "1") result[name] = ["true"];
+                else if (!value.Equals("false", StringComparison.OrdinalIgnoreCase) && value != "0") throw new RelayUsageException($"{EnvName(name)} must be true, 1, false or 0, got '{value}'");
+            }
+            else if (Repeatable(name)) result[name] = [.. value.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)];
+            else result[name] = [value];
+        }
+        return result;
+    }
+
+    private static void ReadConfigFile(string text, string configPath, Dictionary<string, List<string>> raw)
+    {
         JsonElement root;
         try
         {
@@ -246,7 +297,8 @@ public sealed record RelayOptions
             if (Flags.Contains(name))
             {
                 if (property.Value.ValueKind is JsonValueKind.True) raw[name] = ["true"];
-                else if (property.Value.ValueKind is not JsonValueKind.False) throw new RelayUsageException($"config file: '{name}' must be true or false");
+                else if (property.Value.ValueKind is JsonValueKind.False) raw[name] = ["false"]; // overrides an environment variable that switched it on
+                else throw new RelayUsageException($"config file: '{name}' must be true or false");
                 continue;
             }
             IEnumerable<JsonElement> values = property.Value.ValueKind == JsonValueKind.Array ? property.Value.EnumerateArray() : [property.Value];
@@ -261,14 +313,6 @@ public sealed record RelayOptions
                 Add(raw, name, asText);
             }
         }
-        // the command line wins: drop every key it set, then re-parse both layers
-        var merged = new Dictionary<string, List<string>>(raw, StringComparer.Ordinal);
-        foreach (var key in CliKeys(args)) merged.Remove(key);
-        var layered = new List<string>();
-        foreach (var (key, values) in merged)
-            foreach (var value in values) { layered.Add("--" + key); if (!Flags.Contains(key)) layered.Add(value); }
-        layered.AddRange(args);
-        return Parse(layered);
     }
 
     private static string? FindOption(IReadOnlyList<string> args, string name)

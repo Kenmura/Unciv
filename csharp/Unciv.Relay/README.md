@@ -65,8 +65,11 @@ Everything behind `proxy_protocol on` must understand the header; if your web se
 
 ## Docker and systemd
 
-`deploy/Dockerfile` (build from `csharp/`: `docker build -f Unciv.Relay/deploy/Dockerfile -t unciv-relay .`) and `deploy/compose.yml` (non-root user, read-only root, volume for the data dir,
-ports published on `127.0.0.1` only). `deploy/unciv-relay.service` is a systemd unit (`DynamicUser`, `ProtectSystem=strict`, `NoNewPrivileges`, `Restart=on-failure`; `systemctl reload` sends SIGHUP).
+**Step-by-step guide for a fresh server (DNS, firewall, Docker, nginx, certificates, updating, backups, troubleshooting): [SETUP.md](SETUP.md).**
+`deploy/Dockerfile` (multi-stage, non-root, healthcheck; build context is `csharp/`) and `deploy/compose.yml` (read-only root, volume for the data dir, ports published on `127.0.0.1` by default):
+`cd csharp/Unciv.Relay/deploy && cp .env.example .env && docker compose up -d --build`. Every option is also an environment variable `UNCIV_RELAY_<OPTION>` (upper case, `_` for `-`;
+precedence: command line, then `relay.json`, then the environment), all listed in `deploy/.env.example`. `deploy/nginx/` holds the nginx examples (TLS in nginx, SNI on 443, HTTP directory).
+`deploy/unciv-relay.service` is a systemd unit (`DynamicUser`, `ProtectSystem=strict`, `NoNewPrivileges`, `Restart=on-failure`; `systemctl reload` sends SIGHUP).
 Firewall: open the tunnel port (47830 by default, or 443); keep the HTTP port (47831) on loopback behind nginx.
 Self-contained builds for Linux (x64) and Windows (x64) come from `dotnet publish Unciv.Relay -c Release -r linux-x64 --self-contained true` (the release tooling does this).
 
@@ -75,7 +78,7 @@ Self-contained builds for Linux (x64) and Windows (x64) come from `dotnet publis
 `relay.json` (options), `relay-secret` (32 random bytes, created on first run: keep it, it makes room codes and peer ids stable across restarts), `relay.pfx` (self-signed only),
 `bans.txt`, `allow-keys.txt`, `deny-names.txt`, `logs/relay-YYYY-MM-DD.log`. The three list files are re-read on SIGHUP and when they change.
 
-- `bans.txt`: one entry per line. An IP or CIDR (`203.0.113.0/24`, `2001:db8::/32`), `key <fingerprint>` (64 hex characters or the 26-character form of an invite) or `name <regex>` (matched against listing names). `#` starts a comment.
+- `bans.txt`: one entry per line. An IP or CIDR (`203.0.113.0/24`, `2001:db8::/32`), `key <fingerprint>` (64 hex characters or the 26-character form of an invite) or `name <regex>` (matched against listing names). a line starting with `#` is a comment (not a `#` after an entry).
   A banned address is refused at connect; a newly banned key or name closes the live room.
 - `allow-keys.txt`: with `--listing allowlist` only these host key fingerprints may list games.
 - `deny-names.txt`: one regex per line; a listing whose name or host name matches is rejected.
@@ -106,5 +109,6 @@ SIGHUP: reload the certificate and the three list files. On Windows only Ctrl+C 
 ## What is verified
 
 The protocol, limits, directory, bans, drain, reload and the four TLS modes (certificate, self-signed, plain, plain behind a PROXY protocol test proxy) are covered by automated tests in `Unciv.App.Tests/Relay`.
-UNVERIFIED in this repository's CI: the Dockerfile build and container start (no Docker on the build machine), the systemd unit, the Windows build, and the nginx example (`nginx -t` runs only when nginx is installed).
-The deployment ticket (T356) exercises them on the real server.
+The Docker image and compose file were built and run with Podman (Docker-compatible), and the nginx examples checked with `nginx -t` and a live stream proxy using the official nginx image (T374; details in SETUP.md,
+"What was tested"). UNVERIFIED: Docker Engine itself, Let's Encrypt/certbot, the systemd unit and the Windows build; the deployment ticket (T356) exercises them on the real server.
+The compose and `.env.example` variable names are checked against the real options by `RelayDeployFilesTests`.

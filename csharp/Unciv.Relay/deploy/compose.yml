@@ -1,36 +1,78 @@
-# Unciv.Relay with Docker Compose (design/RELAY.md section 8). relay.example.org is a placeholder: set your own name.
-# Behind nginx (deploy/nginx/relay.conf.example) the container speaks plain TCP and nginx owns the certificate.
-# Everything is published on 127.0.0.1 only; change the "ports" lines to expose the tunnel directly (use --cert/--key or --self-signed then).
+# Unciv.Relay with Docker Compose (design/RELAY.md section 8, T374). Setup guide: ../SETUP.md. relay.example.org is a placeholder.
+# Run from THIS directory:   cp .env.example .env   (edit it)   then   docker compose up -d --build
+# Every relay option is an environment variable UNCIV_RELAY_<OPTION>; the values come from .env next to this file.
+# An empty value means "the relay's default". Ports are published on the host as RELAY_TUNNEL_PUBLISH / RELAY_HTTP_PUBLISH.
+name: unciv-relay
+
 services:
   relay:
     build:
-      context: ../..
+      context: ../..                       # the csharp/ directory of the repository
       dockerfile: Unciv.Relay/deploy/Dockerfile
     image: unciv-relay
     restart: unless-stopped
     read_only: true
     cap_drop: [ALL]
     security_opt: ["no-new-privileges:true"]
-    command:
-      - --tls
-      - none
-      - --bind
-      - 0.0.0.0
-      - --proxy-protocol
-      - --trusted-proxy
-      - 172.16.0.0/12 # the docker bridge nginx reaches the container from; adjust to your network
-      - --public-name
-      - relay.example.org
-      - --contact
-      - abuse@relay.example.org
     ports:
-      - "127.0.0.1:47832:47830" # tunnel (nginx proxy_pass 127.0.0.1:47832)
-      - "127.0.0.1:47831:47831" # read-only directory over HTTP
+      - "${RELAY_TUNNEL_PUBLISH:-127.0.0.1:47832}:47830"   # the tunnel (mode A: nginx proxies to it)
+      - "${RELAY_HTTP_PUBLISH:-127.0.0.1:47831}:47831"     # the read-only HTTP side (/healthz, /v1/info, /v1/games)
     volumes:
-      - relay-data:/data
+      - relay-data:/data                   # relay.json, relay-secret (keep it!), relay.pfx, bans.txt, logs/
+      - ${RELAY_CERT_DIR:-./certs}:/certs:ro,z   # mode B only: fullchain.pem and privkey.pem (,z relabels for SELinux hosts and is harmless elsewhere)
     tmpfs:
       - /tmp
-    stop_grace_period: 20s # the relay drains for 10 s on SIGTERM
+    stop_grace_period: 20s                 # the relay drains for 10 s on SIGTERM
+    environment:
+      # TLS mode
+      UNCIV_RELAY_TLS: ${UNCIV_RELAY_TLS:-}
+      UNCIV_RELAY_CERT: ${UNCIV_RELAY_CERT:-}
+      UNCIV_RELAY_KEY: ${UNCIV_RELAY_KEY:-}
+      UNCIV_RELAY_SELF_SIGNED: ${UNCIV_RELAY_SELF_SIGNED:-}
+      UNCIV_RELAY_PUBLIC_NAME: ${UNCIV_RELAY_PUBLIC_NAME:-}
+      UNCIV_RELAY_PROXY_PROTOCOL: ${UNCIV_RELAY_PROXY_PROTOCOL:-}
+      UNCIV_RELAY_TRUSTED_PROXY: ${UNCIV_RELAY_TRUSTED_PROXY:-}
+      # Listeners
+      UNCIV_RELAY_NO_HTTP: ${UNCIV_RELAY_NO_HTTP:-}
+      UNCIV_RELAY_HTTP_TLS: ${UNCIV_RELAY_HTTP_TLS:-}
+      UNCIV_RELAY_METRICS: ${UNCIV_RELAY_METRICS:-}
+      # Directory and information shown by GET /v1/info
+      UNCIV_RELAY_LISTING: ${UNCIV_RELAY_LISTING:-}
+      UNCIV_RELAY_NAME: ${UNCIV_RELAY_NAME:-}
+      UNCIV_RELAY_CONTACT: ${UNCIV_RELAY_CONTACT:-}
+      UNCIV_RELAY_MOTD: ${UNCIV_RELAY_MOTD:-}
+      # Logs
+      UNCIV_RELAY_LOG_LEVEL: ${UNCIV_RELAY_LOG_LEVEL:-}
+      UNCIV_RELAY_LOG_RETENTION_DAYS: ${UNCIV_RELAY_LOG_RETENTION_DAYS:-}
+      UNCIV_RELAY_NO_LOG_FILES: ${UNCIV_RELAY_NO_LOG_FILES:-}
+      UNCIV_RELAY_DRAIN_SECONDS: ${UNCIV_RELAY_DRAIN_SECONDS:-}
+      # Limits: the defaults are right for one small VM
+      UNCIV_RELAY_MAX_ROOMS: ${UNCIV_RELAY_MAX_ROOMS:-}
+      UNCIV_RELAY_MAX_SPLICES: ${UNCIV_RELAY_MAX_SPLICES:-}
+      UNCIV_RELAY_MAX_CONTROL_PER_NETWORK: ${UNCIV_RELAY_MAX_CONTROL_PER_NETWORK:-}
+      UNCIV_RELAY_MAX_ROOMS_PER_NETWORK: ${UNCIV_RELAY_MAX_ROOMS_PER_NETWORK:-}
+      UNCIV_RELAY_MAX_CONNECTIONS_PER_NETWORK: ${UNCIV_RELAY_MAX_CONNECTIONS_PER_NETWORK:-}
+      UNCIV_RELAY_MAX_JOINERS_PER_ROOM: ${UNCIV_RELAY_MAX_JOINERS_PER_ROOM:-}
+      UNCIV_RELAY_MAX_PENDING_PER_ROOM: ${UNCIV_RELAY_MAX_PENDING_PER_ROOM:-}
+      UNCIV_RELAY_MAX_JOINERS_PER_NETWORK: ${UNCIV_RELAY_MAX_JOINERS_PER_NETWORK:-}
+      UNCIV_RELAY_HANDSHAKES_PER_MINUTE: ${UNCIV_RELAY_HANDSHAKES_PER_MINUTE:-}
+      UNCIV_RELAY_JOINS_PER_MINUTE: ${UNCIV_RELAY_JOINS_PER_MINUTE:-}
+      UNCIV_RELAY_LOOKUP_FAILURES_PER_MINUTE: ${UNCIV_RELAY_LOOKUP_FAILURES_PER_MINUTE:-}
+      UNCIV_RELAY_BAN_MINUTES: ${UNCIV_RELAY_BAN_MINUTES:-}
+      UNCIV_RELAY_LISTINGS_PER_MINUTE: ${UNCIV_RELAY_LISTINGS_PER_MINUTE:-}
+      UNCIV_RELAY_HTTP_REQUESTS_PER_MINUTE: ${UNCIV_RELAY_HTTP_REQUESTS_PER_MINUTE:-}
+      UNCIV_RELAY_SPLICE_RATE: ${UNCIV_RELAY_SPLICE_RATE:-}
+      UNCIV_RELAY_SPLICE_BURST: ${UNCIV_RELAY_SPLICE_BURST:-}
+      UNCIV_RELAY_ROOM_BYTES_PER_DAY: ${UNCIV_RELAY_ROOM_BYTES_PER_DAY:-}
+      UNCIV_RELAY_IDLE_SECONDS: ${UNCIV_RELAY_IDLE_SECONDS:-}
+      UNCIV_RELAY_CONTROL_SILENCE_SECONDS: ${UNCIV_RELAY_CONTROL_SILENCE_SECONDS:-}
+      UNCIV_RELAY_LISTING_STALE_MINUTES: ${UNCIV_RELAY_LISTING_STALE_MINUTES:-}
+      UNCIV_RELAY_ROOM_TTL_HOURS: ${UNCIV_RELAY_ROOM_TTL_HOURS:-}
+      UNCIV_RELAY_HOST_TIMEOUT_MILLIS: ${UNCIV_RELAY_HOST_TIMEOUT_MILLIS:-}
+      UNCIV_RELAY_PREAMBLE_TIMEOUT_MILLIS: ${UNCIV_RELAY_PREAMBLE_TIMEOUT_MILLIS:-}
+      UNCIV_RELAY_FIRST_BYTES_SECONDS: ${UNCIV_RELAY_FIRST_BYTES_SECONDS:-}
+      UNCIV_RELAY_MAX_MBPS: ${UNCIV_RELAY_MAX_MBPS:-}
+      UNCIV_RELAY_MAX_GIB_PER_MONTH: ${UNCIV_RELAY_MAX_GIB_PER_MONTH:-}
 
 volumes:
   relay-data:

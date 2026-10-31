@@ -1,0 +1,4 @@
+# Your secrets and certificates never go into git.
+.env
+certs/*
+!certs/.gitkeep

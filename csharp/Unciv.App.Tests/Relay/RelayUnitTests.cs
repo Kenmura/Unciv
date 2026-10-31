@@ -110,6 +110,57 @@ public sealed class RelayUnitTests : IDisposable
     }
 
     [Fact]
+    public void EnvironmentVariablesAreTheLowestLayer()
+    {
+        var env = new Dictionary<string, string>
+        {
+            ["UNCIV_RELAY_TLS"] = "none",
+            ["UNCIV_RELAY_PUBLIC_NAME"] = "a.example.org, B.example.org",
+            ["UNCIV_RELAY_TRUSTED_PROXY"] = "10.0.0.0/8,172.16.0.0/12",
+            ["UNCIV_RELAY_PROXY_PROTOCOL"] = "TRUE",
+            ["UNCIV_RELAY_METRICS"] = "1",
+            ["UNCIV_RELAY_NO_HTTP"] = "false",
+            ["UNCIV_RELAY_MAX_ROOMS"] = "7",
+            ["UNCIV_RELAY_CONTACT"] = "env",
+            ["UNCIV_RELAY_MOTD"] = "  ", // empty after trimming: ignored, as a compose file passes unset variables
+            ["UNCIV_RELAY_NAME"] = "env name",
+        };
+        string? Env(string name) => env.GetValueOrDefault(name);
+        var json = """{ "contact": "file", "max-rooms": 9, "metrics": false }""";
+        var o = RelayOptions.ParseWithConfig(["--data-dir", dir, "--name", "cli"], path => path.EndsWith("relay.json", StringComparison.Ordinal) ? json : null, Env);
+        Assert.Equal(RelayTlsMode.None, o.TlsMode);
+        Assert.Equal(["a.example.org", "b.example.org"], o.PublicNames);
+        Assert.Equal(2, o.TrustedProxies.Count);
+        Assert.True(o.ProxyProtocol);
+        Assert.False(o.NoHttp);
+        Assert.Equal("", o.Motd);
+        Assert.False(o.Metrics); // the file switches off what the environment switched on
+        Assert.Equal(9, o.Limits.MaxRooms); // the file wins over the environment
+        Assert.Equal("file", o.Contact);
+        Assert.Equal("cli", o.Name); // the command line wins over both
+        var withoutFile = RelayOptions.ParseWithConfig(["--data-dir", dir], _ => null, Env);
+        Assert.Equal(7, withoutFile.Limits.MaxRooms);
+        Assert.True(withoutFile.Metrics);
+        env["UNCIV_RELAY_CONFIG"] = Path.Combine(dir, "x.json");
+        Assert.Contains("cannot be read", Assert.Throws<RelayUsageException>(() => RelayOptions.ParseWithConfig([], _ => null, Env)).Message, StringComparison.Ordinal);
+        env.Remove("UNCIV_RELAY_CONFIG");
+        env["UNCIV_RELAY_METRICS"] = "maybe";
+        Assert.Contains("UNCIV_RELAY_METRICS", Assert.Throws<RelayUsageException>(() => RelayOptions.ParseWithConfig([], _ => null, Env)).Message, StringComparison.Ordinal);
+        env["UNCIV_RELAY_METRICS"] = "0";
+        env["UNCIV_RELAY_MAX_ROOMS"] = "many";
+        Assert.Contains("--max-rooms", Assert.Throws<RelayUsageException>(() => RelayOptions.ParseWithConfig([], _ => null, Env)).Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void EnvironmentNamesFollowTheOptionNames()
+    {
+        Assert.Equal("UNCIV_RELAY_MAX_ROOMS_PER_NETWORK", RelayOptions.EnvName("max-rooms-per-network"));
+        Assert.Contains("self-signed", RelayOptions.OptionNames);
+        Assert.Contains("log-retention-days", RelayOptions.OptionNames);
+        Assert.Equal(RelayOptions.OptionNames.Count, RelayOptions.OptionNames.Distinct().Count());
+    }
+
+    [Fact]
     public void ConfigFileErrorsAreUsageErrors()
     {
         RelayUsageException Fail(string? json, params string[] args) => Assert.Throws<RelayUsageException>(() => RelayOptions.ParseWithConfig(args, _ => json));

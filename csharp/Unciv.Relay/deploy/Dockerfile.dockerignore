@@ -1,0 +1,14 @@
+# Used when the build context is csharp/ (BuildKit, podman and buildah read <Dockerfile name>.dockerignore next to the Dockerfile).
+# Allow list: send only what the Dockerfile copies (the later lines win), not the game client, the test assets or other projects' build output.
+**
+!Directory.Build.props
+!Directory.Packages.props
+!BannedSymbols.txt
+!.editorconfig
+!Unciv.Core
+!Unciv.Relay
+!migration/ai-spec/data
+Unciv.Relay/deploy/*
+!Unciv.Relay/deploy/healthcheck.sh
+**/bin
+**/obj

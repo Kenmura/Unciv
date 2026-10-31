@@ -200,7 +200,7 @@ location /unciv-relay/ {
 ```
 (The exact file is a deliverable of T337; the fragment only shows the shape. With `--tls none` the relay's tunnel listener is plain TCP on loopback, here 47832, and nginx owns the public port and the certificate.)
 
-**Operations.** `Dockerfile` and `compose.yml` (non-root user, read-only root, `127.0.0.1` binds by default, volume for the data dir), a `systemd` unit (`DynamicUser`, `ProtectSystem=strict`, `NoNewPrivileges`, `Restart=on-failure`), graceful shutdown on SIGTERM (stop accepting, send `closing: restart` to every control channel so hosts reconnect, drain 10 s, exit), SIGHUP reloads certs and ban files, `/healthz` for the load balancer or uptime monitor, structured one-line logs. Firewall: allow the tunnel port; the HTTP port stays on loopback behind nginx.
+**Operations.** (Step-by-step guide for a fresh server: `csharp/Unciv.Relay/SETUP.md`, T374.) `Dockerfile` and `compose.yml` (non-root user, read-only root, `127.0.0.1` binds by default, volume for the data dir), a `systemd` unit (`DynamicUser`, `ProtectSystem=strict`, `NoNewPrivileges`, `Restart=on-failure`), graceful shutdown on SIGTERM (stop accepting, send `closing: restart` to every control channel so hosts reconnect, drain 10 s, exit), SIGHUP reloads certs and ban files, `/healthz` for the load balancer or uptime monitor, structured one-line logs. Firewall: allow the tunnel port; the HTTP port stays on loopback behind nginx.
 
 ## 9. Trust model (state it to players; extends SERVER.md 6.6)
 

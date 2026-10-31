@@ -21,7 +21,7 @@ public static class RelayRunner
         RelayOptions options;
         try
         {
-            options = RelayOptions.ParseWithConfig(args, path => File.Exists(path) ? File.ReadAllText(path) : null);
+            options = RelayOptions.ParseWithConfig(args, path => File.Exists(path) ? File.ReadAllText(path) : null, Environment.GetEnvironmentVariable);
         }
         catch (RelayUsageException e)
         {

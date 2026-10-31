@@ -1,0 +1,13 @@
+# nginx http configuration for Unciv.Relay's optional read-only HTTP side (design/RELAY.md section 8, SETUP.md): GET /unciv-relay/healthz, /v1/info, /v1/games.
+# The game itself never needs this; it is for curl, monitors and a future web client. relay.example.org is a PLACEHOLDER.
+#
+# 1. Declare the rate-limit zone ONCE at http level (inside http { } of nginx.conf or in a file under /etc/nginx/conf.d/, which is included there):
+#      limit_req_zone $binary_remote_addr zone=relay_http:10m rate=30r/m;
+# 2. Put the location below inside your existing HTTPS server block for relay.example.org (or create one, see SETUP.md).
+# The relay's HTTP port stays on 127.0.0.1:47831 (RELAY_HTTP_PUBLISH in .env, the default).
+
+location /unciv-relay/ {
+    proxy_pass http://127.0.0.1:47831/;
+    proxy_set_header X-Forwarded-For $remote_addr;    # the relay trusts this header only from its --trusted-proxy networks
+    limit_req zone=relay_http burst=20 nodelay;
+}
