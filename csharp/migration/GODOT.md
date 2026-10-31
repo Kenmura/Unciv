@@ -101,7 +101,7 @@ proves a wrong golden fails. `review-sheet.sh` runs all scenarios and writes `ou
 
 - `Unciv.Godot.Harness` is not in `Unciv.sln`: it needs the Godot SDK and runtime, which the Standard checks must not require.
   Its gate is `tools/run-smoke.sh`.
-- `Unciv.Godot` (C001) is the real client project: it references `Unciv.Core`, boots an empty `Main.tscn`, and is likewise kept out of `Unciv.sln`. CI builds it headlessly with `dotnet build Unciv.Godot -warnaserror` (needs only the .NET SDK and the `Godot.NET.Sdk` NuGet package; no editor or Godot binary). It uses no assets (see ASSETS.md).
+- `Unciv.Godot` (C001) is the real client project: it references `Unciv.Core`, boots `App.tscn` (the composition root), and is likewise kept out of `Unciv.sln`. CI builds it headlessly with `dotnet build Unciv.Godot -warnaserror` (needs only the .NET SDK and the `Godot.NET.Sdk` NuGet package; no editor or Godot binary). It uses no assets (see ASSETS.md).
 - Linux x86-64 only (the install script and the Xvfb path). Windows/macOS are not covered.
 - llvmpipe is slow; keep test scenes small and the resolution at 640x480 unless a ticket needs more.
 

@@ -16,9 +16,6 @@ public static class UserProfile
 
     private static readonly Regex Valid = new(@"\A[A-Za-z0-9][A-Za-z0-9_-]{0,31}\z", RegexOptions.CultureInvariant | RegexOptions.NonBacktracking);
 
-    /// <summary>The command a player types to start a second copy as another player (shown in the host and join help).</summary>
-    public const string SecondInstanceHelp = "Testing with two copies on one computer? Start the second copy with: Unciv -- --profile=friend (or set UNCIV_PROFILE=friend). Each profile is its own player with its own settings and saves.";
-
     private static readonly Regex WindowsReserved = new(@"\A(CON|PRN|AUX|NUL|COM[0-9]|LPT[0-9])\z", RegexOptions.CultureInvariant | RegexOptions.IgnoreCase | RegexOptions.NonBacktracking);
 
     /// <summary>Windows device names (CON, NUL, COM1...) cannot be folder names there, so they are refused everywhere.</summary>

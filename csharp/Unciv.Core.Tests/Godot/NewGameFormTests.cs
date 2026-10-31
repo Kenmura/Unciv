@@ -511,6 +511,20 @@ public sealed class NewGameFormTests
     }
 
     [Fact]
+    public void GodModeFromTheFormSurvivesTheLaunch()
+    {
+        var form = VanillaForm();
+        form.SetNation(0, "Babylon");
+        form.SetNation(1, "Rome");
+        form.SetCityStates(0);
+        form.Size = "Tiny";
+        form.SeedText = "3";
+        Assert.False(NewGameLauncher.Launch(form, 1000).Game!.GameParameters.GodMode);
+        form.GodMode = true;
+        Assert.True(NewGameLauncher.Launch(form, 1000).Game!.GameParameters.GodMode);
+    }
+
+    [Fact]
     public void LaunchResolvesARandomHumanNation()
     {
         var form = VanillaForm();
@@ -602,19 +616,19 @@ public sealed class NewGameFormTests
     private static readonly Action<NewGameForm>[] FlagToggles =
     [
         f => f.NoBarbarians = true, f => f.RagingBarbarians = true, f => f.OneCityChallenge = true, f => f.NoCityRazing = true,
-        f => f.NuclearWeapons = false, f => f.Espionage = false, f => f.WorldWrap = false, f => f.NoRuins = true, f => f.NoNaturalWonders = true,
+        f => f.NuclearWeapons = false, f => f.Espionage = false, f => f.WorldWrap = false, f => f.NoRuins = true, f => f.NoNaturalWonders = true, f => f.GodMode = true,
     ];
 
     private static bool[] Flags(Unciv.Models.Metadata.GameSetupInfo s) =>
     [
         s.GameParameters.NoBarbarians, s.GameParameters.RagingBarbarians, s.GameParameters.OneCityChallenge, s.GameParameters.NoCityRazing,
-        s.GameParameters.NuclearWeaponsEnabled, s.GameParameters.EspionageEnabled, s.MapParameters.WorldWrap, s.MapParameters.NoRuins, s.MapParameters.NoNaturalWonders,
+        s.GameParameters.NuclearWeaponsEnabled, s.GameParameters.EspionageEnabled, s.MapParameters.WorldWrap, s.MapParameters.NoRuins, s.MapParameters.NoNaturalWonders, s.GameParameters.GodMode,
     ];
 
     [Fact]
     public void EachFlagReachesOnlyItsOwnParameter()
     {
-        bool[] defaults = [false, false, false, false, true, true, true, false, false];
+        bool[] defaults = [false, false, false, false, true, true, true, false, false, false];
         Assert.Equal(defaults, Flags(VanillaForm().Build(1).Setup!));
         for (int i = 0; i < FlagToggles.Length; i++)
         {

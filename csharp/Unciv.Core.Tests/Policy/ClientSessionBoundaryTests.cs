@@ -3,10 +3,10 @@ using System.Text.RegularExpressions;
 namespace Unciv.Core.Tests.Policy;
 
 // C037 (design/CLIENT-SLICES.md principle 2): the Godot client reads the world only through IGameSession. Only the session implementation
-// (LocalHost) and the composition root (QuickStart, which builds the game it hands to LocalHost) may name the engine's game objects.
+// (LocalHost) may name the engine's game objects.
 public partial class ClientSessionBoundaryTests
 {
-    private static readonly string[] Allowed = ["Play/LocalHost.cs", "QuickStart.cs"];
+    private static readonly string[] Allowed = ["Play/LocalHost.cs"];
 
     [GeneratedRegex(@"\b(GameInfo|GameSession|SnapshotBuilder|ViewDeltaBuilder|GameView|CommandProcessor)\b")]
     private static partial Regex ForbiddenRegex();

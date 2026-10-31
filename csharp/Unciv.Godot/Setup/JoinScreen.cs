@@ -121,7 +121,6 @@ public partial class JoinScreen : Control
         BrowseButton = new Button { Text = "Browse public games".Tr(), Name = "BrowseButton" };
         BrowseButton.Pressed += () => BrowseRequested?.Invoke();
         formPanel.AddChild(BrowseButton);
-        formPanel.AddChild(new Label { Name = "SecondInstanceHelp", Text = UserProfile.SecondInstanceHelp.Tr(), AutowrapMode = TextServer.AutowrapMode.WordSmart });
         hostsTitle.Text = "Known hosts".Tr();
         formPanel.AddChild(hostsTitle);
         formPanel.AddChild(hostsBox);

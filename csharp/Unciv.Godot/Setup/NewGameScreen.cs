@@ -414,5 +414,6 @@ public partial class NewGameScreen : Control
         AddCheck(advancedPage, "No city razing", Form.NoCityRazing, on => Form.NoCityRazing = on);
         AddCheck(advancedPage, "Nuclear weapons", Form.NuclearWeapons, on => Form.NuclearWeapons = on);
         AddCheck(advancedPage, "Espionage", Form.Espionage, on => Form.Espionage = on);
+        AddCheck(advancedPage, "God mode (cheats; the developer console needs it)", Form.GodMode, on => Form.GodMode = on);
     }
 }

@@ -99,6 +99,9 @@ public sealed class NewGameForm
 
     public bool NoCityRazing { get; set; }
 
+    /// <summary>T386: God mode (the cheats of the game parameters). It is what lets the Developer Console run commands; a game started with it says so on its setup. Single player only: a hosted lobby forces it off.</summary>
+    public bool GodMode { get; set; }
+
     public bool NuclearWeapons { get; set; } = true;
 
     public bool Espionage { get; set; } = true;
@@ -324,6 +327,7 @@ public sealed class NewGameForm
             RagingBarbarians = RagingBarbarians,
             OneCityChallenge = OneCityChallenge,
             NoCityRazing = NoCityRazing,
+            GodMode = GodMode,
             NuclearWeaponsEnabled = NuclearWeapons,
             EspionageEnabled = Espionage,
         };
