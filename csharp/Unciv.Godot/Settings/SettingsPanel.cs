@@ -91,6 +91,7 @@ public partial class SettingsPanel : HBoxContainer
     private readonly HSlider scroll = new() { Name = "ScrollSpeedSlider", MinValue = OptionsModel.MinScrollSpeed, MaxValue = OptionsModel.MaxScrollSpeed, Step = 0.25 };
     private readonly HSlider autoPlayTurns = new() { Name = "AutoPlayTurnsSlider", MinValue = AutoPlaySettings.MinTurns, MaxValue = AutoPlaySettings.MaxTurnsLimit, Step = 1 };
     private readonly OptionButton windowMode = new() { Name = "WindowModePicker" };
+    private readonly OptionButton autoPlayAnimations = new() { Name = "AutoPlayAnimationsPicker" };
     private readonly OptionButton graphicsPicker = new() { Name = "GraphicsQualityPicker" };
     private readonly Label graphicsNote = new() { Name = "GraphicsNote", AutowrapMode = TextServer.AutowrapMode.WordSmart, Visible = false };
     private readonly Button graphicsRestart = new() { Name = "GraphicsRestartButton", Visible = false, SizeFlagsHorizontal = SizeFlags.ShrinkBegin };
@@ -154,6 +155,9 @@ public partial class SettingsPanel : HBoxContainer
 
     /// <summary>C097: the graphics quality picker (Low, High, Ultra), the note under it and the restart button that shows when the choice needs another renderer.</summary>
     public OptionButton GraphicsPicker => graphicsPicker;
+
+    /// <summary>T376: the AutoPlay animations picker (skip, fast, normal).</summary>
+    public OptionButton AutoPlayAnimationsPicker => autoPlayAnimations;
 
     public Label GraphicsNote => graphicsNote;
 
@@ -328,6 +332,12 @@ public partial class SettingsPanel : HBoxContainer
         AddToggle(page, "Show AutoPlay button", s => s.AutoPlay.ShowButton, (s, v) => s with { AutoPlay = s.AutoPlay with { ShowButton = v } });
         AddToggle(page, "AutoPlay until victory", s => s.AutoPlay.UntilEnd, (s, v) => s with { AutoPlay = s.AutoPlay with { UntilEnd = v } });
         AddSlider(page, "Multi-turn AutoPlay amount", autoPlayTurns, (s, v) => s with { AutoPlay = s.AutoPlay with { MaxTurns = (int)Math.Round(v, MidpointRounding.AwayFromZero) } }, s => s.AutoPlay.MaxTurns, v => ((int)Math.Round(v, MidpointRounding.AwayFromZero)).ToString(CultureInfo.InvariantCulture));
+        foreach (var mode in Enum.GetValues<AutoPlayAnimations>()) autoPlayAnimations.AddItem(mode.ToString().Tr());
+        autoPlayAnimations.ItemSelected += index =>
+        {
+            if (!refreshing) service.Update(s => s with { AutoPlay = s.AutoPlay with { Animations = ((AutoPlayAnimations)(int)index).ToString() } });
+        };
+        AddRow(page, "AutoPlay animations", autoPlayAnimations);
         AddToggle(page, "Full AutoPlay AI", s => s.AutoPlay.FullAutoPlayAI, (s, v) => s with { AutoPlay = s.AutoPlay with { FullAutoPlayAI = v } });
     }
 
@@ -535,6 +545,8 @@ public partial class SettingsPanel : HBoxContainer
         scaleStepper.Value = (int)MathF.Round(s.UiScale * 100f, MidpointRounding.AwayFromZero);
         windowMode.Select(Math.Max(0, IndexOf(OptionsModel.WindowModes, s.WindowMode)));
         packPicker.Select(Math.Max(0, IndexOf(packNames, s.AssetPack)));
+        autoPlayAnimations.Select((int)s.AutoPlay.AnimationMode);
+        for (int i = 0; i < autoPlayAnimations.ItemCount; i++) autoPlayAnimations.SetItemText(i, ((AutoPlayAnimations)i).ToString().Tr());
         graphicsPicker.Select((int)s.Quality);
         for (int i = 0; i < graphicsPicker.ItemCount; i++) graphicsPicker.SetItemText(i, ((GraphicsQuality)i).ToString().Tr());
         var note = GraphicsRuntime.NoteFor(s);

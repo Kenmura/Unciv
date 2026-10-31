@@ -38,6 +38,7 @@ tooltips
 combat-presentation
 city-rename
 autoplay
+autoplay-animations
 audio
 console
 next-turn

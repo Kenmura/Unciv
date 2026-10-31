@@ -28,6 +28,19 @@ public sealed record AutoPlayRun(int TurnsLeft, bool UntilEnd, int TurnsPlayed)
     public AutoPlayRun AfterTurn() => this with { TurnsLeft = UntilEnd ? TurnsLeft : Math.Max(0, TurnsLeft - 1), TurnsPlayed = TurnsPlayed + 1 };
 }
 
+/// <summary>T376: how much of the map's animation a running AutoPlay plays.</summary>
+public enum AutoPlayAnimations
+{
+    /// <summary>None: units jump to their new tiles, no combat effects or sounds. The default.</summary>
+    Skip,
+
+    /// <summary>Played several times faster, and whatever is left is dropped when the turn's time is up.</summary>
+    Fast,
+
+    /// <summary>At normal speed; the next turn waits for them (up to a limit).</summary>
+    Normal,
+}
+
 /// <summary>
 /// C047: the AutoPlay button and its menu as plain data, Godot-free so it is unit-tested. It builds the engine's <see cref="StartAutoPlay"/> from the stored
 /// <see cref="AutoPlaySettings"/> and words the button; the engine owns every rule (who may auto-play, when it stops).
@@ -40,6 +53,33 @@ public static class AutoPlayModel
     public const string EndTurnLabel = "AutoPlay End Turn";
     public const string MenuTitle = "AutoPlay";
     public const string NotYourTurn = "You cannot AutoPlay right now";
+
+    /// <summary>T376: playing speed of <see cref="AutoPlayAnimations.Fast"/> (normal speed is 1).</summary>
+    public const float FastSpeed = 6f;
+
+    /// <summary>T376: frames (at 60 per second, 0.6 s) a fast run gives one turn's animations before it drops what is left.</summary>
+    public const int FastWaitFrames = 36;
+
+    /// <summary>T376: frames (30 s) the longest turn's animations may hold the next turn at normal speed; one turn's script is never that long, this only guards a stuck presenter.</summary>
+    public const int NormalWaitFrames = 1800;
+
+    /// <summary>T376: "skip", "fast" or "normal" in any case; anything else is the default, skip.</summary>
+    public static AutoPlayAnimations ParseAnimations(string? text) =>
+        Enum.TryParse<AutoPlayAnimations>(text, true, out var mode) && Enum.IsDefined(mode) ? mode : AutoPlayAnimations.Skip;
+
+    /// <summary>T376: whether the map animates a run's moves and fights at all.</summary>
+    public static bool Animates(AutoPlayAnimations mode) => mode != AutoPlayAnimations.Skip;
+
+    /// <summary>T376: the speed multiplier while a run plays in <paramref name="mode"/>.</summary>
+    public static float Speed(AutoPlayAnimations mode) => mode == AutoPlayAnimations.Fast ? FastSpeed : 1f;
+
+    /// <summary>T376: how many frames one turn's animations may take before the next turn starts (and the rest is dropped); 0 when nothing is animated.</summary>
+    public static int WaitFrames(AutoPlayAnimations mode) => mode switch
+    {
+        AutoPlayAnimations.Fast => FastWaitFrames,
+        AutoPlayAnimations.Normal => NormalWaitFrames,
+        _ => 0,
+    };
 
     public static IReadOnlyList<AutoPlayEntry> Entries(AutoPlaySettings settings, bool canStart)
     {

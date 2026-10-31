@@ -175,6 +175,9 @@ public partial class GameScreen : Control
 
     private int autoPlayGeneration;
 
+    /// <summary>T376: what the running AutoPlay animates (fixed when the run starts).</summary>
+    private AutoPlayAnimations autoPlayAnimations;
+
     /// <summary>C040: the overlay shown while End turn is processed off the UI thread.</summary>
     public NextTurnProgressView TurnOverlay { get; private set; } = null!; // JUSTIFY: C040 assigned in _Ready before any use
 
@@ -1113,6 +1116,7 @@ public partial class GameScreen : Control
         AutoPlayMenu.Init(theme);
         AutoPlayMenu.Close();
         autoPlayGeneration++; // a run of the previous game ends with it
+        Presenter.SpeedScale = 1f;
         AutoPlay = null;
         Hud.SetAutoPlay(null);
         ConsolePopup.Init(theme);
@@ -2177,8 +2181,11 @@ public partial class GameScreen : Control
     // Events arrive before the screen redraws from the new snapshot, so the presenter can still take the nodes of units that just died.
     private void OnEventsReceived(EventBatch batch)
     {
-        PresentEvents(batch.Events);
-        PlayCues(batch.Events);
+        if (AutoPlay == null || AutoPlayModel.Animates(autoPlayAnimations)) // T376: a run that skips animations shows neither the moves and fights nor their sounds
+        {
+            PresentEvents(batch.Events);
+            PlayCues(batch.Events);
+        }
         if (session is not ITurnRoster roster) return;
         foreach (var gameEvent in batch.Events)
             if (TurnBarModel.Toast(gameEvent, roster.Roster, session.ViewerCivId) is { } toast) TurnBar.Toast(toast);
@@ -2552,6 +2559,9 @@ public partial class GameScreen : Control
         AutoPlay = AutoPlayModel.StartRun(settings, kind);
         AutoPlayResult = null;
         Hud.SetAutoPlay(AutoPlay);
+        autoPlayAnimations = settings.AnimationMode;
+        Presenter.Complete(); // T376: whatever the player's own moves still queue is over before the run's turns start, so the backlog starts at zero
+        Presenter.SpeedScale = AutoPlayModel.Speed(autoPlayAnimations);
         string refusal = "";
         while (AutoPlay is { Active: true } && generation == autoPlayGeneration)
         {
@@ -2583,8 +2593,27 @@ public partial class GameScreen : Control
                 await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
                 if (generation != autoPlayGeneration) return;
             }
+            if (!await WaitForAnimations(generation)) return;
         }
         FinishAutoPlay(stoppedByPlayer: false, refusal);
+    }
+
+    /// <summary>
+    /// T376: gives the animations of the turn just played their time (frames, so a scripted run is exact): none when the run skips them, at most
+    /// <see cref="AutoPlayModel.FastWaitFrames"/> when fast, until they end when normal. What is left then is dropped, so the queue never holds more than one turn and the next turn
+    /// never starts behind a backlog. False when the run was stopped or replaced meanwhile.
+    /// </summary>
+    private async Task<bool> WaitForAnimations(int generation)
+    {
+        int frames = AutoPlayModel.WaitFrames(autoPlayAnimations);
+        for (int i = 0; i < frames && !Presenter.IsIdle; i++)
+        {
+            await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
+            if (generation != autoPlayGeneration) return false;
+            if (Presenter.ManualStepping) Presenter.Step(1f / 60f);
+        }
+        Presenter.Complete();
+        return true;
     }
 
     /// <summary>C047: the Stop control. Ends the run at once and tells the engine, so the next turn is the player's.</summary>
@@ -2602,6 +2631,8 @@ public partial class GameScreen : Control
         if (AutoPlay == null) return;
         AutoPlayResult = AutoPlayModel.FinishedText(AutoPlay, stoppedByPlayer, refusal);
         AutoPlay = null;
+        if (autoPlayAnimations == AutoPlayAnimations.Fast) Presenter.Complete(); // T376: the player takes over on the final state, not on a sped-up backlog
+        Presenter.SpeedScale = 1f;
         Hud.SetAutoPlay(null);
         SetStatus(AutoPlayResult);
         Run(RefreshHud());

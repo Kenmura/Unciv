@@ -483,4 +483,48 @@ public sealed class CombatPresentationTests
     [InlineData(1f, 1.5f)]
     [InlineData(9f, 1.5f)]
     public void The_flash_swells(float p, float expected) => Near(expected, CuePoses.FlashScale(p));
+
+    // ---- T376: AutoPlay speed and dropping the backlog
+
+    private static IReadOnlyList<IReadOnlyList<Cue>> Walk(int tiles) => CombatPresentation.Plan([new UnitMoved("Rome", 4, "Warrior", [.. Enumerable.Range(0, tiles + 1).Select(it => HexCoord.Of(it, 0))])]);
+
+    [Fact]
+    public void SpeedScale_PlaysFasterAndNeverSlowerThanNormal()
+    {
+        var normal = new PresentationTimeline();
+        var fast = new PresentationTimeline { SpeedScale = 4f };
+        normal.Enqueue(Walk(4));
+        fast.Enqueue(Walk(4));
+        normal.Advance(0.2f);
+        fast.Advance(0.2f);
+        Assert.True(fast.PendingSeconds < normal.PendingSeconds - 0.5f);
+        var clamped = new PresentationTimeline { SpeedScale = 0.1f };
+        Assert.Equal(1f, clamped.SpeedScale);
+        clamped.SpeedScale = float.NaN;
+        Assert.Equal(1f, clamped.SpeedScale);
+    }
+
+    [Fact]
+    public void Complete_FinishesEveryCueOnceAndLeavesTheTimelineIdle()
+    {
+        var timeline = new PresentationTimeline();
+        timeline.Enqueue(Walk(30));
+        timeline.Enqueue(CombatPresentation.Plan([Attack(A, B, defenderKilled: true)]));
+        timeline.Advance(0.5f);
+        var updates = timeline.Complete();
+        Assert.True(timeline.IsIdle);
+        Assert.Equal(0f, timeline.PendingSeconds);
+        Assert.All(updates.GroupBy(it => it.Cue, ReferenceEqualityComparer.Instance), group => Assert.Single(group, it => it.Done));
+        Assert.Contains(updates, it => it.Cue.Kind == CueKind.Death && it.Done);
+        Assert.Empty(timeline.Complete());
+    }
+
+    [Fact]
+    public void Complete_OnAFastTimelineStillDropsEverything()
+    {
+        var timeline = new PresentationTimeline { SpeedScale = 6f };
+        for (int i = 0; i < 50; i++) timeline.Enqueue(Walk(10));
+        timeline.Complete();
+        Assert.True(timeline.IsIdle);
+    }
 }

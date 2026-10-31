@@ -141,4 +141,37 @@ public sealed class AutoPlayModelTests
         Assert.Equal("AutoPlay stopped after 1 turn.", AutoPlayModel.FinishedText(new AutoPlayRun(4, false, 1), true, ""));
         Assert.Equal("AutoPlay finished after 0 turns: Auto-play is not running", AutoPlayModel.FinishedText(new AutoPlayRun(4, false, 0), false, "Auto-play is not running"));
     }
+
+    [Theory]
+    [InlineData("skip", AutoPlayAnimations.Skip)]
+    [InlineData("FAST", AutoPlayAnimations.Fast)]
+    [InlineData("Normal", AutoPlayAnimations.Normal)]
+    [InlineData("", AutoPlayAnimations.Skip)]
+    [InlineData(null, AutoPlayAnimations.Skip)]
+    [InlineData("slow", AutoPlayAnimations.Skip)]
+    [InlineData("7", AutoPlayAnimations.Skip)]
+    public void ParseAnimations_ReadsTheModeAndDefaultsToSkip(string? text, AutoPlayAnimations expected) =>
+        Assert.Equal(expected, AutoPlayModel.ParseAnimations(text));
+
+    [Fact]
+    public void Animations_DefaultToSkipAndSanitizedNormalizesTheText()
+    {
+        Assert.Equal(AutoPlayAnimations.Skip, new AutoPlaySettings().AnimationMode);
+        Assert.Equal("Fast", new AutoPlaySettings { Animations = "fast" }.Sanitized().Animations);
+        Assert.Equal("Skip", new AutoPlaySettings { Animations = "garbage" }.Sanitized().Animations);
+    }
+
+    [Fact]
+    public void SkipAnimatesNothingFastIsSpedUpAndBoundedNormalWaitsForThem()
+    {
+        Assert.False(AutoPlayModel.Animates(AutoPlayAnimations.Skip));
+        Assert.True(AutoPlayModel.Animates(AutoPlayAnimations.Fast));
+        Assert.True(AutoPlayModel.Animates(AutoPlayAnimations.Normal));
+        Assert.Equal(1f, AutoPlayModel.Speed(AutoPlayAnimations.Skip));
+        Assert.Equal(AutoPlayModel.FastSpeed, AutoPlayModel.Speed(AutoPlayAnimations.Fast));
+        Assert.Equal(1f, AutoPlayModel.Speed(AutoPlayAnimations.Normal));
+        Assert.Equal(0, AutoPlayModel.WaitFrames(AutoPlayAnimations.Skip));
+        Assert.Equal(AutoPlayModel.FastWaitFrames, AutoPlayModel.WaitFrames(AutoPlayAnimations.Fast));
+        Assert.Equal(AutoPlayModel.NormalWaitFrames, AutoPlayModel.WaitFrames(AutoPlayAnimations.Normal));
+    }
 }

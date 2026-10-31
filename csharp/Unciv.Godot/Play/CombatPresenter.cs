@@ -44,6 +44,9 @@ public partial class CombatPresenter : Node3D
     /// <summary>The damage numbers shown so far, in order, with the tile they floated over (what tests compare with the engine's result).</summary>
     public IReadOnlyList<(int Amount, HexCoord At)> NumbersShown => numbers;
 
+    /// <summary>Script seconds still queued, at normal speed (T376: what AutoPlay keeps bounded).</summary>
+    public float PendingSeconds => timeline.PendingSeconds;
+
     /// <summary>Units taken out of the screen's table that are still dying.</summary>
     public int DyingCount => dying.Count;
 
@@ -61,6 +64,34 @@ public partial class CombatPresenter : Node3D
 
     /// <summary>Particle bursts started so far.</summary>
     public int BurstsStarted { get; private set; }
+
+    /// <summary>T376: playing speed (1 is normal; AutoPlay's fast animations raise it). Never below 1.</summary>
+    public float SpeedScale
+    {
+        get => timeline.SpeedScale;
+        set => timeline.SpeedScale = value;
+    }
+
+    private bool dropping;
+
+    /// <summary>
+    /// T376: drops the backlog without playing it: every queued cue is taken to its end state at once (units stand on their final tiles, the dead are freed, floating numbers and
+    /// effects vanish) with no sounds or particles. AutoPlay calls it when a turn's time is up and when a run stops, so the map always shows the game as it is.
+    /// </summary>
+    public void Complete()
+    {
+        if (!Enabled) return;
+        dropping = true;
+        try
+        {
+            Apply(timeline.Complete());
+        }
+        finally
+        {
+            dropping = false;
+        }
+        ClearBursts();
+    }
 
     /// <summary>Wires the presenter to the screen: how to find the node of a unit by id, and where a tile's top is in the world.</summary>
     public void Bind(Func<int, UnitNode?> unitLookup, Func<HexCoord, Vector3> tileTopOf)
@@ -160,6 +191,11 @@ public partial class CombatPresenter : Node3D
     /// <summary>Fires the moments (sparks, dust, flashes, sounds) of a cue that its progress has reached, each once.</summary>
     private void FireMoments(Cue cue, float p, bool done)
     {
+        if (dropping)
+        {
+            if (done) fired.Remove(cue);
+            return;
+        }
         var moments = CombatEffects.For(cue);
         if (moments.Count == 0) return;
         var next = fired.GetValueOrDefault(cue);

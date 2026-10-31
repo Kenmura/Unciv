@@ -141,10 +141,21 @@ public sealed class PresentationTimeline
     }
 
     private readonly List<List<Slot>> beats = [];
+    private float speedScale = 1f;
     private int current;
     private float beatTime;
 
     public bool IsIdle => current >= beats.Count;
+
+    /// <summary>T376: a multiplier on playing speed (AutoPlay's "fast" animations); never below 1 and NaN counts as 1, so a script never plays slower than normal.</summary>
+    public float SpeedScale
+    {
+        get => speedScale;
+        set => speedScale = value >= 1f ? value : 1f;
+    }
+
+    /// <summary>T376: plays whatever is left at once and reports every cue that still ran (each finishes exactly once), leaving the timeline idle.</summary>
+    public IReadOnlyList<CueUpdate> Complete() => Advance(PendingSeconds + 1f);
 
     /// <summary>Script seconds left, at normal speed.</summary>
     public float PendingSeconds
@@ -184,7 +195,7 @@ public sealed class PresentationTimeline
     {
         var updates = new List<CueUpdate>();
         if (IsIdle) return updates;
-        var remaining = (seconds > 0f ? seconds : 0f) * Math.Max(1f, PendingSeconds / MaxBacklogSeconds); // NaN counts as no time, or the clock would stick forever
+        var remaining = (seconds > 0f ? seconds : 0f) * speedScale * Math.Max(1f, PendingSeconds / MaxBacklogSeconds); // NaN counts as no time, or the clock would stick forever
         while (!IsIdle)
         {
             var beat = beats[current];

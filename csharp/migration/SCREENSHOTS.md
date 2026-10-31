@@ -99,6 +99,7 @@
 - [T334 (ticket not Done or unknown)](#t334-ticket-not-done-or-unknown)
 - [T339 (ticket not Done or unknown)](#t339-ticket-not-done-or-unknown)
 - [T371 (ticket not Done or unknown)](#t371-ticket-not-done-or-unknown)
+- [T376 (ticket not Done or unknown)](#t376-ticket-not-done-or-unknown)
 - [Missing screenshots](#missing-screenshots)
 <!-- /toc -->
 
@@ -2071,6 +2072,16 @@ Scenario `relay`.
 ![An invite names another relay: the prompt names it, says what its operator can see and that yes is remembered for that relay only; nothing has been sent yet.](../Unciv.Godot.Harness/golden/relay/prompt.png)
 
 *An invite names another relay: the prompt names it, says what its operator can see and that yes is remembered for that relay only; nothing has been sent yet.* (`relay/prompt.png`)
+
+## T376 (ticket not Done or unknown)
+
+AutoPlay animations: skip, fast or normal while a run plays (no backlog behind the turns); the option in the Gameplay options.
+
+Scenario `autoplay-animations`.
+
+![Options, Gameplay tab, AutoPlay section: the AutoPlay animations picker set to Skip, between the turns slider and Full AutoPlay AI.](../Unciv.Godot.Harness/golden/autoplay-animations/options.png)
+
+*Options, Gameplay tab, AutoPlay section: the AutoPlay animations picker set to Skip, between the turns slider and Full AutoPlay AI.* (`autoplay-animations/options.png`)
 
 ## Missing screenshots
 

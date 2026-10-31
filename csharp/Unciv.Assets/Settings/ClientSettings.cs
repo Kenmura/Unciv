@@ -188,8 +188,16 @@ public sealed record AutoPlaySettings
     [JsonPropertyName("fullAutoPlayAI")]
     public bool FullAutoPlayAI { get; init; } = true;
 
+    /// <summary>T376: what the map animates while a run plays, "skip", "fast" or "normal" (see <see cref="AutoPlayModel.ParseAnimations"/>); the default is skip.</summary>
+    [JsonPropertyName("animations")]
+    public string Animations { get; init; } = nameof(AutoPlayAnimations.Skip);
+
+    /// <summary><see cref="Animations"/> as the enum (an unknown or hand-edited value reads as skip).</summary>
+    [JsonIgnore]
+    public AutoPlayAnimations AnimationMode => AutoPlayModel.ParseAnimations(Animations);
+
     /// <summary>The number of turns kept inside <see cref="MinTurns"/> to <see cref="MaxTurnsLimit"/> (a hand-edited file could hold anything).</summary>
-    public AutoPlaySettings Sanitized() => this with { MaxTurns = Math.Clamp(MaxTurns, MinTurns, MaxTurnsLimit) };
+    public AutoPlaySettings Sanitized() => this with { MaxTurns = Math.Clamp(MaxTurns, MinTurns, MaxTurnsLimit), Animations = AnimationMode.ToString() };
 }
 
 /// <summary>Reads and writes <see cref="ClientSettings"/> as indented JSON at one path (in the game: the globalized <c>user://settings.json</c>).</summary>
