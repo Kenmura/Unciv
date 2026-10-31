@@ -146,6 +146,7 @@ public sealed class RelaySettings
     {
         var named = RelayRoutes.EndpointOf(route) ?? throw new RelayException(RelayCodes.RoomUnknown, "That is not a relay route.");
         var choice = Choose(named.Host, named.Port);
+        if (choice.NeedsPrompt) throw new RelayException(RelayCodes.Declined, "That relay was not agreed to.");
         return TcpTlsClientTransport.ConnectViaRelayAsync(choice.Endpoint, route.Room, fingerprint, dial: choice.Dial, cancellationToken: cancellationToken);
     }
 

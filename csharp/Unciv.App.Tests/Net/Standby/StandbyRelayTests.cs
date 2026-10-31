@@ -355,4 +355,14 @@ public sealed class StandbyRelayProbeTests : IAsyncDisposable
         Assert.Null(settings.Url); // never added to the player's own relay
         Assert.False(await settings.ConfirmAsync(new RelayRoute { Relay = "not a relay", Room = "K7QF-3MXP4A" }, _ => Task.FromResult(true)));
     }
+
+    [Fact]
+    public async Task RelaySettings_ConnectAsync_NeverDialsARelayThePlayerDidNotAgreeTo()
+    {
+        var route = new RelayRoute { Relay = "friend-relay.example.org:47830", Room = "K7QF-3MXP4A" };
+        var ex = await Assert.ThrowsAsync<RelayException>(() => new RelaySettings().ConnectAsync(route, "ab", CancellationToken.None));
+        Assert.Equal(RelayCodes.Declined, ex.Code);
+        Assert.False(new TlsEndpointProber().HasRelayResolver);
+        Assert.True(new TlsEndpointProber(_ => null).HasRelayResolver);
+    }
 }

@@ -254,7 +254,7 @@ public sealed class InProcessHost : IAsyncDisposable
         else if (relayEndpoint != null)
         {
             // T354: this host's own relay is one it agreed to by configuring it, so a standby probe may go through it; any other relay stays refused until the UI layer installs a prober that knows the player's agreements.
-            if (host.Standby.Prober is TlsEndpointProber)
+            if (host.Standby.Prober is TlsEndpointProber { HasRelayResolver: false })
                 host.Standby.Prober = new TlsEndpointProber(named => string.Equals(named.Key, relayEndpoint.Key, StringComparison.OrdinalIgnoreCase) ? new RelayDialPlan(relayEndpoint, relayOptions?.Dial ?? new RelayDialOptions()) : null);
             relay = new RelayListener(relayEndpoint, certificate, store.GameId, relayOptions, relayLog);
             background.Add(RunRelayAcceptLoopAsync(relay, cts.Token));

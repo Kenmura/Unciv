@@ -21,6 +21,9 @@ public sealed record RelayDialPlan(RelayEndpoint Endpoint, RelayDialOptions Dial
 /// </summary>
 public sealed class TlsEndpointProber(Func<RelayEndpoint, RelayDialPlan?>? relayResolver = null) : IEndpointProber
 {
+    /// <summary>T354: whether a relay resolver was installed (the player's agreed relays); the host then keeps it rather than replacing it with its own relay only.</summary>
+    public bool HasRelayResolver => relayResolver != null;
+
     public async Task<string?> PresentedFingerprintAsync(string host, int port, TimeSpan timeout, CancellationToken cancellationToken)
     {
         using var limit = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
