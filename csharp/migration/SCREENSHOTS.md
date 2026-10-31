@@ -100,6 +100,7 @@
 - [T339 (ticket not Done or unknown)](#t339-ticket-not-done-or-unknown)
 - [T371 (ticket not Done or unknown)](#t371-ticket-not-done-or-unknown)
 - [T376 (ticket not Done or unknown)](#t376-ticket-not-done-or-unknown)
+- [T377 (ticket not Done or unknown)](#t377-ticket-not-done-or-unknown)
 - [Missing screenshots](#missing-screenshots)
 <!-- /toc -->
 
@@ -2082,6 +2083,36 @@ Scenario `autoplay-animations`.
 ![Options, Gameplay tab, AutoPlay section: the AutoPlay animations picker set to Skip, between the turns slider and Full AutoPlay AI.](../Unciv.Godot.Harness/golden/autoplay-animations/options.png)
 
 *Options, Gameplay tab, AutoPlay section: the AutoPlay animations picker set to Skip, between the turns slider and Full AutoPlay AI.* (`autoplay-animations/options.png`)
+
+## T377 (ticket not Done or unknown)
+
+Border rendering fix: closed, mitred two-tone outlines of constant pixel width, checked on screen at several tilts, zooms and UI scales.
+
+Scenario `borders`.
+
+![Low tilt: the outlines stay closed and of one thickness.](../Unciv.Godot.Harness/golden/borders/low-tilt.png)
+
+*Low tilt: the outlines stay closed and of one thickness.* (`borders/low-tilt.png`)
+
+![The default view at 150% UI scale: thin two-tone outlines joined at every corner.](../Unciv.Godot.Harness/golden/borders/default-view.png)
+
+*The default view at 150% UI scale: thin two-tone outlines joined at every corner.* (`borders/default-view.png`)
+
+![Steep tilt and a turned map: the band keeps its width on slanted sides.](../Unciv.Godot.Harness/golden/borders/steep-yawed.png)
+
+*Steep tilt and a turned map: the band keeps its width on slanted sides.* (`borders/steep-yawed.png`)
+
+![Zoomed far out at 250% UI scale: the outline is still a few pixels wide and closed.](../Unciv.Godot.Harness/golden/borders/far-zoom-large-ui.png)
+
+*Zoomed far out at 250% UI scale: the outline is still a few pixels wide and closed.* (`borders/far-zoom-large-ui.png`)
+
+![Zoomed in on a turned map: the outline is capped at four scaled pixels, corners mitred.](../Unciv.Godot.Harness/golden/borders/close-yawed.png)
+
+*Zoomed in on a turned map: the outline is capped at four scaled pixels, corners mitred.* (`borders/close-yawed.png`)
+
+![Stress map, twelve crowded territories: closed outlines, shared edges in both colours, none on the ocean.](../Unciv.Godot.Harness/golden/borders-stress/whole-map.png)
+
+*Stress map, twelve crowded territories: closed outlines, shared edges in both colours, none on the ocean.* (`borders-stress/whole-map.png`)
 
 ## Missing screenshots
 

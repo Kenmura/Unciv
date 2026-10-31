@@ -29,6 +29,7 @@ options
 trade
 improvements
 borders
+borders-stress
 menu
 decisions
 decisions-religion

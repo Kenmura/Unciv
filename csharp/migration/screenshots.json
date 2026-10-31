@@ -338,6 +338,36 @@
       }
     ]
   },
+  "T377": {
+    "scenario": "borders",
+    "about": "Border rendering fix: closed, mitred two-tone outlines of constant pixel width, checked on screen at several tilts, zooms and UI scales.",
+    "shots": [
+      {
+        "golden": "borders/low-tilt.png",
+        "caption": "Low tilt: the outlines stay closed and of one thickness."
+      },
+      {
+        "golden": "borders/default-view.png",
+        "caption": "The default view at 150% UI scale: thin two-tone outlines joined at every corner."
+      },
+      {
+        "golden": "borders/steep-yawed.png",
+        "caption": "Steep tilt and a turned map: the band keeps its width on slanted sides."
+      },
+      {
+        "golden": "borders/far-zoom-large-ui.png",
+        "caption": "Zoomed far out at 250% UI scale: the outline is still a few pixels wide and closed."
+      },
+      {
+        "golden": "borders/close-yawed.png",
+        "caption": "Zoomed in on a turned map: the outline is capped at four scaled pixels, corners mitred."
+      },
+      {
+        "golden": "borders-stress/whole-map.png",
+        "caption": "Stress map, twelve crowded territories: closed outlines, shared edges in both colours, none on the ocean."
+      }
+    ]
+  },
   "C043": {
     "scenario": "settings",
     "about": "Client settings model persisted under user:// and the engine PlayerSettings options.",

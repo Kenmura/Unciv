@@ -23,7 +23,6 @@ public partial class CityNode : Node3D
 /// </summary>
 public partial class MapOverlayLayer : Node3D
 {
-    private const float BorderWidth = 0.1f;
     private const float BorderLift = 0.03f;
     private const float RoadWidth = 0.22f;
     private const float RoadLift = 0.02f;
@@ -45,6 +44,30 @@ public partial class MapOverlayLayer : Node3D
     public IReadOnlyDictionary<HexCoord, CityNode> Cities => cities;
 
     public int BorderEdgeCount { get; private set; }
+
+    private BorderStrips? borderStrips;
+    private MapView? borderMap;
+    private float uiScale = 1f;
+
+    /// <summary>The border strips of the last <see cref="Rebuild"/>, or null before it.</summary>
+    public BorderStrips? Borders => borderStrips;
+
+    /// <summary>T377: the effective UI scale (<c>UiTheme.Scale</c>) the border band width honours; set it again when the scale changes.</summary>
+    public float UiScale
+    {
+        get => uiScale;
+        set
+        {
+            uiScale = value;
+            ApplyBorderView();
+        }
+    }
+
+    private void ApplyBorderView()
+    {
+        if (borderStrips == null || !IsInstanceValid(borderStrips) || borderMap == null || !borderMap.IsInsideTree() || borderMap.Camera == null) return;
+        borderStrips.ApplyView(borderMap.Camera, borderMap.Camera.GetViewport().GetVisibleRect().Size, uiScale);
+    }
 
     public int RoadLinkCount { get; private set; }
 
@@ -101,7 +124,7 @@ public partial class MapOverlayLayer : Node3D
     private readonly Dictionary<HexCoord, IReadOnlyList<YieldChip>> yieldChips = [];
 
     /// <summary>Replaces everything drawn. <paramref name="colourOf"/> gives a civ's own colour (borders, city blocks, banner outlines), null for an unknown civ.</summary>
-    public void Rebuild(AssetRegistry assets, Ruleset ruleset, MapView map, IReadOnlyList<TileDto> tiles, IReadOnlyList<CityDto> cityRows, Func<string, Rgb?> colourOf, TileOwnerMemory? owners = null)
+    public void Rebuild(AssetRegistry assets, Ruleset ruleset, MapView map, IReadOnlyList<TileDto> tiles, IReadOnlyList<CityDto> cityRows, Func<string, Rgb?> colourOf, TileOwnerMemory? owners = null, Func<string, Rgb?>? innerColourOf = null)
     {
         foreach (var child in GetChildren())
         {
@@ -116,17 +139,22 @@ public partial class MapOverlayLayer : Node3D
 
         var borders = MapOverlays.BorderEdges(tiles, owners);
         BorderEdgeCount = borders.Count;
-        foreach (var group in borders.GroupBy(it => it.Owner))
+        var visibleAt = tiles.ToDictionary(it => new HexCoord(it.X, it.Y), it => it.Visible);
+        float SideHeight(BorderEdge edge) => Math.Max(RimOf(edge.X, edge.Y), RimOf(edge.X + edge.Dx, edge.Y + edge.Dy)) + BorderLift; // both civs of a shared side lie level
+        float SideOpacity(BorderEdge edge) => visibleAt.GetValueOrDefault(new HexCoord(edge.X, edge.Y), true) ? 1f : BorderStyle.RememberedOpacity;
+        var strips = new BorderStrips { Name = "Borders" };
+        foreach (var group in BorderChains.Build(borders).GroupBy(it => it.Owner))
         {
-            var ribbon = new Ribbon();
-            foreach (var edge in group)
-            {
-                var (a, b) = MapOverlays.EdgeEnds(edge.X, edge.Y, edge.Dx, edge.Dy, BorderWidth / 2f); // inward by half the ribbon: both civs of a shared edge show
-                float y = RimOf(edge.X, edge.Y) + BorderLift;
-                ribbon.Add(new Vector3(a.X, y, a.Z), new Vector3(b.X, y, b.Z), BorderWidth);
-            }
-            AddChild(ribbon.ToNode("Border_" + group.Key, Unlit(colourOf(group.Key) is { } c ? ProceduralAssets.ToColor(c) : ProceduralAssets.ToColor(PlaceholderPalette.Light))));
+            var outer = colourOf(group.Key) ?? PlaceholderPalette.Light;
+            var casing = BorderStyle.CasingFor(outer, innerColourOf?.Invoke(group.Key) ?? new Rgb(255, 255, 255));
+            strips.Add(group.Key, BorderMesh.Build([.. group], SideHeight, SideOpacity), ProceduralAssets.ToColor(outer), ProceduralAssets.ToColor(casing));
         }
+        AddChild(strips);
+        borderStrips = strips;
+        borderMap = map;
+        map.ViewChanged -= ApplyBorderView;
+        map.ViewChanged += ApplyBorderView;
+        ApplyBorderView();
 
         var links = MapOverlays.RoadLinks(tiles, cityRows);
         RoadLinkCount = links.Count;

@@ -1093,6 +1093,7 @@ public partial class GameScreen : Control
         World.Init(theme);
         theme.LayoutChanged += World.OnLayoutChanged;
         theme.LayoutChanged += RelayoutAfterRebuild;
+        theme.ScaleChanged += () => Overlays.UiScale = theme.Scale;
         theme.Bind(GetViewport());
         TurnBar.Init(theme);
         Social.Init(theme);
@@ -1270,7 +1271,8 @@ public partial class GameScreen : Control
         Minimap.Update(snapshot.Tiles, OwnerColour);
         Layout();
         ownerMemory.Remember(snapshot.Tiles);
-        Overlays.Rebuild(assets, session.Ruleset, Map, snapshot.Tiles, snapshot.Cities, OwnerColour, ownerMemory);
+        Overlays.UiScale = ui?.Scale ?? 1f;
+        Overlays.Rebuild(assets, session.Ruleset, Map, snapshot.Tiles, snapshot.Cities, OwnerColour, ownerMemory, OwnerInnerColour);
         RefreshMarkers();
         if (OpenCity != null) ShowCity(snapshot.Cities.FirstOrDefault(it => it.X == OpenCity.X && it.Y == OpenCity.Y));
         RebuildUnits();
@@ -1283,6 +1285,8 @@ public partial class GameScreen : Control
         ApplySelectionScale();
         Run(RefreshSelection());
     }
+
+    private Rgb? OwnerInnerColour(string owner) => session.Ruleset.Nations.TryGetValue(owner, out var nation) ? ToRgb(nation.GetInnerColor()) : null;
 
     private Rgb? OwnerColour(string owner) => session.Ruleset.Nations.TryGetValue(owner, out var nation) ? ToRgb(nation.GetOuterColor()) : null;
 

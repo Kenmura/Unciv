@@ -1,10 +1,12 @@
 using Godot;
 using Unciv.Assets;
 using Unciv.Commands;
+using Unciv.Harness;
 using Unciv.GodotClient.Assets;
 using Unciv.GodotClient.Map;
 using Unciv.Logic.Map;
 using Unciv.Net.Visibility;
+using Unciv.Utils;
 
 namespace Unciv.GodotHarness;
 
@@ -52,11 +54,15 @@ public sealed class BordersScenario : Scenario
             && other.Visible != Visible(tiles, it.X, it.Y) && memory.TryOwner(other, out var owner) && owner == it.Owner).ToList();
         var withoutMemory = MapOverlays.BorderEdges(tiles);
 
-        return
-        [
+        var chains = BorderChains.Build(edges);
+        var closed = chains.Where(it => it.Closed).ToList();
+        RgbaImage? with = null;
+        RgbaImage? without = null;
+        var steps = new List<ScenarioStep>
+        {
             new WaitFrames(3),
             new AssertQuery("the overlay draws exactly the border edges BorderEdges answers, in one ribbon per civ", () =>
-                layer.BorderEdgeCount == edges.Count && layer.GetNodeOrNull<MeshInstance3D>("Border_Japan") != null && layer.GetNodeOrNull<MeshInstance3D>("Border_Greece") != null),
+                layer.BorderEdgeCount == edges.Count && layer.Borders?.GetNodeOrNull<MeshInstance3D>("Border_Japan") != null && layer.Borders.GetNodeOrNull<MeshInstance3D>("Border_Greece") != null),
             new AssertQuery("no border runs along the line where sight ends inside Japan's territory", () => fogLine.Count == 0),
             new AssertQuery("without the remembered owners the fogged territory would have no border of its own (what the memory adds)", () =>
                 withoutMemory.Count < edges.Count && !withoutMemory.Any(it => !Visible(tiles, it.X, it.Y))),
@@ -78,7 +84,57 @@ public sealed class BordersScenario : Scenario
             }),
             new WaitFrames(2),
             new Capture("shared-edge-close", "The edge Japan and Greece share, close up: each border ribbon lies on its own side"),
-        ];
+        };
+        // T377: measured on screen. Per camera: render with and without the strips and require paint at every side and every corner of every closed outline, and a width that does not depend on direction.
+        foreach (var (tilt, yaw, zoom, scale, tag, caption) in new[] { (25f, 0f, 8f, 1f, "low-tilt", "Low tilt: the outlines stay closed and of one thickness"),
+            (55f, 0f, 14f, 1.5f, "default-view", "The default view at 150% UI scale: thin two-tone outlines joined at every corner"),
+            (80f, 30f, 10f, 1f, "steep-yawed", "Steep tilt and a turned map: the band keeps its width on slanted sides"),
+            (55f, 17f, 20f, 2.5f, "far-zoom-large-ui", "Zoomed far out at 250% UI scale: the outline is still a few pixels wide and closed"),
+            (40f, 60f, 6f, 1f, "close-yawed", "Zoomed in on a turned map: the outline is capped at four scaled pixels, corners mitred") })
+        {
+            var label = $"tilt {tilt} yaw {yaw} zoom {zoom} ui {scale}";
+            steps.Add(new Act("view " + label, () =>
+            {
+                layer.UiScale = scale;
+                view.SetView(tilt, yaw);
+                view.FocusOn(MapLayout.TileTop(1, 1, 0f));
+                view.SetZoom(zoom);
+                layer.Borders.NotNull().Visible = true;
+            }));
+            steps.Add(new WaitFrames(3));
+            steps.Add(new Capture(tag, caption));
+            steps.Add(new Act("capture with " + label, () => with = ViewportCapture.Capture(host.GetViewport())));
+            steps.Add(new Act("hide strips " + label, () => layer.Borders.NotNull().Visible = false));
+            steps.Add(new WaitFrames(3));
+            steps.Add(new Act("capture without " + label, () =>
+            {
+                without = ViewportCapture.Capture(host.GetViewport());
+                layer.Borders.NotNull().Visible = true;
+            }));
+            steps.Add(new AssertQuery($"every side and corner of the closed outlines is painted ({label})", () =>
+            {
+                var result = BorderProbe.Run(view.Camera, with.NotNull(), without.NotNull(), closed, _ => true, layer.Borders.NotNull().BandPixels);
+                GD.Print($"borders probe {label}: {result.Painted}/{result.Samples} painted, corners {result.CornersPainted}/{result.Corners}, band {layer.Borders.BandPixels}px {string.Join("; ", result.Misses)}");
+                return result.Samples >= 20 && result.Corners >= 6 && result.Painted == result.Samples;
+            }));
+            steps.Add(new AssertQuery($"the band is as wide on a slanted side as on a horizontal one, within the measuring error of the probe ({label})", () =>
+            {
+                var widths = new List<float>();
+                foreach (var chain in closed)
+                {
+                    for (var i = 0; i < chain.Sides.Count; i++)
+                    {
+                        // A side the neighbouring civ also borders carries two bands: measure the sides with one
+                        if (tiles.Any(t => t.X == chain.Sides[i].X + chain.Sides[i].Dx && t.Y == chain.Sides[i].Y + chain.Sides[i].Dy && t.Owner != null && t.Owner != chain.Owner)) continue;
+                        var w = BorderProbe.WidthAcross(view.Camera, with.NotNull(), without.NotNull(), chain.Points[i], chain.Points[(i + 1) % chain.Sides.Count]);
+                        if (w > 0f) widths.Add(w);
+                    }
+                }
+                GD.Print($"borders width {label}: min {widths.Min()} max {widths.Max()} band {layer.Borders.NotNull().BandPixels}");
+                return widths.Count >= 12 && widths.Max() - widths.Min() <= 3f && Math.Abs(widths.Order().ElementAt(widths.Count / 2) - layer.Borders.BandPixels) <= 1f;
+            }));
+        }
+        return steps;
     }
 
     private static bool Visible(IReadOnlyList<TileDto> tiles, int x, int y) => tiles.First(it => it.X == x && it.Y == y).Visible;
