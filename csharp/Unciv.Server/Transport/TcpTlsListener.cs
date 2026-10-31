@@ -62,30 +62,36 @@ public sealed class TcpTlsListener : IAsyncDisposable
     }
 
     /// <summary>The server-side TLS handshake on an accepted connection (closes it on failure).</summary>
-    public async Task<ITransport> HandshakeAsync(TcpClient tcpClient, CancellationToken cancellationToken = default)
-    {
+    public Task<ITransport> HandshakeAsync(TcpClient tcpClient, CancellationToken cancellationToken = default) =>
+        HandshakeOverAsync(tcpClient, tcpClient.GetStream(), serverCertificate, handshakeTimeout, cancellationToken);
 
-        var sslStream = new SslStream(tcpClient.GetStream(), leaveInnerStreamOpen: false);
+    /// <summary>
+    /// The server-side TLS handshake over <paramref name="inner"/>, which is the connection's own stream or (T338) a stream the relay carries: the relay's outer TLS session, inside which this
+    /// handshake runs unchanged. <paramref name="owner"/> is closed with the stream on failure. <paramref name="peerId"/> is the relay's opaque id of the joiner.
+    /// </summary>
+    public static async Task<ITransport> HandshakeOverAsync(TcpClient owner, Stream inner, X509Certificate2 certificate, TimeSpan timeout, CancellationToken cancellationToken = default, string? peerId = null)
+    {
+        var sslStream = new SslStream(inner, leaveInnerStreamOpen: false);
 
         using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-        cts.CancelAfter(handshakeTimeout);
+        cts.CancelAfter(timeout);
 
         try
         {
             var authOptions = new SslServerAuthenticationOptions
             {
-                ServerCertificate = serverCertificate,
+                ServerCertificate = certificate,
                 EnabledSslProtocols = SslProtocols.Tls13 | SslProtocols.Tls12,
                 ClientCertificateRequired = false
             };
 
             await sslStream.AuthenticateAsServerAsync(authOptions, cts.Token).ConfigureAwait(false);
-            return new TcpTlsTransport(tcpClient, sslStream);
+            return new TcpTlsTransport(owner, sslStream, peerId);
         }
         catch
         {
             sslStream.Dispose();
-            tcpClient.Close();
+            owner.Close();
             throw;
         }
     }

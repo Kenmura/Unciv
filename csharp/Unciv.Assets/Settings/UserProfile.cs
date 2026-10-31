@@ -77,6 +77,9 @@ public sealed class ProfileFiles(string root, string? profile)
 
     public string LastJoin => Path.Combine(folder, "last-join.txt");
 
+    /// <summary>T338: the relay setting (design/RELAY.md R13: absent on a fresh install, the owner may ship a default beside the program).</summary>
+    public string Relay => Path.Combine(folder, "relay.json");
+
     public string HostedGames => Path.Combine(folder, "hosted");
 
     /// <summary>Shared by every profile: mods are content, not player state.</summary>

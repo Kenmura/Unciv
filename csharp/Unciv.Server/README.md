@@ -89,6 +89,7 @@ The server presents a self-signed certificate, so there is no certificate author
 `SSFU2-PNMD6-...`) is part of the invite `unciv://host:port/fingerprint[/token]`. A client joining through an invite checks it before sending anything, so a man in the middle cannot slip in.
 A client that types only `address:port` is shown the fingerprint once and asks "trust this host?" (like SSH's known hosts); later changes are a hard stop.
 
+- Behind a router you cannot forward (T338): `--relay unciv-relay://relay.example.org[:port][?fp=FINGERPRINT]` makes the server dial out to a relay and keep a room there. The line `RELAY-ROOM K7QF-3MXP4A` is printed and, with `--print-invite`, `INVITE-RELAY unciv://relay.example.org/r/ROOM/FINGERPRINT[/token]`, which works from anywhere. `--relay-fingerprint FP` pins a self-signed relay, `--list` publishes the game in the relay's public list (`--list-name NAME` sets the title). The server reconnects to the relay by itself and keeps the same room. There is no built-in relay address: name your own.
 - The invite is printed only with `--print-invite`; start the server with it whenever you need the invite again (the fingerprint only changes if `host-key.pfx` does). Read the fingerprint to friends
   over another channel if you want to be strict.
 - With a password set, `--print-invite` also mints a join token (`/token`, valid for 24 hours, redeemed when a friend uses it, so one friend per invite) so they need not type the password;

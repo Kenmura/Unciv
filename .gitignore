@@ -213,3 +213,6 @@ __pycache__/
 # T368: the relay deployment files are source
 !csharp/Unciv.Relay/deploy/
 !csharp/Unciv.Relay/deploy/**
+
+# T338: the owner's own relay default (R13: never committed; shipped next to a build by hand)
+relay-default.json

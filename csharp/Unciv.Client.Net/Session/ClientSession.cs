@@ -674,6 +674,7 @@ public sealed class ClientSession : IAsyncDisposable
         while (!stopped)
         {
             ITransport? current = null;
+            string? connectCode = null; // T338: why a relay refused, so the player is told "host gone" and not just "could not connect"
             connectionSettled = false;
             handshakeTimedOut = false;
             using var timer = CancellationTokenSource.CreateLinkedTokenSource(token);
@@ -683,6 +684,7 @@ public sealed class ClientSession : IAsyncDisposable
             try { current = await ConnectAsync(attempt, timer.Token).ConfigureAwait(false); }
             catch (OperationCanceledException) when (token.IsCancellationRequested) { break; }
             catch (OperationCanceledException) { handshakeTimedOut = true; }
+            catch (Unciv.Server.Transport.RelayException e) { connectCode = e.Code; }
             catch (Exception) { /* any failure to connect (socket, TLS, factory bug) is a failed attempt: fall through to the retry logic */ }
 
             if (current != null) await RunConnectionAsync(current, timer, token).ConfigureAwait(false);
@@ -691,7 +693,7 @@ public sealed class ClientSession : IAsyncDisposable
 
             if (!everJoined)
             {
-                var code = handshakeTimedOut ? ClientCodes.HandshakeTimeout : current == null ? ClientCodes.ConnectFailed : ClientCodes.ConnectionLost;
+                var code = handshakeTimedOut ? ClientCodes.HandshakeTimeout : current == null ? connectCode ?? ClientCodes.ConnectFailed : ClientCodes.ConnectionLost;
                 await EndAsync(code, refused: false).ConfigureAwait(false);
                 return;
             }
@@ -1068,6 +1070,12 @@ public sealed class ClientSession : IAsyncDisposable
         if (!string.IsNullOrEmpty(expectedFingerprint))
         {
             if (!HostKey.Matches(expectedFingerprint, presented)) return ClientCodes.HostKeyMismatch;
+        }
+        else if (pinnedTrust == HostTrust.Unknown && known != null && known.IsFingerprintKnown(presented))
+        {
+            // T338: this key was pinned under another address (the host moved to another relay, room or port): the key is what was trusted, so the new address gets the same pin.
+            if (known.Pin(address, presented)) options.PersistKnownHosts?.Invoke(known);
+            return null;
         }
         else if (pinnedTrust != HostTrust.Trusted)
         {

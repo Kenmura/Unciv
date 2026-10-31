@@ -9,6 +9,7 @@ using Unciv.GodotClient.Localization;
 using Unciv.GodotClient.Ui;
 using Unciv.Models.Translations;
 using Unciv.Net.Identity;
+using Unciv.Net.Relay;
 using TabBar = Unciv.GodotClient.Ui.TabBar;
 
 namespace Unciv.GodotClient.Setup;
@@ -30,6 +31,9 @@ public sealed class HostScreenEnvironment
     public required Func<long> Clock { get; init; }
 
     public required Action<string> SetClipboard { get; init; }
+
+    /// <summary>T338: the relay to host through (null: not set or switched off, hosting is direct only).</summary>
+    public Func<RelayEndpoint?> Relay { get; init; } = () => null;
 
     public Func<IReadOnlyList<LocalAddress>> Addresses { get; init; } = LocalAddresses.Enumerate;
 }
@@ -252,7 +256,7 @@ public partial class HostScreen : Control
             }
             SetMessage("Opening the lobby ...", false);
             await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
-            var started = await HostingSession.StartLobbyAsync(settings, Identity(), Certificate(), env.DisplayName, Form.Port);
+            var started = await HostingSession.StartLobbyAsync(settings, Identity(), Certificate(), env.DisplayName, Form.Port, env.Relay());
             ShowHosting(started, null);
         }
         catch (Exception e) when (e is not OutOfMemoryException)
@@ -349,11 +353,35 @@ public partial class HostScreen : Control
         CopyInviteButton = new Button { Text = "Copy invite".Tr(), Name = "CopyInviteButton" };
         CopyInviteButton.Pressed += CopyInvite;
         hostingPanel.AddChild(CopyInviteButton);
+        RelayInviteBox = new VBoxContainer { Name = "RelayInviteBox", Visible = false };
+        RelayInviteBox.AddChild(new Label { Text = "Invite through the relay (works behind any router):".Tr() });
+        RelayInviteField = new LineEdit { Name = "RelayInviteField", Editable = false, SizeFlagsHorizontal = SizeFlags.ExpandFill };
+        RelayInviteBox.AddChild(RelayInviteField);
+        CopyRelayInviteButton = new Button { Text = "Copy relay invite".Tr(), Name = "CopyRelayInviteButton" };
+        CopyRelayInviteButton.Pressed += CopyRelayInvite;
+        RelayInviteBox.AddChild(CopyRelayInviteButton);
+        hostingPanel.AddChild(RelayInviteBox);
         hostingPanel.AddChild(new Label { Text = "Players:".Tr() });
         hostingPanel.AddChild(slotsBox);
         StopButton = new Button { Text = "Stop hosting".Tr(), Name = "StopHostingButton" };
         StopButton.Pressed += () => _ = StopAsync();
         hostingPanel.AddChild(StopButton);
+    }
+
+    public VBoxContainer RelayInviteBox { get; private set; } = null!; // JUSTIFY: T338 assigned by BuildHostingPanel, which the constructor runs
+
+    public LineEdit RelayInviteField { get; private set; } = null!; // JUSTIFY: T338 assigned by BuildHostingPanel, which the constructor runs
+
+    public Button CopyRelayInviteButton { get; private set; } = null!; // JUSTIFY: T338 assigned by BuildHostingPanel, which the constructor runs
+
+    /// <summary>The invite that reaches this host through the relay by room code; empty while not hosting through one or before the relay answered.</summary>
+    public string RelayInvite => Session?.RelayInvite() ?? "";
+
+    private void CopyRelayInvite()
+    {
+        if (RelayInvite.Length == 0) return;
+        env.SetClipboard(RelayInvite);
+        SetMessage("Relay invite copied. Send it to your friends.", false);
     }
 
     private void CopyInvite()
@@ -378,7 +406,21 @@ public partial class HostScreen : Control
             hostingAddresses.AddChild(row);
         }
         InviteField.Text = session.Invite(InviteAddress);
+        RelayInviteBox.Visible = session.Relay != null;
+        RelayInviteField.Text = RelayInvite;
+        if (session.Relay is { Room: null }) _ = RefreshRelayInviteWhenReadyAsync(session);
         addressNote.Text = AddressNoteText(session.Port);
+    }
+
+    // The room code arrives when the relay has answered, a moment after hosting starts.
+    private async Task RefreshRelayInviteWhenReadyAsync(HostingSession session)
+    {
+        try
+        {
+            await session.Relay!.WaitForRoomAsync(CancellationToken.None);
+        }
+        catch (OperationCanceledException) { return; }
+        if (IsInstanceValid(this) && Session == session) RelayInviteField.Text = RelayInvite;
     }
 
     private ChoiceRow? FindAddressRow() => (Session != null ? hostingAddresses : networkPage).GetChildren().OfType<ChoiceRow>().FirstOrDefault(it => it.Name == "AddressRow");

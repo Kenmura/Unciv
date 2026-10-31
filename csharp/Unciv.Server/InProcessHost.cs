@@ -6,6 +6,7 @@ using Unciv.Models.Metadata;
 using Unciv.Net;
 using Unciv.Net.Identity;
 using Unciv.Net.Persistence;
+using Unciv.Net.Relay;
 using Unciv.Net.Turns;
 using Unciv.Server.Transport;
 
@@ -70,6 +71,7 @@ public sealed class InProcessHost : IAsyncDisposable
     private readonly CancellationTokenSource cts = new();
     private readonly List<Task> background = [];
     private TcpTlsListener? listener;
+    private RelayListener? relay;
     private string fingerprint = "";
     private bool stopped;
 
@@ -98,6 +100,9 @@ public sealed class InProcessHost : IAsyncDisposable
 
     /// <summary>The TCP port being listened on, or null when <see cref="Listen"/> was not called.</summary>
     public int? Port => listener?.Port;
+
+    /// <summary>T338: the relay registration of this game (design/RELAY.md), or null when <see cref="Listen"/> was called without a relay. Its <see cref="RelayListener.Room"/> is the room code for invites.</summary>
+    public RelayListener? Relay => relay;
 
     /// <summary>The host key fingerprint carried in invites (empty until <see cref="Listen"/>).</summary>
     public string Fingerprint => fingerprint;
@@ -225,8 +230,11 @@ public sealed class InProcessHost : IAsyncDisposable
     public Task<string?> RebindAsync(string civId, string newPlayerKey) =>
         civId == hostCivId ? Task.FromResult<string?>("own-seat") : host.RebindCivAsync(civId, newPlayerKey);
 
-    /// <summary>Starts accepting friends over TLS/TCP (port 0 picks a free one). Remote players must present a key bound in <c>game.json</c>.</summary>
-    public void Listen(X509Certificate2 certificate, int port = 47821)
+    /// <summary>
+    /// Starts accepting friends over TLS/TCP (port 0 picks a free one). Remote players must present a key bound in <c>game.json</c>.
+    /// T338: with <paramref name="relayEndpoint"/> the host also dials out to that relay and registers a room, so friends reach it with no open port; the local port stays as it is.
+    /// </summary>
+    public void Listen(X509Certificate2 certificate, int port = 47821, RelayEndpoint? relayEndpoint = null, RelayListenerOptions? relayOptions = null, Action<string>? relayLog = null)
     {
         if (listener != null) throw new InvalidOperationException("Already listening");
         fingerprint = HostCertificate.GetFingerprint(certificate);
@@ -234,6 +242,12 @@ public sealed class InProcessHost : IAsyncDisposable
         listener = new TcpTlsListener(certificate, port, options.HandshakeTimeout);
         listener.Start();
         background.Add(RunAcceptLoopAsync(listener, cts.Token));
+        if (relayEndpoint != null)
+        {
+            relay = new RelayListener(relayEndpoint, certificate, store.GameId, relayOptions, relayLog);
+            background.Add(RunRelayAcceptLoopAsync(relay, cts.Token));
+            relay.Start();
+        }
     }
 
     /// <summary>
@@ -245,6 +259,7 @@ public sealed class InProcessHost : IAsyncDisposable
     {
         if (stopped) return GameHost.HandoffRefusals.Closed;
         listener?.Stop(); // no new connection can slip past the hand-off; the game's own sessions are told by it
+        if (relay != null) await relay.DisposeAsync().ConfigureAwait(false);
         string? refusal;
         try
         {
@@ -263,6 +278,7 @@ public sealed class InProcessHost : IAsyncDisposable
         if (stopped) return;
         stopped = true;
         listener?.Stop();
+        if (relay != null) await relay.DisposeAsync().ConfigureAwait(false);
         cts.Cancel();
         foreach (var task in background)
         {
@@ -288,6 +304,21 @@ public sealed class InProcessHost : IAsyncDisposable
             catch (ObjectDisposedException) { return; }
             catch (System.Net.Sockets.SocketException) when (token.IsCancellationRequested) { return; }
             catch (Exception) { continue; } // a failed handshake costs only that connection
+            _ = AdmitAsync(transport, token);
+        }
+    }
+
+    private async Task RunRelayAcceptLoopAsync(RelayListener source, CancellationToken token)
+    {
+        while (!token.IsCancellationRequested)
+        {
+            ITransport transport;
+            try
+            {
+                transport = await source.AcceptTransportAsync(token).ConfigureAwait(false);
+            }
+            catch (OperationCanceledException) { return; }
+            catch (ObjectDisposedException) { return; }
             _ = AdmitAsync(transport, token);
         }
     }

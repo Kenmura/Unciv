@@ -137,6 +137,7 @@ public static class ServerRunner
         {
             log.Warn("--address only changes the invite text; add --print-invite to see it");
         }
+        await using var relay = StartRelay(options, certificate, stdout, log, lobby, settings);
         if (resumed != null)
             log.Info($"resumed game {options.GameId}: turn {resumed.Game.Turns.ToString(System.Globalization.CultureInfo.InvariantCulture)}, {lobby.Lobby.Slots.Count.ToString(System.Globalization.CultureInfo.InvariantCulture)} saved seat(s) may reconnect, state hash {Unciv.Commands.Log.ReplayVerifier.FullHash(resumed.Game).ToString("x16", System.Globalization.CultureInfo.InvariantCulture)}, host key {fingerprint}");
         else
@@ -149,6 +150,8 @@ public static class ServerRunner
         using var run = CancellationTokenSource.CreateLinkedTokenSource(stop);
         var failure = (Exception?)null;
         var accept = AcceptLoopAsync(tcp, lobby, log, run.Token);
+        var relayAccept = relay == null ? Task.CompletedTask : RelayAcceptLoopAsync(relay, lobby, log, run.Token);
+        var listing = relay != null && options.List ? PublishListingAsync(relay, lobby, settings, options, run.Token) : Task.CompletedTask;
         var watch = (resumed != null ? RunGameAsync(resumed, log, run.Token) : WatchLobbyAsync(lobby, options, log, run.Token)).ContinueWith(t =>
         {
             if (t.IsFaulted)
@@ -165,6 +168,9 @@ public static class ServerRunner
         tcp.Stop(); // no new joins from here on
         await run.CancelAsync().ConfigureAwait(false);
         await accept.ConfigureAwait(false);
+        if (relay != null) await relay.DisposeAsync().ConfigureAwait(false); // no new joins through the relay either; also unlists
+        await relayAccept.ConfigureAwait(false);
+        await listing.ConfigureAwait(false);
         await watch.ConfigureAwait(false);
         var finished = lobby.ActiveGameHost;
         log.Info(options.GameId != null && finished != null ? "stopping: finishing the round and saving the game" : "stopping");
@@ -177,6 +183,86 @@ public static class ServerRunner
         if (failure != null) throw failure;
         return 0;
     }
+
+    /// <summary>
+    /// T338: dials the relay of <c>--relay</c> and prints <c>RELAY-ROOM &lt;code&gt;</c> (and with <c>--print-invite</c> <c>INVITE-RELAY &lt;invite&gt;</c>) each time the relay assigns a room. Null without <c>--relay</c>.
+    /// The server keeps listening on its own port too.
+    /// </summary>
+    private static RelayListener? StartRelay(ServerOptions options, X509Certificate2 certificate, TextWriter stdout, ServerLog log, ServerLobby lobby, LobbySettings settings)
+    {
+        if (options.Relay == null) return null;
+        // A game folder keeps its room across restarts; without --game-id nothing persists, so the room is per run.
+        var listener = new RelayListener(options.Relay, certificate, options.GameId ?? RelayListener.NewGameId(), new RelayListenerOptions(), log.Info);
+        listener.RoomChanged += room =>
+        {
+            lock (stdout)
+            {
+                stdout.WriteLine("RELAY-ROOM " + room);
+                if (options.PrintInvite)
+                {
+                    var token = settings.Password != null ? lobby.Lobby.Admission.MintInviteToken(InviteLifetime) : null;
+                    stdout.WriteLine("INVITE-RELAY " + listener.Invite(token));
+                }
+                stdout.Flush();
+            }
+        };
+        listener.Start();
+        log.Info("dialling the relay " + options.Relay.Key + (options.List ? " (the game will be listed)" : ""));
+        return listener;
+    }
+
+    private static async Task RelayAcceptLoopAsync(RelayListener relay, ServerLobby lobby, ServerLog log, CancellationToken token)
+    {
+        while (!token.IsCancellationRequested)
+        {
+            ITransport transport;
+            try
+            {
+                transport = await relay.AcceptTransportAsync(token).ConfigureAwait(false);
+            }
+            catch (Exception e) when (token.IsCancellationRequested || e is ObjectDisposedException or OperationCanceledException) { return; }
+            log.Debug("connection accepted through the relay");
+            _ = lobby.AttachConnectionAsync(transport, token);
+        }
+    }
+
+    /// <summary>Keeps the relay listing in step with the lobby (players, started); the listener sends at most one change per five seconds.</summary>
+    private static async Task PublishListingAsync(RelayListener relay, ServerLobby lobby, LobbySettings settings, ServerOptions options, CancellationToken token)
+    {
+        RelayListing? last = null;
+        using var timer = new PeriodicTimer(TimeSpan.FromSeconds(1));
+        try
+        {
+            do
+            {
+                var humans = lobby.Lobby.CreateLobbyState().Slots.Count(s => s.Kind == nameof(SlotKind.Human));
+                var next = BuildListing(settings, options.ListName, humans, started: lobby.ActiveGameHost != null);
+                if (next == last) continue;
+                relay.SetListing(next);
+                last = next;
+            }
+            while (await timer.WaitForNextTickAsync(token).ConfigureAwait(false));
+        }
+        catch (OperationCanceledException) { }
+    }
+
+    /// <summary>The listing of a dedicated server: the lobby's name (or <c>--list-name</c>), its seats and rules. A host's claims only; no password, token or address.</summary>
+    public static RelayListing BuildListing(LobbySettings settings, string? listName, int humans, bool started) => new()
+    {
+        Name = listName ?? settings.GameName,
+        HostName = "Dedicated server",
+        Players = humans,
+        Slots = settings.MaxMajorCivs,
+        Ai = settings.AiFill ? Math.Max(0, settings.MaxMajorCivs - humans) : 0,
+        Ruleset = settings.Ruleset,
+        RulesetHash = settings.ComputeRulesetHash(),
+        Mods = settings.Mods,
+        Speed = settings.Speed,
+        Map = settings.Map.MapSize.ToString() + " " + settings.Map.Type,
+        PasswordRequired = settings.Password != null,
+        TurnMode = settings.TurnMode,
+        Started = started,
+    };
 
     /// <summary>The settings file (the same <see cref="LobbySettings"/> JSON the host screen builds), then the command line over it.</summary>
     private static LobbySettings LoadSettings(ServerOptions options, ServerLog log)

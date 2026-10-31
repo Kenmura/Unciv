@@ -1,6 +1,6 @@
 using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
-using Unciv.Relay;
+using Unciv.Net.Relay;
 
 namespace Unciv.Core.Tests.Relay;
 

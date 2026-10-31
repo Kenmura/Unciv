@@ -38,6 +38,11 @@ public sealed record ServerOptions
           --settings FILE     Lobby settings as JSON (the LobbySettings fields: map, speed, difficulty, era, victoryTypes, ruleset, mods, turnTimerSeconds, ...). Options above override it.
           --print-invite      Print 'INVITE unciv://host:port/fingerprint[/token]' (a token only with a password) after LISTENING.
           --address HOST      The host name or address written into the invite (default localhost).
+          --relay URL         Also dial OUT to a relay (unciv-relay://host[:port][?fp=FINGERPRINT]) and register a room, so players reach this server with no open port. The relay's room code
+                              is printed as 'RELAY-ROOM <code>' and, with --print-invite, 'INVITE-RELAY <unciv://relay/r/room/fingerprint[/token]>'. The server still listens on --port. There is no default relay.
+          --relay-fingerprint FP  Pin the relay's own certificate (a self-signed standalone relay prints this as RELAY-FINGERPRINT); the same as ?fp= in the URL.
+          --list              List this game in the relay's public lobby directory (needs --relay). Without it the game is reachable only by invite or room code.
+          --list-name NAME    The name shown in the directory (3 to 40 characters; default the lobby's game name). Needs --list.
           --jsons DIR         The rulesets folder (default: data/jsons next to the executable, else android/assets/jsons above the current folder).
           --mods-dir DIR      A folder of mods to offer.
           --parallel-views N  Build the per-player views of a round on up to N tasks (2 to 64; 0, 1 or absent: off, the default). Frames are byte-identical either way; it only pays on a host with spare cores and several players.
@@ -81,6 +86,15 @@ public sealed record ServerOptions
 
     public string EffectiveAddress => Address ?? "localhost";
 
+    /// <summary>T338: the relay to register a room on (<c>--relay</c>, with <c>--relay-fingerprint</c> folded in); null when not asked for. There is no default.</summary>
+    public Unciv.Net.Relay.RelayEndpoint? Relay { get; init; }
+
+    private string? RelayFingerprint { get; init; }
+
+    public bool List { get; init; }
+
+    public string? ListName { get; init; }
+
     public string? Jsons { get; init; }
 
     public string? ModsDir { get; init; }
@@ -110,9 +124,10 @@ public sealed record ServerOptions
                 case "no-ai-fill": result = result with { AiFill = false }; continue;
                 case "auto-start": result = result with { AutoStart = true }; continue;
                 case "print-invite": result = result with { PrintInvite = true }; continue;
+                case "list": result = result with { List = true }; continue;
             }
 
-            if (name is not ("port" or "data-dir" or "password" or "password-file" or "game-id" or "max-players" or "min-humans" or "settings" or "address" or "jsons" or "mods-dir" or "log-level" or "parallel-views"))
+            if (name is not ("port" or "data-dir" or "password" or "password-file" or "game-id" or "max-players" or "min-humans" or "settings" or "address" or "jsons" or "mods-dir" or "log-level" or "parallel-views" or "relay" or "relay-fingerprint" or "list-name"))
                 throw new ServerUsageException($"unknown option --{name} (see --help)");
             if (i + 1 >= args.Count) throw new ServerUsageException($"option --{name} needs a value");
             var value = args[++i];
@@ -130,10 +145,17 @@ public sealed record ServerOptions
                 "jsons" => result with { Jsons = value },
                 "mods-dir" => result with { ModsDir = value },
                 "parallel-views" => result with { ParallelViews = ParseInt(name, value, 0, 64) },
+                "relay" => result with { Relay = Unciv.Net.Relay.RelayEndpoint.TryParse(value, out var endpoint) ? endpoint : throw new ServerUsageException($"--relay must look like unciv-relay://host[:port][?fp=FINGERPRINT], got '{value}'") },
+                "relay-fingerprint" => result with { RelayFingerprint = Unciv.Net.Identity.HostKey.Normalize(value) ?? throw new ServerUsageException("--relay-fingerprint must be a fingerprint (26 letters and digits, e.g. as printed by the relay)") },
+                "list-name" => result with { ListName = value },
                 _ => result with { LogLevel = ParseLevel(value) },
             };
         }
         if (seen.Contains("ai-fill") && seen.Contains("no-ai-fill")) throw new ServerUsageException("--ai-fill and --no-ai-fill exclude each other");
+        if (seen.Contains("relay-fingerprint") && !seen.Contains("relay")) throw new ServerUsageException("--relay-fingerprint needs --relay");
+        if (seen.Contains("list") && !seen.Contains("relay")) throw new ServerUsageException("--list needs --relay: the directory is the relay's");
+        if (seen.Contains("list-name") && !seen.Contains("list")) throw new ServerUsageException("--list-name needs --list");
+        if (result.RelayFingerprint != null) result = result with { Relay = result.Relay! with { Fingerprint = result.RelayFingerprint } };
         if (seen.Contains("password") && seen.Contains("password-file")) throw new ServerUsageException("--password and --password-file exclude each other");
         return result;
     }

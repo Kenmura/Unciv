@@ -1,4 +1,5 @@
 using System.Net;
+using Unciv.Net.Relay;
 using Unciv.Relay;
 
 namespace Unciv.Core.Tests.Relay;

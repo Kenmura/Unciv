@@ -1,6 +1,7 @@
 using System.Globalization;
 using Unciv.Net.Identity;
 using Unciv.Net.Mods;
+using Unciv.Net.Relay;
 
 namespace Unciv.GodotClient.Setup;
 
@@ -8,9 +9,17 @@ namespace Unciv.GodotClient.Setup;
 /// Where a join attempt goes. <see cref="Address"/> is the key into the known hosts (<c>host:port</c>, lower-cased); <see cref="Fingerprint"/> and <see cref="Token"/> come from an invite
 /// code and are null for a typed address (which then needs the fingerprint prompt the first time).
 /// </summary>
-public sealed record JoinTarget(string Host, int Port, string? Fingerprint, string? Token)
+public sealed record JoinTarget(string Host, int Port, string? Fingerprint, string? Token, string? Room = null)
 {
-    public string Address => (Host.Contains(':', StringComparison.Ordinal) ? $"[{Host}]" : Host).ToLowerInvariant() + ":" + Port.ToString(CultureInfo.InvariantCulture);
+    /// <summary>T338: true when <see cref="Host"/>/<see cref="Port"/> name a relay and <see cref="Room"/> the game on it (a relay invite, or a typed room code resolved against the relay setting). Never dial such a target as a game host.</summary>
+    public bool IsRelay => Room != null;
+
+    /// <summary>T338: the relay of a relay target, without a certificate pin (the settings' relay carries it: see <c>RelaySettings.Choose</c>).</summary>
+    public RelayEndpoint? Relay => IsRelay ? new RelayEndpoint(Host, Port) : null;
+
+    public string Address => IsRelay ? Unciv.Net.Identity.KnownHosts.RelayAddress(Relay!.Key, Room!) : DirectAddress;
+
+    private string DirectAddress => (Host.Contains(':', StringComparison.Ordinal) ? $"[{Host}]" : Host).ToLowerInvariant() + ":" + Port.ToString(CultureInfo.InvariantCulture);
 }
 
 /// <summary>What <see cref="JoinModel.Parse"/> made of the typed text: a target, or the sentence that says what is wrong. A bad input is a result, never an exception.</summary>
@@ -37,15 +46,23 @@ public static class JoinModel
     private const string ProtocolMismatch = "protocol-mismatch";
     private const string SessionClosed = "session-closed";
 
-    public static JoinParse Parse(string? text)
+    /// <param name="text">What the player typed or pasted.</param>
+    /// <param name="relay">T338: the relay of the settings, if any. A typed room code (<c>K7QF-3MXP4A</c>) is joined through it, trusting the host's key on first use; without one the player is told to set a relay first.</param>
+    public static JoinParse Parse(string? text, RelayEndpoint? relay = null)
     {
         var typed = text?.Trim() ?? "";
-        if (typed.Length == 0) return new JoinParse(null, "Type the host's address (for example 192.168.1.20:47821) or paste the invite.");
+        if (typed.Length == 0) return new JoinParse(null, "Type the host's address (for example 192.168.1.20:47821), the room code, or paste the invite.");
         if (typed.StartsWith(InviteCode.Scheme, StringComparison.OrdinalIgnoreCase))
         {
             return InviteCode.TryParse(typed, out var invite) && invite != null
-                ? new JoinParse(new JoinTarget(invite.Host, invite.Port, invite.Fingerprint, invite.Token), null)
+                ? new JoinParse(new JoinTarget(invite.Host, invite.Port, invite.Fingerprint, invite.Token, invite.Room), null)
                 : new JoinParse(null, "This invite is not valid. Copy it again from the host's screen.");
+        }
+        if (LooksLikeRoomCode(typed) && RelayProtocol.NormalizeRoom(typed) is { } code)
+        {
+            return relay == null
+                ? new JoinParse(null, "To join by room code, first set the relay address in the settings (ask the host which relay they use), or paste the host's full invite.")
+                : new JoinParse(new JoinTarget(relay.Host, relay.Port, null, null, RelayProtocol.FormatRoom(code)), null);
         }
 
         string host;
@@ -84,6 +101,11 @@ public static class JoinModel
         return new JoinParse(new JoinTarget(host, port, null, null), null);
     }
 
+    // A room code is 10 Crockford symbols, shown as XXXX-XXXXXX. A bare 10-letter host name could look like one, so the undashed spelling must also hold a digit (a code of letters only is rare).
+    private static bool LooksLikeRoomCode(string typed) =>
+        typed.Length <= 12 && !typed.Contains(':', StringComparison.Ordinal) && !typed.Contains('.', StringComparison.Ordinal)
+        && (typed.Contains('-', StringComparison.Ordinal) || typed.Any(char.IsAsciiDigit));
+
     /// <summary>The sentence for a refusal or failure code of the join (client codes and the host's own).</summary>
     public static string RefusalText(string code) => code switch
     {
@@ -96,6 +118,18 @@ public static class JoinModel
         HostKeyMismatch => "The host's key does not match the invite. Someone may be pretending to be the host. Ask the host for a fresh invite over a channel you trust.",
         HostKeyChanged => KeyChangedText("this host"),
         ProtocolMismatch => "Your game version and the host's cannot talk to each other. Both of you need the same version.",
+        "relay-unreachable" => "The relay could not be reached. Check the relay address in the settings and your internet connection.",
+        "relay-certificate" => "The relay's certificate was not accepted. For a standalone relay add its fingerprint to the relay address (unciv-relay://host:port?fp=...).",
+        "relay-room-unknown" => "The relay does not know that room code. Check the code, or ask the host for a fresh invite: a room code changes when the relay lost its data.",
+        "relay-host-gone" => "The host is not connected to the relay right now. Ask them to check that their game is still running.",
+        "relay-room-full" => "The game is full, or the host is busy right now. Try again in a moment.",
+        "relay-rate-limited" => "Too many tries. Wait a minute and try again.",
+        "relay-banned" => "The relay refused you.",
+        "relay-full" => "The relay is full. Try again later.",
+        "relay-too-old" => "The relay is older than your game and cannot talk to it. Tell whoever runs the relay.",
+        "relay-wrong-host" => "That invite is out of date: the room now belongs to another host. Ask for a fresh invite.",
+        "relay-host-timeout" => "The host did not answer through the relay in time.",
+        "relay-failed" => "The connection through the relay failed.",
         ModSyncCodes.Declined => "You chose not to download the host's mods, so you cannot join.",
         ModSyncCodes.BadManifest or ModSyncCodes.BadFile => "The host sent mod files that are not valid. Nothing was installed.",
         ModSyncCodes.Failed => "The mods could not be downloaded or installed. Nothing was changed.",

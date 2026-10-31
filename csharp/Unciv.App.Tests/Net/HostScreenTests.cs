@@ -289,6 +289,33 @@ public sealed class HostScreenTests : IDisposable
         Assert.Equal(("192.168.1.5", session.Port, session.Fingerprint), (invite!.Host, invite.Port, invite.Fingerprint));
     }
 
+    // T338: a resumed saved game can be hosted through a relay too; a friend with the seat's key joins by room code.
+    [Fact]
+    public async Task Resume_ThroughARelayLetsTheFriendJoinByRoomCode()
+    {
+        using var host = ClientIdentity.Generate();
+        using var friendIdentity = ClientIdentity.Generate();
+        var directory = await SaveHostedGameAsync("relayed", host, friendIdentity);
+        using var cert = HostCertificate.Generate();
+        await using var rig = await Unciv.Core.Tests.Relay.RelayRig.StartAsync(Unciv.Core.Tests.Relay.RelayMode.Plain, o => o with { PublicNames = [Unciv.Core.Tests.Relay.RelayRig.PublicName, "127.0.0.1"] });
+        var endpoint = new Unciv.Net.Relay.RelayEndpoint("127.0.0.1", rig.Port);
+        var dial = new RelayDialOptions { UseTls = false };
+
+        await using var session = await HostingSession.ResumeAsync(directory, host, cert, 0, endpoint, new RelayListenerOptions { Dial = dial });
+        await session.Relay!.WaitForRoomAsync(CancellationToken.None).WaitAsync(TimeSpan.FromSeconds(30));
+        Assert.True(InviteCode.TryParse(session.RelayInvite(), out var invite));
+
+        await using var friend = new ClientSession(token => TcpTlsClientTransport.ConnectViaRelayAsync(endpoint, invite!.Room!, invite.Fingerprint, dial: dial, cancellationToken: token), new ClientSessionOptions
+        {
+            Identity = friendIdentity,
+            DisplayName = "Friend",
+            RulesetHash = "",
+            ExpectedFingerprint = invite!.Fingerprint,
+            MaxReconnectAttempts = 0,
+        });
+        Assert.True((await friend.JoinAsync().WaitAsync(TimeSpan.FromSeconds(30))).Joined);
+    }
+
     [Fact]
     public async Task Resume_AKeyThatOwnsNoCivIsRefusedWithAMessage()
     {

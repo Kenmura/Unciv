@@ -118,6 +118,12 @@ public sealed class KnownHosts
         return HostKey.Matches(pinned, presentedFingerprint) ? HostTrust.Trusted : HostTrust.Mismatch;
     }
 
+    /// <summary>T338: true when some address is pinned to this fingerprint. A host that moved (another relay, room or port) keeps its pin: the key is what the player trusted, not where it answered.</summary>
+    public bool IsFingerprintKnown(string fingerprint) => pins.Values.Any(pinned => HostKey.Matches(pinned, fingerprint));
+
+    /// <summary>T338: the key of a relay join, <c>relayhost:port/room</c> (never the relay's address alone, which every room on it shares); the room is spelled in its display form.</summary>
+    public static string RelayAddress(string relayHostAndPort, string room) => relayHostAndPort.ToLowerInvariant() + "/" + (Unciv.Net.Relay.RelayProtocol.NormalizeRoom(room) is { } canonical ? Unciv.Net.Relay.RelayProtocol.FormatRoom(canonical) : room);
+
     /// <summary>Pins a fingerprint the user accepted (or that came from an invite). Refuses to overwrite a different pin.</summary>
     public bool Pin(string hostAddress, string fingerprint)
     {

@@ -3,9 +3,9 @@ using System.Security.Cryptography;
 using System.Text;
 using Unciv.Net.Identity;
 
-namespace Unciv.Relay;
+namespace Unciv.Net.Relay;
 
-/// <summary>The constants, signed strings and codes of the relay tunnel protocol version 1 (design/RELAY.md section 3). Shared by the relay, the test stub and, later, the client (T338).</summary>
+/// <summary>The constants, signed strings and codes of the relay tunnel protocol version 1 (design/RELAY.md section 3). Shared by the relay, the host side (Unciv.Server) and the client (T338).</summary>
 public static class RelayProtocol
 {
     public const int Version = 1;

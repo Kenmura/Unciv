@@ -8,17 +8,21 @@ namespace Unciv.Server.Transport;
 /// Direct TCP + TLS 1.3 frame transport implementing <see cref="ITransport"/> (SERVER.md 6.3).
 /// Frames are length-prefixed JSON UTF-8 payloads.
 /// </summary>
-public sealed class TcpTlsTransport : ITransport
+public sealed class TcpTlsTransport : ITransport, IPeerTransport
 {
     private readonly TcpClient tcpClient;
     private readonly Stream stream;
     private bool disposed;
 
-    public TcpTlsTransport(TcpClient tcpClient, Stream stream)
+    public TcpTlsTransport(TcpClient tcpClient, Stream stream, string? peerId = null)
     {
         this.tcpClient = tcpClient;
         this.stream = stream;
+        PeerId = peerId;
     }
+
+    /// <summary>T338: the relay's opaque id of the joiner for a connection that came through a relay; null for a direct one.</summary>
+    public string? PeerId { get; }
 
     /// <summary>The TLS version negotiated for this connection (null when the stream is not TLS).</summary>
     public System.Security.Authentication.SslProtocols? NegotiatedProtocol => (stream as System.Net.Security.SslStream)?.SslProtocol;

@@ -578,12 +578,13 @@ public sealed class LobbyHost : IAsyncDisposable
         }
 
         // T270: after a restart the password and the one-use invite tokens are gone, but a saved seat's key still proves itself in the Auth step: it needs no credential again. Everyone else does.
+        var remoteKey = (session.Transport as IPeerTransport)?.PeerId is { } peer ? "peer:" + peer : join.PlayerKey; // T338: through a relay the joiner's network, which a rotated key cannot escape
         var knownSavedKey = restored && !session.ModSync && Bindings.SlotOf(join.PlayerKey) != null;
         var admissionResult = knownSavedKey
             ? AdmissionResult.Admitted
             : session.ModSync
-            ? Admission.AdmitForModSync(join.PlayerKey, join.Password, join.InviteToken)
-            : Admission.Admit(join.PlayerKey, join.Password, join.InviteToken);
+            ? Admission.AdmitForModSync(remoteKey, join.Password, join.InviteToken)
+            : Admission.Admit(remoteKey, join.Password, join.InviteToken);
         if (admissionResult == AdmissionResult.RateLimited)
         {
             await SendAsync(session.Transport, new JoinRefused { Code = JoinRefusedCodes.RateLimited }).ConfigureAwait(false);

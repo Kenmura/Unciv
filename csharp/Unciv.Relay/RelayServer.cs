@@ -8,6 +8,7 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using Unciv.Net.Identity;
+using Unciv.Net.Relay;
 using Unciv.Net.Turns;
 
 namespace Unciv.Relay;

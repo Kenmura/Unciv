@@ -7,6 +7,7 @@ using Unciv.Models.Translations;
 using Unciv.Net;
 using Unciv.Models.Ruleset;
 using Unciv.Net.Identity;
+using Unciv.Net.Relay;
 using Unciv.Net.Mods;
 
 namespace Unciv.GodotClient.Setup;
@@ -34,6 +35,9 @@ public sealed class JoinScreenEnvironment
 
     /// <summary>Opens the connection to the host. The real one is TCP + TLS (<c>TcpTlsClientTransport</c>); the host key is checked by the session, not here.</summary>
     public required Func<JoinTarget, CancellationToken, Task<ITransport>> Connect { get; init; }
+
+    /// <summary>T338: the relay a typed room code goes through (null: none set, so a bare room code gets an explanation).</summary>
+    public Func<RelayEndpoint?> Relay { get; init; } = () => null;
 
     /// <summary>T247: where mods are installed (the file source the rulesets load from, and its mods folder). Without it a host with other mods is refused as before; with it the screen offers to download them.</summary>
     public IRulesetFileSource? ModFiles { get; init; }
@@ -234,7 +238,7 @@ public partial class JoinScreen : Control
     public void Join()
     {
         if (busy) return;
-        var parsed = JoinModel.Parse(AddressField.Text);
+        var parsed = JoinModel.Parse(AddressField.Text, env.Relay());
         if (parsed.Target is not { } target)
         {
             messageLabel.Text = (parsed.Problem ?? "").Tr();

@@ -4,6 +4,7 @@ using Unciv.Client.Net.Session;
 using Unciv.Net;
 using Unciv.Net.Identity;
 using Unciv.Net.Lobby;
+using Unciv.Net.Relay;
 using Unciv.Server;
 using Unciv.Server.Transport;
 
@@ -23,10 +24,13 @@ public sealed class HostingSession : IAsyncDisposable
     private readonly CancellationTokenSource cts = new();
     private readonly TcpTlsListener? listener;
     private readonly Task? acceptLoop;
+    private readonly RelayListener? lobbyRelay;
+    private readonly Task? relayAcceptLoop;
     private bool disposed;
 
-    private HostingSession(string fingerprint, int port, ServerLobby? lobby, ClientSession? hostPlayer, TcpTlsListener? listener, InProcessHost? resumed, string? directory)
+    private HostingSession(string fingerprint, int port, ServerLobby? lobby, ClientSession? hostPlayer, TcpTlsListener? listener, InProcessHost? resumed, string? directory, RelayListener? lobbyRelay = null)
     {
+        this.lobbyRelay = lobbyRelay;
         Fingerprint = fingerprint;
         Port = port;
         Lobby = lobby;
@@ -35,7 +39,17 @@ public sealed class HostingSession : IAsyncDisposable
         Resumed = resumed;
         Directory = directory;
         if (listener != null && lobby != null) acceptLoop = AcceptAsync(listener, lobby, cts.Token);
+        if (lobbyRelay != null && lobby != null) relayAcceptLoop = AcceptRelayAsync(lobbyRelay, lobby, cts.Token);
     }
+
+    /// <summary>T338: the relay registration of this game (null without a relay). Its room code arrives a moment after hosting starts, and again if the relay assigns a new one.</summary>
+    public RelayListener? Relay => lobbyRelay ?? Resumed?.Relay;
+
+    /// <summary>T338: the invite that works from anywhere through the relay (needs <see cref="Relay"/> registered), or null before the relay answered or without a relay.</summary>
+    public string? RelayInvite(string? token = null) => Relay?.Invite(token);
+
+    /// <summary>T338: publishes (or with null removes) the public listing of this game on the relay; no effect without a relay.</summary>
+    public void SetListing(RelayListing? listing) => Relay?.SetListing(listing);
 
     /// <summary>The key fingerprint friends verify (it is part of every invite).</summary>
     public string Fingerprint { get; }
@@ -65,12 +79,13 @@ public sealed class HostingSession : IAsyncDisposable
     /// Opens the lobby with <paramref name="settings"/>, listens on <paramref name="port"/> (0 picks a free port) and returns once the host sits in slot 1.
     /// </summary>
     /// <exception cref="HostingException">the port is taken or the lobby refused the host.</exception>
-    public static async Task<HostingSession> StartLobbyAsync(LobbySettings settings, ClientIdentity identity, X509Certificate2 certificate, string displayName, int port)
+    public static async Task<HostingSession> StartLobbyAsync(LobbySettings settings, ClientIdentity identity, X509Certificate2 certificate, string displayName, int port, RelayEndpoint? relayEndpoint = null, RelayListenerOptions? relayOptions = null)
     {
         var fingerprint = HostCertificate.GetFingerprint(certificate);
         var lobby = new ServerLobby(settings, hostFingerprint: fingerprint, hostName: displayName);
         TcpTlsListener? tcp = null;
         ClientSession? hostPlayer = null;
+        RelayListener? relay = null;
         try
         {
             tcp = new TcpTlsListener(certificate, port);
@@ -110,10 +125,16 @@ public sealed class HostingSession : IAsyncDisposable
                 // fall through to the check below
             }
             if (hostPlayer.Lobby == null) throw new HostingException("The lobby did not answer.");
-            return new HostingSession(fingerprint, tcp.Port, lobby, hostPlayer, tcp, null, null);
+            if (relayEndpoint != null)
+            {
+                relay = new RelayListener(relayEndpoint, certificate, RelayListener.NewGameId(), relayOptions); // a fresh game id: this lobby's room
+                relay.Start();
+            }
+            return new HostingSession(fingerprint, tcp.Port, lobby, hostPlayer, tcp, null, null, relay);
         }
         catch
         {
+            if (relay != null) await relay.DisposeAsync().ConfigureAwait(false);
             if (hostPlayer != null) await hostPlayer.DisposeAsync().ConfigureAwait(false);
             tcp?.Stop();
             await lobby.DisposeAsync().ConfigureAwait(false);
@@ -123,7 +144,7 @@ public sealed class HostingSession : IAsyncDisposable
 
     /// <summary>Reopens the saved game in <paramref name="directory"/> (the player's key must own a civ in it) and listens for friends on <paramref name="port"/>.</summary>
     /// <exception cref="HostingException">the directory is not a readable game of this player, or the port is taken.</exception>
-    public static Task<HostingSession> ResumeAsync(string directory, ClientIdentity identity, X509Certificate2 certificate, int port)
+    public static Task<HostingSession> ResumeAsync(string directory, ClientIdentity identity, X509Certificate2 certificate, int port, RelayEndpoint? relayEndpoint = null, RelayListenerOptions? relayOptions = null)
     {
         InProcessHost host;
         try
@@ -136,7 +157,7 @@ public sealed class HostingSession : IAsyncDisposable
         }
         try
         {
-            host.Listen(certificate, port);
+            host.Listen(certificate, port, relayEndpoint, relayOptions);
         }
         catch (SocketException e)
         {
@@ -167,15 +188,36 @@ public sealed class HostingSession : IAsyncDisposable
         }
     }
 
+    private static async Task AcceptRelayAsync(RelayListener relay, ServerLobby lobby, CancellationToken token)
+    {
+        while (!token.IsCancellationRequested)
+        {
+            ITransport transport;
+            try
+            {
+                transport = await relay.AcceptTransportAsync(token).ConfigureAwait(false);
+            }
+            catch (OperationCanceledException) { return; }
+            catch (ObjectDisposedException) { return; }
+            _ = lobby.AttachConnectionAsync(transport, token);
+        }
+    }
+
     public async ValueTask DisposeAsync()
     {
         if (disposed) return;
         disposed = true;
         listener?.Stop();
+        if (lobbyRelay != null) await lobbyRelay.DisposeAsync().ConfigureAwait(false);
         await cts.CancelAsync().ConfigureAwait(false);
         if (acceptLoop != null)
         {
             try { await acceptLoop.ConfigureAwait(false); }
+            catch (OperationCanceledException) { }
+        }
+        if (relayAcceptLoop != null)
+        {
+            try { await relayAcceptLoop.ConfigureAwait(false); }
             catch (OperationCanceledException) { }
         }
         if (HostPlayer != null) await HostPlayer.DisposeAsync().ConfigureAwait(false);

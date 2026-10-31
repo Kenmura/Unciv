@@ -32,6 +32,12 @@ public static class UserPaths
     /// <summary>C006: the address typed on the join screen last time.</summary>
     public static string LastJoin => Files.LastJoin;
 
+    /// <summary>T338: the relay setting file; a fresh install has none and the player turns relay on by entering a relay URL.</summary>
+    public static string Relay => Files.Relay;
+
+    /// <summary>T338: the optional default the owner ships next to the program (never in the source tree); used only while <see cref="Relay"/> does not exist.</summary>
+    public static string RelayDefault => System.IO.Path.Combine(System.AppContext.BaseDirectory, "relay-default.json");
+
     /// <summary>C034: one folder per saved hosted game.</summary>
     public static string HostedGames => Files.HostedGames;
 

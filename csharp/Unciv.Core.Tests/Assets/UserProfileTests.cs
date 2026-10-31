@@ -89,6 +89,7 @@ public sealed class UserProfileTests
         Assert.Equal(Path.Combine("/data", "host-key.pfx"), files.HostKey);
         Assert.Equal(Path.Combine("/data", "known-hosts.json"), files.KnownHosts);
         Assert.Equal(Path.Combine("/data", "last-join.txt"), files.LastJoin);
+        Assert.Equal(Path.Combine("/data", "relay.json"), files.Relay);
         Assert.Equal(Path.Combine("/data", "hosted"), files.HostedGames);
         Assert.Equal(Path.Combine("/data", "mods"), files.Mods);
     }
