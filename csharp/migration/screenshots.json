@@ -1243,6 +1243,24 @@
       }
     ]
   },
+  "T372": {
+    "scenario": "relay-session",
+    "about": "T372: a host and a joiner through a local Unciv.Relay: the friend joins by relay invite, both get ready and the joiner's game opens.",
+    "shots": [
+      {
+        "golden": "relay-session/host-lobby.png",
+        "caption": "The host's lobby after a friend joined through the relay: the friend sits in slot 2; Start waits for both to be ready."
+      },
+      {
+        "golden": "relay-session/joiner-lobby.png",
+        "caption": "The friend's lobby, reached through the relay with the pasted invite: own seat marked (you), settings read-only, only Ready and chat."
+      },
+      {
+        "golden": "relay-session/game.png",
+        "caption": "The joiner's game screen, opened from the first snapshot that reached it through the relay."
+      }
+    ]
+  },
   "T334": {
     "scenario": "two-instances",
     "about": "T334: the main menu of two client instances on one computer, started with --profile=alpha and --profile=beta, and of one without a profile.",

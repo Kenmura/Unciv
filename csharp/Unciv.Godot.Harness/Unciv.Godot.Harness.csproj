@@ -9,6 +9,8 @@
   <ItemGroup>
     <ProjectReference Include="..\Unciv.Harness\Unciv.Harness.csproj" />
     <ProjectReference Include="..\Unciv.Godot\Unciv.Godot.csproj" />
+    <!-- T372: the relay-session scenario runs the real relay server in-process -->
+    <ProjectReference Include="..\Unciv.Relay\Unciv.Relay.csproj" />
   </ItemGroup>
 
 </Project>

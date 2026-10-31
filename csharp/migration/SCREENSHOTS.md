@@ -99,6 +99,7 @@
 - [T334 (ticket not Done or unknown)](#t334-ticket-not-done-or-unknown)
 - [T339 (ticket not Done or unknown)](#t339-ticket-not-done-or-unknown)
 - [T371 (ticket not Done or unknown)](#t371-ticket-not-done-or-unknown)
+- [T372 (ticket not Done or unknown)](#t372-ticket-not-done-or-unknown)
 - [T376 (ticket not Done or unknown)](#t376-ticket-not-done-or-unknown)
 - [T377 (ticket not Done or unknown)](#t377-ticket-not-done-or-unknown)
 - [Missing screenshots](#missing-screenshots)
@@ -2073,6 +2074,24 @@ Scenario `relay`.
 ![An invite names another relay: the prompt names it, says what its operator can see and that yes is remembered for that relay only; nothing has been sent yet.](../Unciv.Godot.Harness/golden/relay/prompt.png)
 
 *An invite names another relay: the prompt names it, says what its operator can see and that yes is remembered for that relay only; nothing has been sent yet.* (`relay/prompt.png`)
+
+## T372 (ticket not Done or unknown)
+
+T372: a host and a joiner through a local Unciv.Relay: the friend joins by relay invite, both get ready and the joiner's game opens.
+
+Scenario `relay-session`.
+
+![The host's lobby after a friend joined through the relay: the friend sits in slot 2; Start waits for both to be ready.](../Unciv.Godot.Harness/golden/relay-session/host-lobby.png)
+
+*The host's lobby after a friend joined through the relay: the friend sits in slot 2; Start waits for both to be ready.* (`relay-session/host-lobby.png`)
+
+![The friend's lobby, reached through the relay with the pasted invite: own seat marked (you), settings read-only, only Ready and chat.](../Unciv.Godot.Harness/golden/relay-session/joiner-lobby.png)
+
+*The friend's lobby, reached through the relay with the pasted invite: own seat marked (you), settings read-only, only Ready and chat.* (`relay-session/joiner-lobby.png`)
+
+![The joiner's game screen, opened from the first snapshot that reached it through the relay.](../Unciv.Godot.Harness/golden/relay-session/game.png)
+
+*The joiner's game screen, opened from the first snapshot that reached it through the relay.* (`relay-session/game.png`)
 
 ## T376 (ticket not Done or unknown)
 

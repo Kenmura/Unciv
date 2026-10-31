@@ -62,6 +62,7 @@ on the main menu and the player's name in lobbies. Local mods (`user://mods`) an
 hosts, instance two (`--profile=friend`) joins `127.0.0.1:47821`. Only one instance can host on a port: a second host must change the port in the Host screen's Network tab (a taken port is
 refused with a message). Godot's log file (`user://logs/godot.log`) is shared and rotated by Godot; the client has no lock file and no listening port besides the host's. The harness
 scenario `two-instances` hosts and joins as two profiles over real TCP and checks two distinct player keys, separate settings and saves.
+The scenario `relay-session` (T372) runs the real relay server in-process (self-signed TLS, loopback), hosts through it from the host screen, joins by the relay invite from the join screen and plays the first snapshot on the joiner.
 
 ## Pieces
 
