@@ -219,7 +219,7 @@ xychart-beta
 | T278 | Available (waiting on ) | T260, T276 | 2 | Android on-device verification: TLS join, lifecycle reconnect, frame time and APK size on a mid-range phone |
 | T305 | Available (waiting on ) | T280 | 1 | Verify the Android APK job of the release workflow on a hosted runner (first tag push) |
 | T319 | Available (waiting on ) | none | 1 | Client scenario goldens phone-menus and flat-city fail locally at the base commit: find out whether stale or machine-dependent, then fix |
-| T339 | Needs-Review [Claude] | T336, T337, T338 | 1 | Lobby browser screen: list public games from the relay directory, filter, join, password prompt, host a listed game |
+| T339 | In-Review [Claude-reviewer] | T336, T337, T338 | 1 | Lobby browser screen: list public games from the relay directory, filter, join, password prompt, host a listed game |
 | T290 | Blocked | T271 | 0 | Real-device frame-time pass: Windows, macOS, Android phone |
 | T300 | In-Progress [Claude] | none | 0 | Replace text-letter placeholder icons (resource chips etc.) with real pictorial icons |
 | T301 | In-Progress [Claude] | none | 0 | Maximizing a windowed game freaks out and may crash |
