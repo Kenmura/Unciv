@@ -67,6 +67,7 @@ public partial class GameScreen : Control
 
     public MinimapView Minimap { get; private set; } = null!; // JUSTIFY: C014 assigned in _Ready before any use
 
+    private TileOwnerMemoryStore? ownerStore;
     private readonly TileOwnerMemory ownerMemory = new(); // what this screen has seen of tile ownership, so fogged tiles keep their last-known owner (T298)
 
     /// <summary>Cities, borders, roads and improvements drawn on the map (C041).</summary>
@@ -1085,6 +1086,7 @@ public partial class GameScreen : Control
         if (session != gameSession) ownerMemory.Clear(); // T298: what one game or viewer saw must never colour another's fog (hotseat hand-over, load)
         if (session != gameSession) sessionMarkers = ClientSettings.Default; // C089: in-memory markers belong to one game
         session = gameSession;
+        RestoreOwnerMemory(); // T378: a new session of a game this viewer played before (load, reconnect, restart) starts from what it saw
         assets = registry;
         queries = new GameQueries(session);
         ui?.Unbind();
@@ -1262,6 +1264,24 @@ public partial class GameScreen : Control
         SetStatus("Click one of your units.", quiet: true);
     }
 
+    /// <summary>T378: persists what this viewer saw of tile ownership under the store's folder (per game and viewer); a session without a key keeps it in memory only. Call before <see cref="Start"/> or after, in which case an earlier memory is restored now.</summary>
+    public void BindOwnerMemory(TileOwnerMemoryStore store)
+    {
+        ownerStore = store;
+        if (session == null) return;
+        bool restored = RestoreOwnerMemory();
+        if (ownerMemory.Remember(session.Snapshot.Tiles)) SaveOwnerMemory(); // the first look at this game, before the store was known
+        if (restored) Refresh();
+    }
+
+    private bool RestoreOwnerMemory() =>
+        ownerStore != null && session is { OwnerMemoryKey: { } key } && ownerStore.Load(key, session.ViewerCivId, session.Snapshot.Turn, session.Snapshot.Tiles, ownerMemory);
+
+    private void SaveOwnerMemory()
+    {
+        if (ownerStore != null && session is { OwnerMemoryKey: { } key }) ownerStore.Save(key, session.ViewerCivId, session.Snapshot.Turn, session.Snapshot.Tiles, ownerMemory);
+    }
+
     /// <summary>Redraws everything from the session's current snapshot (the screen does this itself after its own commands; a caller that changed the game another way calls it).</summary>
     public void Refresh()
     {
@@ -1270,7 +1290,7 @@ public partial class GameScreen : Control
         mapLoaded = true;
         Minimap.Update(snapshot.Tiles, OwnerColour);
         Layout();
-        ownerMemory.Remember(snapshot.Tiles);
+        if (ownerMemory.Remember(snapshot.Tiles)) SaveOwnerMemory();
         Overlays.UiScale = ui?.Scale ?? 1f;
         Overlays.Rebuild(assets, session.Ruleset, Map, snapshot.Tiles, snapshot.Cities, OwnerColour, ownerMemory, OwnerInnerColour);
         RefreshMarkers();

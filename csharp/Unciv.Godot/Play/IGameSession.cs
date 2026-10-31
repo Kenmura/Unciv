@@ -30,6 +30,9 @@ public interface IGameSession
     /// <summary>C089: the id of the game, which keys the player's private client-side data (map markers); null when the session does not know it (a joined network game), then such data is not persisted.</summary>
     string? GameId => null;
 
+    /// <summary>T378: what keys the viewer's remembered tile owners on disk: the game id, for a joined network game the host's key fingerprint (the game id is withheld from clients); null when neither is known, then they live in memory only.</summary>
+    string? OwnerMemoryKey => GameId;
+
     /// <summary>The static ruleset (names, colours, costs by name). Read-only data identical on every peer, so it may be read directly.</summary>
     Ruleset Ruleset { get; }
 
