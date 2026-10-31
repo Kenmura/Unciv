@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Unciv.Assets;
 using Unciv.Commands.Events;
 using Unciv.Commands.Turn;
 using Unciv.GodotClient.Play;
@@ -113,6 +114,64 @@ public sealed class NetGameSessionTests
     {
         await using var rig = new ClientNetRig();
         Assert.Throws<InvalidOperationException>(() => new NetGameSession(rig.Session, new Ruleset()));
+    }
+
+    // T378: a joined game is keyed by the host's key, so what the viewer saw outlives a reconnect and a restart of the client, and the host sends no more than before.
+    [Fact]
+    public async Task OwnerMemory_SurvivesReconnectAndRestart_WithoutTheHostSendingFoggedOwners()
+    {
+        static TileDto Tile(int x, int y, bool visible, string? owner) => new()
+        {
+            X = x,
+            Y = y,
+            Visible = visible,
+            BaseTerrain = "Grassland",
+            Features = [],
+            RiverBottom = false,
+            RiverBottomLeft = false,
+            RiverBottomRight = false,
+            Owner = owner,
+        };
+        static ClientSnapshot With(ClientSnapshot snap, long seq, bool lit) => snap with
+        {
+            Seq = seq,
+            Tiles = [Tile(0, 0, lit, lit ? "Rome" : null), Tile(1, 0, lit, lit ? "Rome" : null), Tile(2, 0, lit, lit ? "Greece" : null), Tile(3, 0, false, null)],
+        };
+        string folder = Path.Combine(Directory.CreateTempSubdirectory("unciv-owner-memory-").FullName, "store");
+        try
+        {
+            await using var rig = new ClientNetRig();
+            var lit = With(ClientNetRig.Snap(5, 1), 5, lit: true);
+            var (net, host) = await StartAsync(rig, lit);
+            await using var _ = net;
+            Assert.StartsWith("host:", net.OwnerMemoryKey, StringComparison.Ordinal);
+            var store = new TileOwnerMemoryStore(folder);
+            var screenMemory = new TileOwnerMemory();
+            Assert.True(screenMemory.Remember(net.Snapshot.Tiles));
+            Assert.True(store.Save(net.OwnerMemoryKey!, net.ViewerCivId, net.Snapshot.Turn, net.Snapshot.Tiles, screenMemory));
+            // The connection drops; the host's resync answers with everything fogged: the wire carries no owner of a fogged tile
+            var back = new TaskCompletionSource();
+            net.SnapshotChanged += fresh => { if (fresh.Seq == 6) back.TrySetResult(); };
+            var next = rig.NewConnection();
+            await host.CloseAsync();
+            await rig.HandshakeAsync(next);
+            await next.ReceiveAsync<ResyncRequest>();
+            await next.SendAsync(ClientNetRig.SnapshotMessage(With(lit, 6, lit: false)));
+            await back.Task.WaitAsync(Limit);
+            Assert.All(net.Snapshot.Tiles, it => Assert.Null(it.Owner));
+            Assert.False(screenMemory.Remember(net.Snapshot.Tiles)); // a fogged snapshot teaches nothing
+            // A restarted client (a fresh memory, the same store): the borders of the fogged territory are back
+            var restarted = new TileOwnerMemory();
+            Assert.True(new TileOwnerMemoryStore(folder).Load(net.OwnerMemoryKey!, net.ViewerCivId, net.Snapshot.Turn, net.Snapshot.Tiles, restarted));
+            var edges = MapOverlays.BorderEdges(net.Snapshot.Tiles, restarted);
+            Assert.Contains(edges, it => it.Owner == "Rome");
+            Assert.Contains(edges, it => it.Owner == "Greece");
+            Assert.DoesNotContain(edges, it => it.X == 3); // the tile that was never in sight stays borderless
+            Assert.Empty(MapOverlays.BorderEdges(net.Snapshot.Tiles, new TileOwnerMemory()));
+            // Another viewer on the same host (a second civ at the same computer) starts empty
+            Assert.False(new TileOwnerMemoryStore(folder).Load(net.OwnerMemoryKey!, "Greece", net.Snapshot.Turn, net.Snapshot.Tiles, new TileOwnerMemory()));
+        }
+        finally { if (Directory.Exists(folder)) Directory.Delete(folder, recursive: true); }
     }
 
     [Fact]

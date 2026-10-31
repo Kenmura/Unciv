@@ -53,6 +53,13 @@ public sealed class BordersScenario : Scenario
         var fogLine = edges.Where(it => tiles.FirstOrDefault(t => t.X == it.X + it.Dx && t.Y == it.Y + it.Dy) is { } other
             && other.Visible != Visible(tiles, it.X, it.Y) && memory.TryOwner(other, out var owner) && owner == it.Owner).ToList();
         var withoutMemory = MapOverlays.BorderEdges(tiles);
+        // T378: the same map after a restart or load: the memory comes back from the store and the fogged borders are identical
+        var storeDir = System.IO.Directory.CreateTempSubdirectory("unciv-borders-memory-").FullName;
+        var store = new TileOwnerMemoryStore(storeDir);
+        var reloaded = new TileOwnerMemory();
+        bool reloadedOk = store.Save("borders", "Japan", 1, tiles, memory) && store.Load("borders", "Japan", 1, tiles, reloaded);
+        var loadedEdges = MapOverlays.BorderEdges(tiles, reloaded);
+        System.IO.Directory.Delete(storeDir, recursive: true);
 
         var chains = BorderChains.Build(edges);
         var closed = chains.Where(it => it.Closed).ToList();
@@ -66,6 +73,7 @@ public sealed class BordersScenario : Scenario
             new AssertQuery("no border runs along the line where sight ends inside Japan's territory", () => fogLine.Count == 0),
             new AssertQuery("without the remembered owners the fogged territory would have no border of its own (what the memory adds)", () =>
                 withoutMemory.Count < edges.Count && !withoutMemory.Any(it => !Visible(tiles, it.X, it.Y))),
+            new AssertQuery("after a save and load the fogged territory shows exactly the same borders (the remembered owners are stored)", () => reloadedOk && loadedEdges.SequenceEqual(edges)),
             new AssertQuery("fogged Japanese tiles keep their remembered border", () => edges.Any(it => it.Owner == "Japan" && !Visible(tiles, it.X, it.Y))),
             new AssertQuery("Japan and Greece each draw their side of the shared edge", () =>
                 edges.Any(it => it.Owner == "Japan" && it.X == 1 && it.Y == 1 && it is { Dx: 1, Dy: 1 }) && edges.Any(it => it.Owner == "Greece" && it.X == 2 && it.Y == 2 && it is { Dx: -1, Dy: -1 })),
