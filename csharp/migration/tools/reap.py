@@ -18,10 +18,22 @@ process is killed when
     ptest or build is running. VBCSCompiler is shared by all worktrees and is killed only when no worktree at all is busy.
 A live gate/ptest/build is therefore never touched: it keeps at least one young or running process in its worktree.
 Exit status 0; with --kill the number of processes that survived is printed.
+
+Scratch directories (T390). `--scratch` lists stale scratch folders instead of processes; `--scratch --remove` deletes them. Default is
+listing only. Candidates are exactly (nothing else is ever touched, and every path must be a real directory, not a symlink, owned by
+the current user, directly inside the temp root or, for agent scratchpads, three levels down):
+  * /tmp/unciv-run-<pid>-*   per-run folders of gate/ptest/release/run-scenario (T390): stale when pid <pid> is gone
+  * /tmp/unciv-*, /tmp/dotnet-diagnostic-*, /tmp/clr-debug-pipe-*   leftovers of tests and the CLR: stale when older than --scratch-age
+    hours (default 6) and no live process has its cwd, command line or environment inside them
+  * /tmp/MSBuildTemp* and 6-character names (MSBuild/dotnet temp): only when EMPTY and older than --scratch-age
+  * /tmp/claude-<uid>/<project>/<session>   agent scratchpads: stale when nothing inside changed for --claude-age hours (default 24)
+    and no live process uses it
+A live session's scratchpad is never listed as stale: fresh files, an open cwd or a process mentioning the path all keep it.
 """
 import argparse
 import os
 import re
+import shutil
 import signal
 import sys
 import time
@@ -198,6 +210,161 @@ def kill(pids):
     return pids
 
 
+SCRATCH_RUN_RE = re.compile(r"^unciv-run-(\d+)-")
+SCRATCH_NAMED = ("unciv-", "dotnet-diagnostic-", "clr-debug-pipe-")
+SCRATCH_EMPTY_RE = re.compile(r"^(MSBuildTemp[A-Za-z0-9]*|[A-Za-z0-9]{6})$")
+UUID_RE = re.compile(r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$")
+
+
+def tree_info(path, limit=200000):
+    """(bytes, newest mtime) of everything under `path` (symlinks not followed); caps the walk at `limit` entries."""
+    size, newest, n = 0, 0.0, 0
+    try:
+        newest = os.lstat(path).st_mtime
+    except OSError:
+        return 0, 0.0
+    for root, dirs, files in os.walk(path):
+        for name in dirs + files:
+            n += 1
+            if n > limit:
+                return size, newest
+            try:
+                st = os.lstat(os.path.join(root, name))
+            except OSError:
+                continue
+            size += st.st_blocks * 512
+            newest = max(newest, st.st_mtime)
+    return size, newest
+
+
+def live_usage():
+    """One text blob of every process's cwd, command line and environment: a scratch path appearing in it is in use."""
+    parts = []
+    for name in os.listdir("/proc"):
+        if not name.isdigit():
+            continue
+        parts.append(read("/proc/%s/cmdline" % name).replace(b"\0", b" ").decode(errors="replace"))
+        parts.append(read("/proc/%s/environ" % name).replace(b"\0", b" ").decode(errors="replace"))
+        try:
+            parts.append(os.readlink("/proc/%s/cwd" % name))
+        except OSError:
+            pass
+    return "\n".join(parts)
+
+
+def scratch_candidates(root, now, uid, usage, pid_alive, age_s, claude_age_s, exists=os.path.exists, info=tree_info):
+    """Every scratch folder `reap.py --scratch` knows about -> list of dict(path, kind, bytes, age_s, verdict, reason).
+    Pure apart from the filesystem reads behind `info`/`exists`: tests drive it with a temp directory and fabricated
+    `usage` (see live_usage) and `pid_alive`."""
+    out = []
+
+    def add(path, kind, verdict, reason, size, newest):
+        out.append({"path": path, "kind": kind, "bytes": size, "age_s": max(0.0, now - newest), "verdict": verdict, "reason": reason})
+
+    def eligible(path):
+        try:
+            st = os.lstat(path)
+        except OSError:
+            return False
+        import stat as statmod
+        return statmod.S_ISDIR(st.st_mode) and st.st_uid == uid
+
+    def used(path):
+        return path in usage
+
+    try:
+        names = sorted(os.listdir(root))
+    except OSError:
+        names = []
+    for name in names:
+        path = os.path.join(root, name)
+        if not eligible(path):
+            continue
+        m = SCRATCH_RUN_RE.match(name)
+        if m:
+            size, newest = info(path)
+            if pid_alive(int(m.group(1))) or used(path):
+                add(path, "run", "keep", "owner process alive", size, newest)
+            else:
+                add(path, "run", "STALE", "owner pid %s gone" % m.group(1), size, newest)
+        elif name.startswith(SCRATCH_NAMED):
+            size, newest = info(path)
+            if now - newest < age_s:
+                add(path, "temp", "keep", "younger than scratch-age", size, newest)
+            elif used(path):
+                add(path, "temp", "keep", "in use by a live process", size, newest)
+            else:
+                add(path, "temp", "STALE", "old and unused", size, newest)
+        elif SCRATCH_EMPTY_RE.match(name):
+            try:
+                empty = not os.listdir(path)
+                newest = os.lstat(path).st_mtime
+            except OSError:
+                continue
+            if empty and now - newest >= age_s:
+                add(path, "empty", "STALE", "empty and old", 0, newest)
+        elif name.startswith("claude-") and name[7:].isdigit():
+            for project in sorted(os.listdir(path)) if eligible(path) else []:
+                pdir = os.path.join(path, project)
+                if not project.startswith("-") or not eligible(pdir):
+                    continue
+
+                for session in sorted(os.listdir(pdir)):
+                    sdir = os.path.join(pdir, session)
+                    if not UUID_RE.match(session) or not eligible(sdir):
+                        continue
+                    size, newest = info(sdir)
+                    if used(sdir):
+                        add(sdir, "claude", "keep", "in use by a live process", size, newest)
+                    elif now - newest < claude_age_s:
+                        add(sdir, "claude", "keep", "changed within claude-age", size, newest)
+                    else:
+                        add(sdir, "claude", "STALE", "idle for more than claude-age and unused", size, newest)
+    return out
+
+
+def remove_scratch(rows, root):
+    """Delete the STALE rows (re-checking each path is still inside `root`). Returns (removed count, bytes freed)."""
+    root = os.path.realpath(root)
+    n = freed = 0
+    for r in rows:
+        if r["verdict"] != "STALE":
+            continue
+        real = os.path.realpath(r["path"])
+        if os.path.islink(r["path"]) or not real.startswith(root + os.sep) or real == root:
+            continue
+        shutil.rmtree(real, ignore_errors=True)
+        if not os.path.exists(real):
+            n += 1
+            freed += r["bytes"]
+    return n, freed
+
+
+def scratch_main(a):
+    root = a.tmp_root
+    rows = scratch_candidates(root, time.time(), os.getuid(), live_usage(), lambda pid: os.path.exists("/proc/%d" % pid),
+                              a.scratch_age * 3600, a.claude_age * 3600)
+    stale = [r for r in rows if r["verdict"] == "STALE"]
+    kinds = {}
+    for r in rows:
+        k = kinds.setdefault((r["kind"], r["verdict"]), [0, 0])
+        k[0] += 1
+        k[1] += r["bytes"]
+    print("%-8s %-6s %7s %9s" % ("kind", "verdict", "count", "MB"))
+    for (kind, verdict), (n, b) in sorted(kinds.items()):
+        print("%-8s %-6s %7d %9.1f" % (kind, verdict, n, b / 1048576))
+    for r in sorted(rows, key=lambda r: -r["bytes"])[:15]:
+        if not a.quiet:
+            print("%-5s %-7s %8.1f MB %7s  %s  (%s)" % (r["verdict"], r["kind"], r["bytes"] / 1048576, fmt_age(r["age_s"]), r["path"], r["reason"]))
+    print("\n%d stale scratch folder(s), %.1f MB" % (len(stale), sum(r["bytes"] for r in stale) / 1048576))
+    if a.remove:
+        n, freed = remove_scratch(rows, root)
+        print("removed %d folder(s), %.1f MB freed" % (n, freed / 1048576))
+    elif stale:
+        print("(list mode: nothing removed; add --remove to delete the STALE ones)")
+    return 0
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--kill", action="store_true", help="kill the processes marked KILL (default: only list)")
@@ -205,7 +372,14 @@ def main():
     ap.add_argument("--max-age", type=float, default=360.0, metavar="MIN", help="kill test hosts / nodes / builds older than this even if busy (default 360; a full gate takes minutes)")
     ap.add_argument("--sample", type=float, default=3.0, metavar="SEC", help="CPU sampling window in seconds (default 3)")
     ap.add_argument("-q", "--quiet", action="store_true", help="per-worktree table only, no per-process lines")
+    ap.add_argument("--scratch", action="store_true", help="list stale scratch folders in the temp root instead of processes (T390)")
+    ap.add_argument("--remove", action="store_true", help="with --scratch: delete the folders marked STALE")
+    ap.add_argument("--scratch-age", type=float, default=6.0, metavar="H", help="hours before test/dotnet temp leftovers are stale (default 6)")
+    ap.add_argument("--claude-age", type=float, default=24.0, metavar="H", help="hours without a change before an agent scratchpad is stale (default 24)")
+    ap.add_argument("--tmp-root", default="/tmp", help=argparse.SUPPRESS)
     a = ap.parse_args()
+    if a.scratch:
+        return scratch_main(a)
     before = scan()
     time.sleep(a.sample)
     after = scan()

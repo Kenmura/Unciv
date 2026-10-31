@@ -21,6 +21,7 @@ import time
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
+import runtmp  # noqa: E402
 import ptest  # noqa: E402  (explicit path: -I drops the script directory from sys.path)
 
 CSHARP = ptest.CSHARP
@@ -63,16 +64,19 @@ def format_args(changed):
 
 def main():
     signal.signal(signal.SIGTERM, lambda *_: sys.exit(143))
+    runtmp.acquire()
     try:
         return run_main()
     finally:
         ptest.shutdown_build_servers()
+        runtmp.release()
 
 
 def run_main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--quick", action="store_true")
     ap.add_argument("--since", metavar="REV")
+    ap.add_argument("--keep-tmp", action="store_true", help="keep the per-run temp folder (T390) instead of removing it on exit")
     a = ap.parse_args()
     t0 = time.time()
 

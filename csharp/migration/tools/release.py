@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Build the CLI and the Godot client from the current (clean) tree and publish them to <repo>/csharp-releases/.
 
-Usage: release.py T### [--cli-only | --client-only] [--linux-only] [--keep N] [--force] [--dry-run]
+Usage: release.py T### [--cli-only | --client-only] [--linux-only] [--keep N] [--force] [--dry-run] [--keep-tmp]
 
 ticket.py runs this after every `state T### Done`. The folder sits next to `csharp/` in the main checkout (never inside a worktree, which is
 removed when its agent finishes):
@@ -170,7 +170,7 @@ def point_latest(root, name):
 
 def main(argv):
     if not argv or argv[0].startswith("-"):
-        die("usage: release.py T### [--cli-only | --client-only] [--linux-only] [--keep N] [--force] [--dry-run]", 2)
+        die("usage: release.py T### [--cli-only | --client-only] [--linux-only] [--keep N] [--force] [--dry-run] [--keep-tmp]", 2)
     tid, opts = argv[0], argv[1:]
     cli = "--client-only" not in opts
     client = "--cli-only" not in opts
@@ -276,5 +276,19 @@ def main(argv):
         print(f"release: pruned {', '.join(gone)}")
 
 
+def run_with_tmp(argv):
+    """T390: the build's temp files land in a per-run folder that is removed on exit (--keep-tmp / UNCIV_KEEP_TMP=1 keeps it)."""
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
+    import runtmp
+    argv = [a for a in argv if a != "--keep-tmp"]
+    keep = runtmp.keep_requested() or "--keep-tmp" in sys.argv
+    global DOTNET
+    DOTNET = DOTNET.replace("env ", "env TMPDIR=" + shlex.quote(runtmp.acquire()) + " ", 1)  # reaches the container too
+    try:
+        main(argv)
+    finally:
+        runtmp.release(keep)
+
+
 if __name__ == "__main__":
-    main(sys.argv[1:])
+    run_with_tmp(sys.argv[1:])

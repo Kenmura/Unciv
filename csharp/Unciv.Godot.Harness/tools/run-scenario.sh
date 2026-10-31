@@ -10,6 +10,7 @@
 # HARNESS_GOLDEN_TOLERANCE=renderer compares with the cross-renderer tolerance of GoldenTolerance.Renderer (CI, T246); default strict.
 # HARNESS_TIMEOUT (seconds) bounds the whole run; default 120, 600 for layout-matrix (T388: it renders every screen at five sizes plus a resize cycle, ~135 s of
 # pure CPU on llvmpipe with no waiting, so a 120 s limit passed or timed out depending on machine load). UNCIV_STEP_TIMES=1 prints "[steptime] index ms step" per step.
+# T390: temp files (dotnet build, the scenario's settings/save folders, Xvfb display file) go to /tmp/unciv-run-<pid>-XXXXXX, removed on exit; HARNESS_KEEP_TMP=1 keeps it (path printed).
 # Output: out/<name>/<step>.png and out/<name>/result.json (git-ignored). Run inside dotnet-dev (see csharp/migration/GODOT.md).
 set -euo pipefail
 
@@ -28,6 +29,11 @@ mkdir -p "$out"
 
 if [[ -z "${HARNESS_SKIP_BUILD:-}" ]]; then (cd "$project" && dotnet build -m:"${UNCIV_MSBUILD_NODES:-1}" -nodeReuse:false -p:UseSharedCompilation=false -warnaserror); fi
 
+run_tmp=""
+if [[ -z "${UNCIV_RUN_TMP:-}" ]]; then
+    run_tmp="$(mktemp -d -t "unciv-run-$$-XXXXXX")"
+    export TMPDIR="$run_tmp" UNCIV_RUN_TMP="$run_tmp"
+fi
 extra=(); cleanup_golden=""; cleanup_out=""
 [[ -n "${HARNESS_GOLDEN_TOLERANCE:-}" ]] && extra+=("--golden-tolerance=$HARNESS_GOLDEN_TOLERANCE")
 case "$mode" in
@@ -53,6 +59,9 @@ cleanup() {
     dotnet build-server shutdown >/dev/null 2>&1 || true
     [[ -n "$cleanup_golden" ]] && rm -rf "$cleanup_golden"
     [[ -n "$cleanup_out" ]] && rm -rf "$cleanup_out"
+    if [[ -n "$run_tmp" ]]; then
+        if [[ -n "${HARNESS_KEEP_TMP:-}" ]]; then echo "tmp: kept $run_tmp" >&2; else rm -rf "$run_tmp"; fi
+    fi
     return 0
 }
 # also on Ctrl-C / kill of the script alone (the signal would otherwise leave the Xvfb it started running)

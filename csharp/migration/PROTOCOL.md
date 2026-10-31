@@ -17,6 +17,7 @@
 - [Running until budget is exhausted](#running-until-budget-is-exhausted)
   - [Stop conditions](#stop-conditions)
 - [Memory](#memory)
+  - [Scratch output in /tmp (T390)](#scratch-output-in-tmp-t390)
 - [Rules](#rules)
 - [Ticket format](#ticket-format)
 <!-- /toc -->
@@ -215,6 +216,21 @@ free -m                             # system view
 ```
 
 Safety rule (details in the `reap.py` docstring): only MSBuild nodes, VBCSCompiler, test hosts, datacollector, vstest and `dotnet build|test|format|publish|restore|pack` processes are ever killed, never `gate.py`/`ptest.py`. A process dies when its worktree directory is gone, or when it is older than `--min-age` (30 min) and used no CPU in the sampling window and its worktree has no young or running process (a live gate keeps its worktree busy), or when it is older than `--max-age` (6 h, a hung test spinning for days). Run list mode before dispatching a new agent and `--kill` when available memory is low.
+
+### Scratch output in /tmp (T390)
+
+dotnet and the test hosts litter `/tmp`: in 2026-10 it held ~95,000 leftover entries (65,000 empty `MSBuildTemp*` folders, 28,000 empty 6-character folders, thousands of `unciv-*` test folders) plus 8 GB of agent scratchpads (render outputs, dotnet copies, publish folders), which hit the tmpfs quota twice. Fixes:
+
+- `gate.py`, `ptest.py`, `release.py` and `Unciv.Godot.Harness/tools/run-scenario.sh` create **one per-run folder** `/tmp/unciv-run-<pid>-<random>`, export it as `TMPDIR` for every dotnet command and test host they start, and remove it on exit (also after a failure or Ctrl-C/SIGTERM). Keep it for debugging with `--keep-tmp` (gate, ptest, release) or `UNCIV_KEEP_TMP=1` / `HARNESS_KEEP_TMP=1`; the path is printed. A tool started by another tool reuses the parent's folder (`UNCIV_RUN_TMP`).
+- Your own large scratch (renders, `dotnet publish` outputs, copies of the SDK) belongs in a subfolder of your scratchpad that you delete before handing back; `HARNESS_OUT` renders are not needed after the scenario passes.
+- Orchestrator, to see and clean what runs left behind (default is listing only; run it from `csharp/migration`):
+
+```
+python3 -I tools/reap.py --scratch           # table of stale / kept scratch folders, largest first, no changes
+python3 -I tools/reap.py --scratch --remove  # delete only the STALE ones
+```
+
+  Only direct children of `/tmp` of the current user (and `/tmp/claude-<uid>/<project>/<session>`), never symlinks, are candidates: `unciv-run-<pid>-*` is stale when its pid is gone; other `unciv-*`, `dotnet-diagnostic-*` and `clr-debug-pipe-*` leftovers when older than `--scratch-age` hours (6) and unused; empty `MSBuildTemp*` and 6-character folders when old; an agent scratchpad when nothing in it changed for `--claude-age` hours (24) and no live process has it as cwd or mentions it. Another session's live scratchpad (fresh files, open cwd) is never listed as stale.
 
 ## Rules
 

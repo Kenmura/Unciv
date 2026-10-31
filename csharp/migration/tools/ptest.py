@@ -34,6 +34,8 @@ import time
 import xml.etree.ElementTree as ET
 
 HERE = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, HERE)
+import runtmp  # noqa: E402  (explicit path: -I drops the script directory from sys.path)
 MIGRATION = os.path.dirname(HERE)
 CSHARP = os.path.dirname(MIGRATION)
 CORE = "Unciv.Core.Tests"
@@ -77,8 +79,11 @@ def msbuild_nodes():
 def dotnet_env():
     """Environment every dotnet command of the tools runs with (T360): no idle MSBuild nodes left behind after the command, no
     VBCSCompiler server shared across worktrees, workstation GC. Passed through `env` so it also reaches the dotnet-dev container."""
-    return ["MSBUILDDISABLENODEREUSE=1", "MSBUILDNODECOUNT=" + msbuild_nodes(), "MSBUILDUSESERVER=0",
-            "UseSharedCompilation=false", "DOTNET_gcServer=0", "DOTNET_CLI_TELEMETRY_OPTOUT=1"]
+    env = ["MSBUILDDISABLENODEREUSE=1", "MSBUILDNODECOUNT=" + msbuild_nodes(), "MSBUILDUSESERVER=0",
+           "UseSharedCompilation=false", "DOTNET_gcServer=0", "DOTNET_CLI_TELEMETRY_OPTOUT=1"]
+    if os.environ.get(runtmp.ENV_DIR):  # T390: temp files of the build / test hosts land in the per-run folder, removed on exit
+        env.append("TMPDIR=" + os.environ[runtmp.ENV_DIR])
+    return env
 
 
 def dotnet_args(args):
@@ -306,11 +311,13 @@ def run_shard(index, project, flt, results, coverage):
 def main():
     # a SIGTERM (harness timeout, kill) must run the finally below like Ctrl-C does
     signal.signal(signal.SIGTERM, lambda *_: sys.exit(143))
+    runtmp.acquire()
     try:
         return run_main()
     finally:
         stop_children()
         shutdown_build_servers()
+        runtmp.release()
 
 
 def run_main():
@@ -323,6 +330,7 @@ def run_main():
     ap.add_argument("--since")
     ap.add_argument("--class", dest="classes", nargs="+")
     ap.add_argument("--list-affected", action="store_true")
+    ap.add_argument("--keep-tmp", action="store_true", help="keep the per-run temp folder (T390) instead of removing it on exit")
     a = ap.parse_args()
 
     timings = load_timings()
