@@ -113,7 +113,8 @@ flowchart TD
 Unlinked tickets (no open dependency in either direction), by state:
 
 - ready: T355 T356 T357 T386
-- in progress: T300 T301 T303 T385 T387 T388
+- in progress: T300 T301 T303 T387 T388
+- in review: T385
 - blocked: T290
 - waiting: T313 T314 T317 T318 T321 T326 T328 T329 T330 T331 T332 T333 T335 T341 T342 T343 T344 T345 T346 T348 T349 T350 T351 T352 T353 T362 T363
 
@@ -202,6 +203,6 @@ xychart-beta
 | T353 | Available (waiting on ) | none | 0 | Sound and music: effects and a soundtrack from CC0 or original sources (no Civ 5 audio) |
 | T362 | Available (waiting on ) | T334 | 0 | Two real client processes host and join on the real GPU (manual two-profile smoke) |
 | T363 | Available (waiting on ) | none | 0 | QuickStart and harness scenario games still start on Vanilla/Gods & Kings: move them to BNW and regenerate goldens |
-| T385 | In-Progress [Claude] | none | 0 | Remove or fold the always-visible 'Saves' button (bottom-right of the game screen) into the in-game menu |
+| T385 | Needs-Review [Claude] | none | 0 | Remove or fold the always-visible 'Saves' button (bottom-right of the game screen) into the in-game menu |
 | T387 | In-Progress [Claude] | none | 0 | Unit legibility pass 4: mounted figures from above, Keshik slab, sheet crowding, baked boosts |
 | T388 | In-Progress [Claude] | none | 0 | layout-matrix scenario times out intermittently (stuck at the relay / host-lobby steps): reproduce, find the cause, make it deterministic |
