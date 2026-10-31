@@ -138,12 +138,15 @@ public partial class App : Node
         var identity = HostFiles.LoadIdentity(UserPaths.Identity);
         var form = NewGameForm.FromRulesetCache();
         var known = JoinFiles.LoadKnownHosts(UserPaths.KnownHosts);
-        (string Ruleset, IReadOnlyList<string> Mods, string? Hash)? browsed = null; // T339: the rules of the game picked in the browser, when this machine has them all
+        (string Invite, string Ruleset, IReadOnlyList<string> Mods, string? Hash)? browsedGame = null; // T339: the rules of the game picked in the browser, when this machine has them all
+        JoinScreen? joinScreen = null;
+        // only while the address field still holds the invite the browser made: a player who then types another address joins with the rules of the form, not of the listing
+        (string Ruleset, IReadOnlyList<string> Mods, string? Hash)? Browsed() => browsedGame is { } picked && joinScreen?.AddressField.Text == picked.Invite ? (picked.Ruleset, picked.Mods, picked.Hash) : null;
         var environment = new JoinScreenEnvironment
         {
             Identity = identity,
             DisplayName = UserPaths.Profile ?? (System.Environment.UserName is { Length: > 0 } user ? user : "Player"),
-            RulesetHash = () => browsed?.Hash ?? new LobbySettings { Ruleset = form.BaseRuleset, Mods = [.. form.Mods] }.ComputeRulesetHash(),
+            RulesetHash = () => Browsed()?.Hash ?? new LobbySettings { Ruleset = form.BaseRuleset, Mods = [.. form.Mods] }.ComputeRulesetHash(),
             KnownHosts = known,
             PersistKnownHosts = known => JoinFiles.SaveKnownHosts(UserPaths.KnownHosts, known),
             LastAddress = JoinFiles.LoadLastAddress(UserPaths.LastJoin),
@@ -154,14 +157,16 @@ public partial class App : Node
             ModsDirectory = UserPaths.Mods,
         };
         var screen = new JoinScreen(theme, environment);
+        joinScreen = screen;
         screen.BackRequested += () => screens.Pop();
-        screen.Joined += session => OpenJoinedLobby(session, identity, browsed is { Hash: not null } picked && screen.SyncedRules == null ? ConfigureFor(picked.Ruleset, picked.Mods) : ConfigureForSync(form, screen));
+        screen.Joined += session => OpenJoinedLobby(session, identity, Browsed() is { Hash: not null } picked && screen.SyncedRules == null ? ConfigureFor(picked.Ruleset, picked.Mods) : ConfigureForSync(form, screen));
         screen.BrowseRequested += () => OpenBrowse(known, (game, relay, password) =>
         {
             var info = game.Info;
             var hash = BrowseModel.RulesetHash(info.Ruleset, info.Mods, form.BaseRulesets, form.AvailableMods);
-            browsed = hash == null ? null : (info.Ruleset, info.Mods, hash);
-            screen.Begin(BrowseModel.InviteFor(game, relay), password);
+            var invite = BrowseModel.InviteFor(game, relay);
+            browsedGame = hash == null ? null : (invite, info.Ruleset, info.Mods, hash);
+            screen.Begin(invite, password);
         });
         screens.Push(screen);
     }

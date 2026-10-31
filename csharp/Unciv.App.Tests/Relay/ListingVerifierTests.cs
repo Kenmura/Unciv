@@ -34,6 +34,30 @@ public sealed class ListingVerifierTests
     }
 
     [Fact]
+    public void AnotherCurveOf256BitsIsNotP256()
+    {
+        ECDsa other;
+        try { other = ECDsa.Create(ECCurve.CreateFromFriendlyName("secp256k1")); }
+        catch (Exception e) when (e is PlatformNotSupportedException or CryptographicException) { return; } // this platform has no such curve: nothing to forge with
+        using (other)
+        {
+            var certificate = new System.Security.Cryptography.X509Certificates.CertificateRequest("CN=K1", other, HashAlgorithmName.SHA256).CreateSelfSigned(DateTimeOffset.UtcNow.AddDays(-1), DateTimeOffset.UtcNow.AddYears(1));
+            var body = TestHost.ListingBody(1);
+            var entry = new JsonObject
+            {
+                ["room"] = "k7m2-9xq4ab",
+                ["fp"] = RelayProtocol.FingerprintHex(certificate.PublicKey.ExportSubjectPublicKeyInfo()),
+                ["body"] = body,
+                ["sig"] = Convert.ToBase64String(other.SignData(System.Text.Encoding.UTF8.GetBytes(RelayProtocol.ListingSignedText(body)), HashAlgorithmName.SHA256)),
+                ["cert"] = Convert.ToBase64String(certificate.RawData),
+            };
+            var (game, problem) = ListingVerifier.Verify(entry);
+            Assert.Null(game);
+            Assert.Equal("not a P-256 key", problem);
+        }
+    }
+
+    [Fact]
     public void AnAlteredBodyFailsTheSignature()
     {
         using var key = new TestHostKey();

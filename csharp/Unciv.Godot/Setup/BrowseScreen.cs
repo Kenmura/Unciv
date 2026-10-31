@@ -242,7 +242,7 @@ public partial class BrowseScreen : Control
         {
             failure = BrowseModel.FromRelayCode(e.Code);
         }
-        catch (Exception e) when (e is IOException or System.Net.Sockets.SocketException or InvalidOperationException or System.Text.Json.JsonException)
+        catch (Exception e) when (e is not OutOfMemoryException) // anything else must end the Loading state too: this task is not awaited
         {
             failure = (BrowseStatus.Failed, "The relay's answer could not be used: " + e.Message);
         }

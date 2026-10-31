@@ -375,6 +375,7 @@ public partial class HostScreen : Control
         ListedCheck.Toggled += on =>
         {
             Form.ListPublicly = on;
+            ListPubliclyCheck.SetPressedNoSignal(on); // the Network tab shows the same setting
             UpdateListing();
         };
         hostingPanel.AddChild(ListedCheck);

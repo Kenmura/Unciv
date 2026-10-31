@@ -47,7 +47,7 @@ public static class ListingVerifier
             var spki = certificate.PublicKey.ExportSubjectPublicKeyInfo();
             if (!string.Equals(RelayProtocol.FingerprintHex(spki), fpHex, StringComparison.Ordinal)) return (null, "fingerprint does not match the certificate");
             using var key = certificate.GetECDsaPublicKey();
-            if (key == null || key.KeySize != 256) return (null, "not a P-256 key");
+            if (key == null || !IsP256(key)) return (null, "not a P-256 key");
             var signed = Encoding.UTF8.GetBytes(RelayProtocol.ListingSignedText(body));
             if (!key.VerifyData(signed, Convert.FromBase64String(sig), HashAlgorithmName.SHA256)) return (null, "bad signature");
             var (info, error) = ListingRules.Parse(body);
@@ -58,6 +58,13 @@ public static class ListingVerifier
         {
             return (null, "unreadable certificate or signature");
         }
+    }
+
+    /// <summary>NIST P-256 (prime256v1) by its curve identifier: the key size alone would also accept other 256-bit curves (secp256k1, Brainpool).</summary>
+    private static bool IsP256(ECDsa key)
+    {
+        var curve = key.ExportParameters(false).Curve;
+        return curve.IsNamed && curve.Oid.Value == "1.2.840.10045.3.1.7";
     }
 
     private static string? Text(JsonObject obj, string name) => obj[name] is JsonValue value && value.TryGetValue<string>(out var text) ? text : null;
