@@ -21,9 +21,9 @@ Work is completed phase by phase (`phases.txt`; `ticket.py ready`/`next` list ea
 
 | Phase | Done | Remaining | Ready | In flight | Remaining tickets |
 |---|---|---|---|---|---|
-| Phase 1: CLI (headless engine) | 231/232 | 1 | 1 | 0 | [T385](backlog/T385.md) |
+| Phase 1: CLI (headless engine) | 231/231 | 0 | 0 | 0 | complete |
 | Phase 2: single player (Godot client) | 57/58 | 1 | 0 | 0 | [T375](backlog/T375.md) |
-| Phase 3: multiplayer | 55/62 | 7 | 4 | 3 | [T355](backlog/T355.md) [T356](backlog/T356.md) [T357](backlog/T357.md) [T361](backlog/T361.md) [T372](backlog/T372.md) [T381](backlog/T381.md) [T384](backlog/T384.md) |
+| Phase 3: multiplayer | 55/63 | 8 | 5 | 3 | [T355](backlog/T355.md) [T356](backlog/T356.md) [T357](backlog/T357.md) [T361](backlog/T361.md) [T372](backlog/T372.md) [T381](backlog/T381.md) [T384](backlog/T384.md) [T385](backlog/T385.md) |
 | Phase 4: queued plans (UI redesign, unit models, BNW) | 75/82 | 7 | 0 | 0 | [T317](backlog/T317.md) [T318](backlog/T318.md) [T321](backlog/T321.md) [T326](backlog/T326.md) [T327](backlog/T327.md) [T328](backlog/T328.md) [T329](backlog/T329.md) |
 | Phase 5: owner issue backlog (Android, performance, ultra graphics, dedicated server, resiliency) | 53/87 | 34 | 0 | 4 | [T274](backlog/T274.md) [T275](backlog/T275.md) [T278](backlog/T278.md) [T290](backlog/T290.md) [T300](backlog/T300.md) [T301](backlog/T301.md) [T303](backlog/T303.md) [T305](backlog/T305.md) [T306](backlog/T306.md) [T313](backlog/T313.md) [T314](backlog/T314.md) [T319](backlog/T319.md) [T325](backlog/T325.md) [T330](backlog/T330.md) [T331](backlog/T331.md) [T332](backlog/T332.md) [T333](backlog/T333.md) [T335](backlog/T335.md) [T340](backlog/T340.md) [T341](backlog/T341.md) [T342](backlog/T342.md) [T343](backlog/T343.md) [T344](backlog/T344.md) [T345](backlog/T345.md) [T346](backlog/T346.md) [T347](backlog/T347.md) [T348](backlog/T348.md) [T349](backlog/T349.md) [T350](backlog/T350.md) [T351](backlog/T351.md) [T352](backlog/T352.md) [T353](backlog/T353.md) [T362](backlog/T362.md) [T363](backlog/T363.md) |
 
