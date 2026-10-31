@@ -86,7 +86,7 @@ flowchart TD
   classDef review fill:#cfe4ff,stroke:#1f6feb,color:#000
   classDef blocked fill:#ffd6d6,stroke:#c62828,color:#000
   classDef done fill:#eeeeee,stroke:#999999,color:#666,stroke-dasharray:4 3
-  class T338 prog
+  class T338 review
   class T339 ondeck
   class T354 ondeck
   class T355 ondeck
@@ -237,7 +237,7 @@ xychart-beta
 | T357 | **On deck** (after T338) | T337, T338 | 0 | WebSocket gateway so the web export can join and host through the relay (optional) |
 | T371 | **On deck** (after T338) | T338 | 0 | Relay settings screen and relay trust prompt: relay URL, pinned fingerprint, Reach-me-through-relay toggle, ask once before using an invite's unknown relay |
 | T372 | **On deck** (after T338) | T338 | 0 | Harness scenario: host and joiner through a local Unciv.Relay (Godot harness) |
-| T338 | In-Progress [Claude] | T336, T337, T334 | 7 | Relay client: in-process host and dedicated server register with the relay; joiners connect through it by room code (no open ports) |
+| T338 | Needs-Review [Claude] | T336, T337, T334 | 7 | Relay client: in-process host and dedicated server register with the relay; joiners connect through it by room code (no open ports) |
 | T274 | In-Progress [Claude-T274] | T273 | 2 | Host migration 4/5: crash election (loss detection, signed HostLossVote quorum, split-brain refusal, superseded-host mode, forced take-over, kill-the-host scenarios) |
 | T278 | Available (waiting on ) | T260, T276 | 2 | Android on-device verification: TLS join, lifecycle reconnect, frame time and APK size on a mid-range phone |
 | T305 | Available (waiting on ) | T280 | 1 | Verify the Android APK job of the release workflow on a hosted runner (first tag push) |
