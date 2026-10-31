@@ -251,7 +251,7 @@ xychart-beta
 | T338 | In-Progress [Claude] | T336, T337, T334 | 5 | Relay client: in-process host and dedicated server register with the relay; joiners connect through it by room code (no open ports) |
 | T274 | In-Progress [Claude-T274] | T273 | 2 | Host migration 4/5: crash election (loss detection, signed HostLossVote quorum, split-brain refusal, superseded-host mode, forced take-over, kill-the-host scenarios) |
 | T278 | Available (waiting on ) | T260, T276 | 2 | Android on-device verification: TLS join, lifecycle reconnect, frame time and APK size on a mid-range phone |
-| T309 | Needs-Review [Claude] | T295 | 2 | Harden the unit sheet and silhouette test: single-figure pages, tight layout, every unit has a style |
+| T309 | In-Review [Reviewer] | T295 | 2 | Harden the unit sheet and silhouette test: single-figure pages, tight layout, every unit has a style |
 | T305 | Available (waiting on ) | T280 | 1 | Verify the Android APK job of the release workflow on a hosted runner (first tag push) |
 | T319 | Available (waiting on ) | none | 1 | Client scenario goldens phone-menus and flat-city fail locally at the base commit: find out whether stale or machine-dependent, then fix |
 | T290 | Blocked | T271 | 0 | Real-device frame-time pass: Windows, macOS, Android phone |
