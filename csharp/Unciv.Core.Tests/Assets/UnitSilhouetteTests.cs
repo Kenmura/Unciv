@@ -819,4 +819,25 @@ public sealed class UnitSilhouetteTests
     /// <summary>T384: riders are drawn larger than walkers (they were not boosted at all in T383).</summary>
     [Fact]
     public void MountedFiguresAreDrawnLargerThanFootFigures() => Assert.True(Unciv.Assets.UnitVisuals.MountedFigureBoost >= Unciv.Assets.UnitVisuals.FootFigureBoost + 0.15f);
+
+    /// <summary>T387: the five mounted figures that were told apart by colour more than by shape from above (Camel Archer, War Elephant, Cavalry, Hakkapeliitta, Keshik), their outlines (average of the four sides, 40x56) at least this far apart (measured minimum 0.284, Cavalry and Hakkapeliitta; before T387 0.244, Camel Archer and Cavalry) AND whose mounts' coats are at least <see cref="MinT387MountedCoat"/> apart (linear RGB).</summary>
+    private const float MinT387MountedOutline = 0.28f;
+
+    private const float MinT387MountedCoat = 0.25f;
+
+    [Fact]
+    public void TheMountedFiguresOfT387DifferByShapeNotJustColour()
+    {
+        string[] names = ["Camel Archer", "War Elephant", "Cavalry", "Hakkapeliitta", "Keshik"];
+        var failures = new List<string>();
+        for (int i = 0; i < names.Length; i++)
+            for (int j = i + 1; j < names.Length; j++)
+            {
+                float d = Distance(Masks(names[i]), Masks(names[j]));
+                float coat = Vector3.Distance(Units().Mounted.First(u => u.Name == names[i]).Horse, Units().Mounted.First(u => u.Name == names[j]).Horse);
+                if (coat < MinT387MountedCoat) failures.Add(string.Create(CultureInfo.InvariantCulture, $"{names[i]} and {names[j]}: mounts' coats differ by {coat:0.000}, need {MinT387MountedCoat:0.00}"));
+                if (d < MinT387MountedOutline) failures.Add(string.Create(CultureInfo.InvariantCulture, $"{names[i]} and {names[j]}: outlines differ by {d:0.000}, need {MinT387MountedOutline:0.00}"));
+            }
+        Assert.True(failures.Count == 0, string.Join(" | ", failures));
+    }
 }

@@ -24,7 +24,10 @@ namespace Unciv.GodotHarness;
 public sealed class UnitSheetScenario : Scenario
 {
     private const int MaxColumns = 12;
-    private const int MaxRows = 6;
+    private const int MaxRows = 4;
+
+    /// <summary>T387: tile rows between two rows of units (an empty row of ground): a mounted figure drawn 1.5 times larger reaches a whole tile up, into the label of the unit above it.</summary>
+    private const int RowStep = 2;
 
     public override string Name => "unit-sheet";
 
@@ -64,7 +67,7 @@ public sealed class UnitSheetScenario : Scenario
         HexCoord Coord(int slot)
         {
             int c = columns - 1 - slot % columns, r = rowCount - 1 - slot / columns;
-            return new(c / 2 + c % 2 + r, -(c / 2) + r);
+            return new(c / 2 + c % 2 + r * RowStep, -(c / 2) + r * RowStep);
         }
         var tiles = Enumerable.Range(0, perPage).Select(s => new TileDto { X = Coord(s).X, Y = Coord(s).Y, Visible = true, BaseTerrain = terrains.Length > 0 ? terrains[s % terrains.Length] : "Grassland", Features = features.Length > 0 && features[s % features.Length] is { Length: > 0 } f && f != "-" ? [f] : [], Resource = null, RiverBottom = false, RiverBottomLeft = false, RiverBottomRight = false }).ToList();
         var view = new MapView();

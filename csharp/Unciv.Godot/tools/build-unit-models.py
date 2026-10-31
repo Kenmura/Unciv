@@ -241,8 +241,8 @@ ELEPHANT_PARTS = [
     ("head", (0.075, 0.30, 0.50), (0.03, 0.03, 0.26)),  # T308: long tusks, ears spread wide, a long trunk and a howdah: an elephant at any zoom
     ("head", (-0.075, 0.30, 0.50), (0.03, 0.03, 0.26)),
     ("trunk", (0.0, 0.27, 0.48), (0.07, 0.34, 0.07)),
-    ("ear_l", (0.19, 0.45, 0.31), (0.03, 0.26, 0.22)),
-    ("ear_r", (-0.19, 0.45, 0.31), (0.03, 0.26, 0.22)),
+    ("ear_l", (0.23, 0.45, 0.31), (0.03, 0.34, 0.30)),  # T387: wider, taller ears: the elephant is the widest figure from the front
+    ("ear_r", (-0.23, 0.45, 0.31), (0.03, 0.34, 0.30)),
     ("tail", (0.0, 0.36, -0.28), (0.03, 0.16, 0.03)),
     ("leg_fl", (0.10, 0.14, 0.17), (0.10, 0.28, 0.10)),
     ("leg_fr", (-0.10, 0.14, 0.17), (0.10, 0.28, 0.10)),
@@ -274,6 +274,15 @@ HORSE_VARIANTS = {
     "saddlecloth": [("body", (0.0, 0.5, -0.27), (0.22, 0.22, 0.1)), ("body", (0.12, 0.3, -0.05), (0.04, 0.2, 0.34)), ("body", (-0.12, 0.3, -0.05), (0.04, 0.2, 0.34)), ("tail", (0.0, 0.2, -0.32), (0.12, 0.28, 0.06))],
     "cantle": [("body", (0.0, 0.34, 0.3), (0.32, 0.36, 0.05)), ("body", (0.0, 0.66, -0.22), (0.32, 0.34, 0.04)), ("body", (0.0, 0.5, 0.2), (0.26, 0.04, 0.2)), ("head", (0.0, 0.7, 0.43), (0.12, 0.2, 0.05))],
     "camel": [("body", (0.0, 0.54, -0.02), (0.17, 0.22, 0.22)), ("neck", (0.0, 0.7, 0.36), (0.09, 0.34, 0.09)), ("head", (0.0, 0.86, 0.5), (0.08, 0.1, 0.2)), ("body", (0.0, 0.2, 0.0), (0.26, 0.04, 0.5))],
+    # T387: the mounted figures seen from above differ by SHAPE (a horse is a narrow box from the front, so the trappings spread sideways and upwards):
+    # the camel gets a tall swayed neck with a raised head and two wide hanging pannier bags, the cavalry a broad flat saddle blanket and a bedroll across the rump, the Hakkapeliitta two tall upright
+    # wings behind the rider (a V from the front), the Keshik a standard with a crossbar and hanging tails and two wide quivers
+    "camel2": [("body", (0.0, 0.58, -0.02), (0.20, 0.30, 0.24)), ("neck", (0.0, 0.78, 0.36), (0.10, 0.46, 0.10)), ("head", (0.0, 1.04, 0.5), (0.10, 0.12, 0.22)), ("head", (0.0, 1.14, 0.44), (0.04, 0.12, 0.04)),
+               ("body", (0.0, 0.2, 0.0), (0.30, 0.04, 0.5)), ("body", (0.15, 0.36, -0.02), (0.08, 0.34, 0.30)), ("body", (-0.15, 0.36, -0.02), (0.08, 0.34, 0.30)), ("body", (0.0, 0.84, -0.02), (0.06, 0.14, 0.14))],
+    "blanket2": [("body", (0.0, 0.445, 0.0), (0.64, 0.03, 0.5)), ("body", (0.0, 0.6, -0.31), (0.58, 0.14, 0.14)), ("body", (0.0, 0.38, 0.27), (0.30, 0.22, 0.04)), ("body", (0.0, 0.5, 0.26), (0.5, 0.05, 0.06))],
+    "wings": [("body", (0.27, 0.78, -0.26), (0.03, 0.34, 0.34)), ("body", (-0.27, 0.78, -0.26), (0.03, 0.34, 0.34)), ("body", (0.13, 0.6, -0.26), (0.26, 0.05, 0.3)), ("body", (-0.13, 0.6, -0.26), (0.26, 0.05, 0.3)), ("head", (0.0, 0.78, 0.44), (0.05, 0.16, 0.05))],
+    "tuq": [("body", (0.0, 0.8, -0.30), (0.03, 0.8, 0.03)), ("body", (0.0, 1.2, -0.30), (0.46, 0.03, 0.03)), ("body", (0.2, 1.04, -0.30), (0.04, 0.3, 0.04)), ("body", (-0.2, 1.04, -0.30), (0.04, 0.3, 0.04)),
+            ("body", (0.0, 1.0, -0.30), (0.08, 0.1, 0.08)), ("body", (0.17, 0.56, -0.26), (0.10, 0.34, 0.12)), ("body", (-0.17, 0.56, -0.26), (0.10, 0.34, 0.12))],
 }
 
 # C095: the chariot is the horse rig scaled to 0.8 and moved forward, drawing a two-wheeled cart (floor, rails, axle, yoke pole, spoked wheels on the joints wheel_l and wheel_r) that the rider stands on
