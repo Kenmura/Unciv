@@ -27,13 +27,13 @@ out="${HARNESS_OUT:-$project/out}"
 golden="$project/golden"
 mkdir -p "$out"
 
-if [[ -z "${HARNESS_SKIP_BUILD:-}" ]]; then (cd "$project" && dotnet build -m:"${UNCIV_MSBUILD_NODES:-1}" -nodeReuse:false -p:UseSharedCompilation=false -warnaserror); fi
-
 run_tmp=""
 if [[ -z "${UNCIV_RUN_TMP:-}" ]]; then
     run_tmp="$(mktemp -d -t "unciv-run-$$-XXXXXX")"
     export TMPDIR="$run_tmp" UNCIV_RUN_TMP="$run_tmp"
 fi
+if [[ -z "${HARNESS_SKIP_BUILD:-}" ]]; then (cd "$project" && dotnet build -m:"${UNCIV_MSBUILD_NODES:-1}" -nodeReuse:false -p:UseSharedCompilation=false -warnaserror); fi
+
 extra=(); cleanup_golden=""; cleanup_out=""
 [[ -n "${HARNESS_GOLDEN_TOLERANCE:-}" ]] && extra+=("--golden-tolerance=$HARNESS_GOLDEN_TOLERANCE")
 case "$mode" in
@@ -60,7 +60,7 @@ cleanup() {
     [[ -n "$cleanup_golden" ]] && rm -rf "$cleanup_golden"
     [[ -n "$cleanup_out" ]] && rm -rf "$cleanup_out"
     if [[ -n "$run_tmp" ]]; then
-        if [[ -n "${HARNESS_KEEP_TMP:-}" ]]; then echo "tmp: kept $run_tmp" >&2; else rm -rf "$run_tmp"; fi
+        if [[ -n "${HARNESS_KEEP_TMP:-}" ]]; then echo "tmp: kept $run_tmp" >&2; else chmod -R u+rwx "$run_tmp" 2>/dev/null || true; rm -rf "$run_tmp" || true; fi
     fi
     return 0
 }

@@ -190,6 +190,20 @@ class Scratch(unittest.TestCase):
         self.assertEqual(n, 1)
         self.assertFalse(os.path.exists(os.path.join(self.root, "unciv-run-333-abc")))
 
+    def test_force_rmtree_does_not_chmod_through_symlinks(self):
+        import os
+        outside = os.path.join(self.root, "outside.txt")
+        with open(outside, "w") as fh:
+            fh.write("x")
+        os.chmod(outside, 0o644)
+        d = self.mk("tree/ro", 1)
+        os.symlink(outside, os.path.join(d, "link"))
+        os.chmod(d, 0o500)
+        runtmp = load("runtmp")
+        runtmp.force_rmtree(os.path.join(self.root, "tree"))
+        self.assertFalse(os.path.exists(os.path.join(self.root, "tree")))
+        self.assertEqual(os.stat(outside).st_mode & 0o777, 0o644)
+
     def test_symlink_is_never_followed(self):
         import os
         target = self.mk("real", 99)

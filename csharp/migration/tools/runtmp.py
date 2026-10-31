@@ -22,10 +22,14 @@ _saved = None  # (TMPDIR, tempfile.tempdir) from before acquire()
 
 def force_rmtree(path):
     """shutil.rmtree that also removes read-only folders (a test leaves dr-x folders behind on purpose, which plain rmtree cannot enter)."""
+    top = os.path.abspath(path)
+
     def fix(func, p, _exc):
         try:
-            os.chmod(os.path.dirname(p), 0o700)
-            os.chmod(p, 0o700)
+            for q in (os.path.dirname(p), p):
+                # never chmod through a symlink, and never above the tree being removed
+                if (q == top or q.startswith(top + os.sep)) and not os.path.islink(q):
+                    os.chmod(q, 0o700)
             func(p)
         except OSError:
             pass
