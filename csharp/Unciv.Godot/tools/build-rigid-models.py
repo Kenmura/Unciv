@@ -48,6 +48,13 @@ MATERIALS = {
     "Cream": [0.90, 0.86, 0.72, 1.0],
     "Blue": [0.18, 0.30, 0.62, 1.0],
     "Green": [0.20, 0.50, 0.22, 1.0],
+    # T373: colours that stand out from grass and from each other (the destroyer, helicopter, panzer and the aircraft were pale or olive)
+    "Navy": [0.07, 0.13, 0.36, 1.0],
+    "Charcoal": [0.24, 0.25, 0.30, 1.0],
+    "White": [0.96, 0.96, 0.94, 1.0],
+    "SkyBlue": [0.20, 0.55, 0.92, 1.0],
+    "Pine": [0.10, 0.22, 0.15, 1.0],
+    "Orange": [0.95, 0.42, 0.06, 1.0],
 }
 
 
@@ -565,15 +572,15 @@ def stand(m, height=FLY):
     m.add("Steel", tube((0, height / 2, 0), height, 0.012, axis="y", n=6))
 
 
-def fuselage(m, y, length, radius, material="Grey", prop=0.0):
+def fuselage(m, y, length, radius, material="Grey", prop=0.0, x=0.0):
     rings = []
     for t, f in ((-0.5, 0.18), (-0.25, 0.7), (0.05, 1.0), (0.3, 0.85), (0.5, 0.0)):
         z = t * length
-        rings.append([(0, y, z)] if f == 0 else ring((0, y, z), radius * f, radius * f, "z", 8))
+        rings.append([(x, y, z)] if f == 0 else ring((x, y, z), radius * f, radius * f, "z", 8))
     m.add(material, loft(rings))
     if prop:
-        m.add("Dark", block((0, y, length / 2 + 0.012), (prop * 2, 0.02, 0.006)))
-        m.add("Dark", block((0, y, length / 2 + 0.012), (0.02, prop * 2, 0.006)))
+        m.add("Dark", block((x, y, length / 2 + 0.012), (prop * 2, 0.02, 0.006)))
+        m.add("Dark", block((x, y, length / 2 + 0.012), (0.02, prop * 2, 0.006)))
 
 
 def wings(m, y, span, root, tip, sweep=0.0, z=0.0, thickness=0.015, material="Grey", roundels=True, shape="swept"):
@@ -607,7 +614,7 @@ def nacelle(m, x, y, z, length=0.3, radius=0.04, prop=0.1):
 
 def propeller(m, wing_levels=(0.0,), length=0.9, span=0.9, engines=(), fuselage_radius=0.06, nose_prop=0.12, bomber=False, round_nose=False, shape="swept", body="Grey", root=0.26, wing_material="Grey"):
     stand(m)
-    fuselage(m, FLY, length, fuselage_radius, body if not bomber else "Olive", prop=nose_prop if not engines else 0.0)
+    fuselage(m, FLY, length, fuselage_radius, "Olive" if bomber and body == "Grey" else body, prop=nose_prop if not engines else 0.0)
     for dy in wing_levels:
         wings(m, FLY + dy, span, root if not bomber else 0.3, 0.14, 0.02 if bomber else 0.06, z=0.02, shape=shape, material=wing_material)
     if len(wing_levels) > 1:  # struts between the wings of a biplane
@@ -618,6 +625,20 @@ def propeller(m, wing_levels=(0.0,), length=0.9, span=0.9, engines=(), fuselage_
     m.add("Dark", ellipsoid((0, FLY + fuselage_radius * 0.8, length * 0.08), 0.035, 0.03, 0.09, n=8, m=4))
     for x, z in engines:
         nacelle(m, x, FLY - 0.01 + wing_levels[0], z, 0.3, 0.045, 0.11)
+
+
+def twin_boom(m, colour="SkyBlue"):
+    """T373: a twin-boom fighter (two long tail booms joined by a tailplane, a short cockpit pod between them): the one aircraft whose outline from above is an H, so it is never mistaken for the single-fuselage ones."""
+    stand(m)
+    for s_ in (-1, 1):
+        fuselage(m, FLY, 1.0, 0.045, colour, prop=0.09, x=s_ * 0.2)
+        m.add(colour, extrude_x([(-0.42, FLY), (-0.5, FLY + 0.15), (-0.55, FLY + 0.15), (-0.5, FLY)], s_ * 0.2 - 0.006, s_ * 0.2 + 0.006))
+        m.add("TeamColor", tube((s_ * 0.3, FLY + 0.01, 0.02), 0.006, 0.04, axis="y", n=10))
+    m.add(colour, slab([(-0.2, 0.2), (0.2, 0.2), (0.2, -0.06), (-0.2, -0.06)], FLY - 0.008, FLY + 0.008))
+    m.add("White", slab([(-0.22, -0.4), (0.22, -0.4), (0.22, -0.46), (-0.22, -0.46)], FLY + 0.1, FLY + 0.112))
+    m.add("White", ellipsoid((0, FLY + 0.01, 0.16), 0.07, 0.06, 0.2, n=8, m=5))
+    m.add("Dark", ellipsoid((0, FLY + 0.045, 0.2), 0.04, 0.03, 0.09, n=8, m=4))
+    m.add("Crimson", block((0, FLY + 0.07, 0.3), (0.02, 0.02, 0.04)))
 
 
 def jet(m, span=0.6, length=0.9, twin_tail=True):
@@ -666,17 +687,18 @@ def missile(m, scale=1.0, warhead="Steel"):
 
 def helicopter(m):
     y = 0.2
-    m.add("Olive", ellipsoid((0, y, 0.03), 0.17, 0.13, 0.3, n=8, m=6))
+    m.add("Charcoal", ellipsoid((0, y, 0.03), 0.17, 0.13, 0.3, n=8, m=6))
     m.add("Teal", ellipsoid((0, y + 0.02, 0.15), 0.08, 0.06, 0.1, n=8, m=4))
     m.add("Iron", tube((0, y + 0.02, -0.3), 0.36, 0.045, 0.014, n=8))
     m.add("TeamColor", tube((0, y + 0.02, -0.24), 0.05, 0.034, n=8))
     m.add("Iron", extrude_x([(-0.44, y + 0.02), (-0.4, y + 0.14), (-0.46, y + 0.14), (-0.48, y + 0.02)], -0.006, 0.006))
     m.add("Dark", tube((0.012, y + 0.12, -0.46), 0.012, 0.06, axis="x", n=10))
     m.add("Steel", tube((0, y + 0.15, 0.0), 0.12, 0.012, axis="y", n=6))
-    m.add("Dark", block((0, y + 0.215, 0.0), (0.9, 0.012, 0.09)))  # T307: broad rotor blades, visible from above; T324: dark, so the gunship no longer reads as a white cross
-    m.add("Dark", block((0, y + 0.215, 0.0), (0.09, 0.012, 0.9)))
-    m.add("Yellow", block((0.4, y + 0.222, 0.0), (0.1, 0.004, 0.09)))
-    m.add("Yellow", block((0.0, y + 0.222, 0.4), (0.09, 0.004, 0.1)))
+    # T307: broad rotor blades, visible from above; T373: fat white blades with orange tips (dark thin ones were lost on grass; a dark body keeps them from reading as a white cross)
+    m.add("White", block((0, y + 0.215, 0.0), (0.9, 0.012, 0.15)))
+    m.add("White", block((0, y + 0.215, 0.0), (0.15, 0.012, 0.9)))
+    for sx, sz in ((0.38, 0.0), (-0.38, 0.0), (0.0, 0.38), (0.0, -0.38)):
+        m.add("Orange", block((sx, y + 0.222, sz), (0.16, 0.004, 0.15) if sx else (0.15, 0.004, 0.16)))
     for s in (-1, 1):
         m.add("Dark", block((s * 0.09, 0.012, 0.03), (0.014, 0.014, 0.4)))
         for z in (-0.06, 0.12):
@@ -689,7 +711,7 @@ ARCHETYPES = {
     "oared": oared, "work_boat": work_boat, "sailer": sailer, "ironclad": ironclad, "warship": warship, "carrier": carrier, "submarine": submarine, "great_admiral": great_admiral,
     "ram": ram, "catapult": catapult, "ballista": ballista, "trebuchet": trebuchet, "hwacha": hwacha, "cannon": cannon, "artillery": artillery, "rocket_artillery": rocket_artillery,
     "tank": tank, "landship": landship, "modern_armor": modern_armor, "death_robot": death_robot,
-    "propeller": propeller, "jet": jet, "stealth": stealth, "bomb": bomb, "missile": missile, "helicopter": helicopter,
+    "propeller": propeller, "twin_boom": twin_boom, "jet": jet, "stealth": stealth, "bomb": bomb, "missile": missile, "helicopter": helicopter,
 }
 
 

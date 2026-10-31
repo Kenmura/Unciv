@@ -55,6 +55,15 @@ public sealed class UnitSilhouetteTests
     private const float MinGroupPictureDistance = 0.27f;
     /// <summary>T369: the five ancient galleys: outline plus mean colour at 120x168.</summary>
     private const float MinGalleyDistance = 0.30f;
+    /// <summary>T373: any two aircraft (Zero, Great War Bomber, Fighter, Bomber, B17, Triplane, jets) at 120x168: outline alone (measured minimum 0.182, Zero and Bomber; the four were 0.17 apart before) and outline plus mean colour (measured minimum 0.43, Bomber and Stealth Bomber).</summary>
+    private const float MinAircraftOutline = 0.18f;
+    private const float MinAircraftOutlinePlusColour = 0.42f;
+    /// <summary>T373: the mean colour of the Destroyer, Helicopter Gunship, Panzer and Fighter at least this far (linear RGB) from the grass tile colour (measured minimum 0.26, Panzer).</summary>
+    private const float MinGrassContrast = 0.25f;
+    private static readonly Vector3 GrassLinear = new(0.2f, 0.5f, 0.2f);
+    private const float MinPanzerColourDistance = 0.15f;
+    /// <summary>T373: Maori Warrior, Spearman, Samurai, Rifleman, Great Merchant and Minuteman as pictures (measured minimum 0.486, Rifleman and Minuteman; before: the same hues, bar 0.27).</summary>
+    private const float MinT373PictureDistance = 0.45f;
     private static readonly string[] Siege = ["Battering Ram", "Catapult", "Ballista", "Trebuchet", "Hwach'a", "Cannon"];
 
     private static readonly string Pack = FindPack();
@@ -685,6 +694,53 @@ public sealed class UnitSilhouetteTests
             {
                 var d = Distance(Masks(galleys[i], FineScale), Masks(galleys[j], FineScale)) + Vector3.Distance(MeanColour(galleys[i]), MeanColour(galleys[j]));
                 if (d < MinGalleyDistance) failures.Add(string.Create(CultureInfo.InvariantCulture, $"{galleys[i]} and {galleys[j]}: outline plus colour {d:0.000}, need {MinGalleyDistance:0.00}"));
+            }
+        Assert.True(failures.Count == 0, string.Join("\n", failures));
+    }
+
+    [Fact]
+    public void TheAircraftAreToldApartByOutlineAndByColour()
+    {
+        // T373: Zero (white ellipse), Great War Bomber (orange biplane), Fighter (sky-blue twin boom, an H from above), Bomber (dark green), B17 (silver, four engines), Triplane (red), Jet Fighter, Stealth Bomber
+        string[] air = ["Zero", "Great War Bomber", "Fighter", "Bomber", "B17", "Triplane", "Jet Fighter", "Stealth Bomber"];
+        var failures = new List<string>();
+        for (var i = 0; i < air.Length; i++)
+            for (var j = i + 1; j < air.Length; j++)
+            {
+                var outline = Distance(Masks(air[i], FineScale), Masks(air[j], FineScale));
+                var colour = Vector3.Distance(MeanColour(air[i]), MeanColour(air[j]));
+                if (outline < MinAircraftOutline || outline + colour < MinAircraftOutlinePlusColour)
+                    failures.Add(string.Create(CultureInfo.InvariantCulture, $"{air[i]} and {air[j]}: outline {outline:0.000} (need {MinAircraftOutline:0.00}), outline plus colour {outline + colour:0.000} (need {MinAircraftOutlinePlusColour:0.00})"));
+            }
+        Assert.True(failures.Count == 0, string.Join("\n", failures));
+    }
+
+    [Fact]
+    public void TheWeakUnitsOfT373StandOutFromGrassAndFromTheirNeighbours()
+    {
+        var failures = new List<string>();
+        foreach (var unit in new[] { "Destroyer", "Helicopter Gunship", "Panzer", "Fighter" })
+        {
+            var d = Vector3.Distance(MeanColour(unit), GrassLinear);
+            if (d < MinGrassContrast) failures.Add(string.Create(CultureInfo.InvariantCulture, $"{unit} is too close to the grass: {d:0.000}, need {MinGrassContrast:0.00}"));
+        }
+        // the Panzer was olive like the Rocket Artillery, the Destroyer pale blue like nothing else but low contrast
+        var panzer = Vector3.Distance(MeanColour("Panzer"), MeanColour("Rocket Artillery"));
+        if (panzer < MinPanzerColourDistance) failures.Add(string.Create(CultureInfo.InvariantCulture, $"Panzer and Rocket Artillery share a colour: {panzer:0.000}, need {MinPanzerColourDistance:0.00}"));
+        Assert.True(failures.Count == 0, string.Join("\n", failures));
+    }
+
+    [Fact]
+    public void TheSameHueUnitsOfT373AreToldApartAsPictures()
+    {
+        // Maori Warrior against Spearman were both cyan; Samurai, Rifleman and the Great Merchant all purplish; Rifleman and Minuteman small and low contrast
+        string[] group = ["Maori Warrior", "Spearman", "Samurai", "Rifleman", "Great Merchant", "Minuteman"];
+        var failures = new List<string>();
+        for (var i = 0; i < group.Length; i++)
+            for (var j = i + 1; j < group.Length; j++)
+            {
+                var d = PictureDistance(group[i], group[j]);
+                if (d < MinT373PictureDistance) failures.Add(string.Create(CultureInfo.InvariantCulture, $"{group[i]} and {group[j]}: {d:0.000}, need {MinT373PictureDistance:0.00}"));
             }
         Assert.True(failures.Count == 0, string.Join("\n", failures));
     }

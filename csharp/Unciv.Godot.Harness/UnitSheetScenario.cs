@@ -18,7 +18,8 @@ namespace Unciv.GodotHarness;
 /// (a Settler must never be taken for an Archer). One figure per unit by default (the far-zoom lone figure: a pair or trio of figures is how the game draws a strong unit, not what tells units apart), the
 /// formations on request. Not part of CI and never compared to goldens (a real GPU draws it): <c>tools/unit-sheet.sh</c> runs it on the host and writes <c>unit-sheet-N.png</c>. Environment: <c>UNCIV_SHEET_OUT</c>
 /// (folder, required), <c>UNCIV_SHEET_RES</c> (WxH, default 1920x1080), <c>UNCIV_SHEET_ZOOM</c> (camera size in world units, default fitted to the page; <see cref="MapView.DefaultZoom"/> is the game's),
-/// <c>UNCIV_SHEET_ONLY</c> (comma separated unit names: only those), <c>UNCIV_SHEET_YAW</c> (degrees the units face, default 0), <c>UNCIV_SHEET_FORMATIONS</c> (1: draw the formations of the game).
+/// <c>UNCIV_SHEET_ONLY</c> (comma separated unit names: only those), <c>UNCIV_SHEET_TERRAIN</c> (T373, comma separated base terrains cycled over the tiles instead of plain grass, so units can be judged on real ground; a ship needs "Coast")
+/// and <c>UNCIV_SHEET_NATIONS</c> (T373, comma separated nations whose real outer colours are cycled over the units instead of the two placeholder tints), <c>UNCIV_SHEET_YAW</c> (degrees the units face, default 0), <c>UNCIV_SHEET_FORMATIONS</c> (1: draw the formations of the game).
 /// </summary>
 public sealed class UnitSheetScenario : Scenario
 {
@@ -45,6 +46,8 @@ public sealed class UnitSheetScenario : Scenario
         var gods = RulesetCache.Get("Civ V - Gods & Kings") ?? ruleset;
         RulesetClass Of(string unit) => ruleset.Units.ContainsKey(unit) ? ruleset : gods;
         var colours = new[] { PlaceholderPalette.AttackTint, PlaceholderPalette.ReachableTint };
+        var nations = (GpuBenchScenario.Bench("UNCIV_SHEET_NATIONS") ?? "").Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).Where(n => ruleset.Nations.ContainsKey(n)).ToArray();
+        var terrains = (GpuBenchScenario.Bench("UNCIV_SHEET_TERRAIN") ?? "").Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
         var units = UnitVisualsScenario.SheetUnits;
         if (GpuBenchScenario.Bench("UNCIV_SHEET_ONLY") is { Length: > 0 } only) // T369: a focused sheet of the named units (comma separated), for judging one group at the real zoom
             units = [.. only.Split(',').Select(n => units.First(u => u.Unit == n.Trim()))];
@@ -61,7 +64,7 @@ public sealed class UnitSheetScenario : Scenario
             int c = columns - 1 - slot % columns, r = rowCount - 1 - slot / columns;
             return new(c / 2 + c % 2 + r, -(c / 2) + r);
         }
-        var tiles = Enumerable.Range(0, perPage).Select(s => new TileDto { X = Coord(s).X, Y = Coord(s).Y, Visible = true, BaseTerrain = "Grassland", Features = [], Resource = null, RiverBottom = false, RiverBottomLeft = false, RiverBottomRight = false }).ToList();
+        var tiles = Enumerable.Range(0, perPage).Select(s => new TileDto { X = Coord(s).X, Y = Coord(s).Y, Visible = true, BaseTerrain = terrains.Length > 0 ? terrains[s % terrains.Length] : "Grassland", Features = [], Resource = null, RiverBottom = false, RiverBottomLeft = false, RiverBottomRight = false }).ToList();
         var view = new MapView();
         host.AddChild(view);
         view.Load(registry, tiles);
@@ -78,7 +81,8 @@ public sealed class UnitSheetScenario : Scenario
             var top = MapLayout.TileTop(c.X, c.Y, view.TileNodeAt(c)?.Elevation ?? 1f);
             node.Place(top);
             var col = colours[i % 2];
-            node.Build(registry, Of(name), Of(name).Units[name], (col.R / 255f, col.G / 255f, col.B / 255f));
+            var civ = nations.Length > 0 ? ruleset.Nations[nations[i % nations.Length]].GetOuterColor() : null;
+            node.Build(registry, Of(name), Of(name).Units[name], civ != null ? (civ.R, civ.G, civ.B) : (col.R / 255f, col.G / 255f, col.B / 255f));
             node.Face(yaw * MathF.PI / 180f);
             if (!formations) node.ApplyLod(true);
             view.AddChild(node);
