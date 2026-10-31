@@ -93,7 +93,7 @@ public sealed class TcpTlsClientTransport : ITransport
     }
 
     /// <summary>The end-to-end TLS client handshake over <paramref name="inner"/> (the connection's own stream, or the relay's outer session), pinned by invite or by <paramref name="knownHosts"/>.</summary>
-    private static async Task<ITransport> HandshakeAsync(TcpClient owner, Stream inner, string targetHost, string pinKey, string? expectedFingerprint, KnownHosts? knownHosts, CancellationToken token)
+    private static async Task<ITransport> HandshakeAsync(TcpClient owner, Stream inner, string targetHost, string pinKey, string? expectedFingerprint, KnownHosts? knownHosts, CancellationToken token, bool pinUnknown = true, System.Runtime.CompilerServices.StrongBox<bool>? rejected = null)
     {
         var sslStream = new SslStream(
             inner,
@@ -108,15 +108,21 @@ public sealed class TcpTlsClientTransport : ITransport
                 // Direct invite verification: zero first-use window, MITM-proof
                 if (!string.IsNullOrEmpty(expectedFingerprint))
                 {
-                    return HostKey.Matches(expectedFingerprint, presentedFingerprint);
+                    var matches = HostKey.Matches(expectedFingerprint, presentedFingerprint);
+                    if (!matches && rejected != null) rejected.Value = true;
+                    return matches;
                 }
 
                 // TOFU: trust-on-first-use with known-hosts pinning
                 if (knownHosts != null)
                 {
                     var trust = knownHosts.Check(pinKey, presentedFingerprint);
-                    if (trust == HostTrust.Mismatch) return false; // Hard stop
-                    if (trust == HostTrust.Unknown)
+                    if (trust == HostTrust.Mismatch)
+                    {
+                        if (rejected != null) rejected.Value = true;
+                        return false; // Hard stop
+                    }
+                    if (trust == HostTrust.Unknown && pinUnknown)
                     {
                         knownHosts.Pin(pinKey, presentedFingerprint);
                     }
@@ -154,6 +160,7 @@ public sealed class TcpTlsClientTransport : ITransport
         using var timeoutCts = new CancellationTokenSource(timeout ?? TimeSpan.FromSeconds(30));
         using var linked = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, timeoutCts.Token);
         var channel = await RelayChannel.ConnectAsync(relay, dial ?? new RelayDialOptions(), linked.Token).ConfigureAwait(false);
+        var rejected = new System.Runtime.CompilerServices.StrongBox<bool>();
         try
         {
             try
@@ -163,9 +170,9 @@ public sealed class TcpTlsClientTransport : ITransport
                 await channel.SendAsync(join, linked.Token).ConfigureAwait(false);
                 RelayChannel.ThrowIfRefused(await channel.ReadAsync(linked.Token).ConfigureAwait(false), "joining " + shownRoom);
                 var pinKey = KnownHosts.RelayAddress(relay.Key, shownRoom);
-                return await HandshakeAsync(channel.Tcp, channel.Stream, relay.Host, pinKey, expectedFingerprint, knownHosts, linked.Token).ConfigureAwait(false);
+                return await HandshakeAsync(channel.Tcp, channel.Stream, relay.Host, pinKey, expectedFingerprint, knownHosts, linked.Token, pinUnknown: false, rejected: rejected).ConfigureAwait(false); // the session asks the player before anything is pinned (TOFU)
             }
-            catch (System.Security.Authentication.AuthenticationException e)
+            catch (System.Security.Authentication.AuthenticationException e) when (rejected.Value)
             {
                 throw new RelayException("host-key-mismatch", "The host's key is not the one this invite or earlier visit pinned.", inner: e);
             }

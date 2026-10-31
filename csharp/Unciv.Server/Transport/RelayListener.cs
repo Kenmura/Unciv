@@ -199,8 +199,9 @@ public sealed class RelayListener : IAsyncDisposable
                 refusedForGood = e.RelayCode is "bad-signature" or "unsupported-version" or "banned";
                 if (!firstRoom.Task.IsCompleted && refusedForGood) firstRoom.TrySetException(e);
             }
-            catch (Exception e) when (e is IOException or System.Net.Sockets.SocketException or ObjectDisposedException or OperationCanceledException or JsonException or InvalidOperationException)
+            catch (Exception e)
             {
+                // Anything else (a malformed reply included) ends this session only: the host reconnects rather than silently stopping.
                 log("relay: connection lost: " + e.Message);
             }
             finally
@@ -322,7 +323,8 @@ public sealed class RelayListener : IAsyncDisposable
         var reserved = false;
         lock (gate)
         {
-            if (pendingJoins < options.MaxPendingJoins && pendingByPeer.GetValueOrDefault(peer) < options.MaxPendingPerPeer)
+            // A connection without the relay's peer id would fall back to the rotatable player key for the back-off (R9): refuse it like a full house.
+            if (peer.Length > 0 && pendingJoins < options.MaxPendingJoins && pendingByPeer.GetValueOrDefault(peer) < options.MaxPendingPerPeer)
             {
                 pendingJoins++;
                 pendingByPeer[peer] = pendingByPeer.GetValueOrDefault(peer) + 1;
@@ -341,7 +343,7 @@ public sealed class RelayListener : IAsyncDisposable
     {
         {
             try { await OpenDataChannelAsync(id, peer, token).ConfigureAwait(false); }
-            catch (Exception e) when (e is RelayException or IOException or System.Net.Sockets.SocketException or OperationCanceledException or System.Security.Authentication.AuthenticationException or ObjectDisposedException)
+            catch (Exception e)
             {
                 log($"relay: joiner {id} dropped: {e.Message}");
             }
@@ -405,9 +407,14 @@ public sealed class RelayListener : IAsyncDisposable
             if (!dirty)
             {
                 // Wait for a change, or the refresh interval (an unchanged listing is re-sent so it does not expire).
-                var refresh = Task.Delay(snapshot == null ? Timeout.InfiniteTimeSpan : options.ListingRefresh, token);
-                var changed = desiredChanged.WaitAsync(token);
+                // The loser of the race is cancelled: a stale semaphore waiter would swallow the next change (FIFO) and a leaked timer would linger.
+                using var round = CancellationTokenSource.CreateLinkedTokenSource(token);
+                var refresh = Task.Delay(snapshot == null ? Timeout.InfiniteTimeSpan : options.ListingRefresh, round.Token);
+                var changed = desiredChanged.WaitAsync(round.Token);
                 var winner = await Task.WhenAny(refresh, changed).ConfigureAwait(false);
+                await round.CancelAsync().ConfigureAwait(false);
+                try { await Task.WhenAll(refresh, changed).ConfigureAwait(false); }
+                catch (OperationCanceledException) { token.ThrowIfCancellationRequested(); }
                 if (winner == refresh)
                 {
                     lock (gate) listingDirty = snapshot != null;

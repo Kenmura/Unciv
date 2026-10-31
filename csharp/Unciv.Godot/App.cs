@@ -158,17 +158,12 @@ public partial class App : Node
     }
 
     // T338: a relay target dials the relay named by the invite (the configured one, or one the player agreed to before); the game's own TLS then runs through it and pins the host key.
-    // Asking "use this relay?" for an unknown relay is a UI step that is not built yet (T371); until then an invite's relay is used, which exposes only that this player's address met that relay.
+    // Asking "use this relay?" for an unknown relay is a UI step that is not built yet (T371); until then an invite's relay is used for this attempt only (nothing is remembered), which exposes only that this player's address met that relay.
     private static async Task<Unciv.Net.ITransport> ConnectAsync(JoinTarget target, KnownHosts known, CancellationToken token)
     {
         if (!target.IsRelay || target.Room is not { } room) return await TcpTlsClientTransport.ConnectAsync(target.Host, target.Port, cancellationToken: token);
         var settings = RelaySettings.Load(UserPaths.Relay, UserPaths.RelayDefault);
         var choice = settings.Choose(target.Host, target.Port);
-        if (choice.NeedsPrompt)
-        {
-            settings.Remember(choice.Endpoint);
-            settings.Save(UserPaths.Relay);
-        }
         return await TcpTlsClientTransport.ConnectViaRelayAsync(choice.Endpoint, room, target.Fingerprint, known, choice.Dial, cancellationToken: token);
     }
 

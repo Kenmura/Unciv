@@ -857,4 +857,96 @@ public sealed class RelayClientTests
         Assert.Equal(1, persisted);
         Assert.Equal(HostTrust.Trusted, known.Check(address, HostCertificate.GetFingerprint(cert)));
     }
+
+    // Review finding: a typed room code carries no fingerprint, so the player must be asked before the host key is pinned; the transport itself pins nothing.
+    [Fact]
+    public async Task ATypedRoomCode_AsksTheTrustPromptBeforeAnythingIsPinned()
+    {
+        Unciv.Harness.ScenarioGame.LoadVanilla();
+        await using var rig = await RigAsync();
+        var settings = GameSettings(null);
+        using var hostId = ClientIdentity.Generate();
+        using var friendId = ClientIdentity.Generate();
+        using var cert = HostCertificate.Generate();
+        await using var hosting = await HostingSession.StartLobbyAsync(settings, hostId, cert, "Host", 0, EndpointOf(rig), Fast(rig));
+        await hosting.Relay!.WaitForRoomAsync(CancellationToken.None).WaitAsync(Bound);
+        var room = hosting.Relay.Room!;
+        var address = KnownHosts.RelayAddress(EndpointOf(rig).Key, room);
+
+        async Task<(bool Joined, string? Code, KnownHosts Known, List<string> Asked)> JoinAsync(bool trust)
+        {
+            var known = new KnownHosts();
+            var asked = new List<string>();
+            await using var friend = new ClientSession(token => TcpTlsClientTransport.ConnectViaRelayAsync(EndpointOf(rig), room, null, known, DialOf(rig), cancellationToken: token), new ClientSessionOptions
+            {
+                Identity = friendId,
+                DisplayName = "Friend",
+                RulesetHash = settings.ComputeRulesetHash(),
+                HostAddress = address,
+                KnownHosts = known,
+                TrustPrompt = (addr, fp) => { asked.Add(addr + " " + fp); Assert.Empty(known.Pins); return Task.FromResult(trust); },
+                MaxReconnectAttempts = 0,
+            });
+            var result = await friend.JoinAsync().WaitAsync(Bound);
+            return (result.Joined, result.Code, known, asked);
+        }
+
+        var refused = await JoinAsync(trust: false);
+        Assert.False(refused.Joined);
+        Assert.Single(refused.Asked);
+        Assert.Empty(refused.Known.Pins); // declining pins nothing
+        var accepted = await JoinAsync(trust: true);
+        Assert.True(accepted.Joined);
+        Assert.Single(accepted.Asked);
+        Assert.Equal(HostTrust.Trusted, accepted.Known.Check(address, HostCertificate.GetFingerprint(cert)));
+    }
+
+    // Review finding: after a refresh tick the publisher must still wake for the next change.
+    [Fact]
+    public async Task ListingUpdates_StillPublishAfterTheRefreshIntervalHasPassed()
+    {
+        await using var rig = await RigAsync();
+        using var cert = HostCertificate.Generate();
+        await using var listener = new RelayListener(EndpointOf(rig), cert, "game-1", Fast(rig) with { ListingRefresh = TimeSpan.FromMilliseconds(150) });
+        listener.SetListing(Listing(players: 1));
+        listener.Start();
+        await listener.WaitForRoomAsync(CancellationToken.None).WaitAsync(Bound);
+        await WaitForListingAsync(rig, g => g != null);
+        await Task.Delay(500); // several refresh ticks
+        listener.SetListing(Listing(players: 4));
+        await WaitForListingAsync(rig, g => g != null && JsonNode.Parse(g["body"]!.GetValue<string>())!["players"]!.GetValue<int>() == 4);
+    }
+
+    // Review finding: a relay that answers with nonsense must make the host retry, not silently stop.
+    [Fact]
+    public async Task AMalformedRelayReply_MakesTheHostReconnectInsteadOfDying()
+    {
+        var fake = new TcpListener(IPAddress.Loopback, 0);
+        fake.Start();
+        var connections = 0;
+        var serve = Task.Run(async () =>
+        {
+            while (true)
+            {
+                using var tcp = await fake.AcceptTcpClientAsync();
+                Interlocked.Increment(ref connections);
+                var stream = tcp.GetStream();
+                await stream.WriteAsync(Encoding.UTF8.GetBytes("{\"challenge\":\"AAAA\",\"v\":1}\n"));
+                await RelayChannel.ReadLineAsync(stream, CancellationToken.None);
+                await stream.WriteAsync(Encoding.UTF8.GetBytes("{\"ok\":true,\"room\":12345}\n")); // a number where the room code belongs
+            }
+        });
+        using var cert = HostCertificate.Generate();
+        var logged = new List<string>();
+        await using (var listener = new RelayListener(new RelayEndpoint("127.0.0.1", ((IPEndPoint)fake.LocalEndpoint).Port), cert, "game-1",
+            new RelayListenerOptions { Dial = new RelayDialOptions { UseTls = false }, MinBackoff = TimeSpan.FromMilliseconds(20), MaxBackoff = TimeSpan.FromMilliseconds(50) }, line => { lock (logged) logged.Add(line); }))
+        {
+            listener.Start();
+            await WaitUntilAsync(() => Volatile.Read(ref connections) >= 3);
+            lock (logged) Assert.Contains(logged, l => l.Contains("connection lost", StringComparison.Ordinal));
+        }
+        fake.Stop();
+        try { await serve; }
+        catch (Exception e) when (e is SocketException or ObjectDisposedException or IOException or InvalidOperationException) { }
+    }
 }
