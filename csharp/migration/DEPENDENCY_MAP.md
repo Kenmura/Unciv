@@ -235,7 +235,7 @@ xychart-beta
 | T362 | Available (waiting on ) | T334 | 0 | Two real client processes host and join on the real GPU (manual two-profile smoke) |
 | T363 | Available (waiting on ) | none | 0 | QuickStart and harness scenario games still start on Vanilla/Gods & Kings: move them to BNW and regenerate goldens |
 | T371 | In-Progress [Claude] | T338 | 0 | Relay settings screen and relay trust prompt: relay URL, pinned fingerprint, Reach-me-through-relay toggle, ask once before using an invite's unknown relay |
-| T374 | Needs-Review [Claude] | none | 0 | Relay server one-step Docker deployment from a GitHub clone: verified Dockerfile and compose with env vars, and a step-by-step setup guide incl. nginx |
+| T374 | In-Review [Claude-reviewer] | none | 0 | Relay server one-step Docker deployment from a GitHub clone: verified Dockerfile and compose with env vars, and a step-by-step setup guide incl. nginx |
 | T375 | Available (waiting on ) | none | 0 | Re-record stale phone-menus goldens (main-menu, new-game, host, lobby, options, modal differ from the committed images at base) |
 | T376 | In-Progress [Claude] | none | 0 | AutoPlay: skip or shorten animations and never let them queue behind the turns |
 | T377 | In-Progress [Claude] | none | 0 | Border rendering review and fix: borders have gaps, do not join at corners and are drawn partially (see owner screenshot) |
