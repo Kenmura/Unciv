@@ -157,7 +157,8 @@ flowchart TD
 Unlinked tickets (no open dependency in either direction), by state:
 
 - ready: T324 T354 T355 T357 T361 T366 T367 T371 T372
-- in progress: T300 T301 T303 T320
+- in progress: T300 T301 T303
+- in review: T320
 - blocked: T290
 - waiting: T313 T314 T317 T318 T321 T326 T328 T329 T330 T331 T332 T333 T335 T341 T342 T343 T344 T345 T346 T348 T349 T350 T351 T352 T353 T362 T363
 
@@ -228,7 +229,7 @@ xychart-beta
 | T314 | Available (waiting on ) | none | 0 | Flaky tests: NetLobbyTests.ServerLobby_TwoRapidSameKeyReconnects... and server/CLI bench tests fail once under full-gate load, pass alone |
 | T317 | Available (waiting on ) | T312 | 0 | Extend the layout matrix: alerts and popups, city Production tab, game over/victory/hotseat/vote screens, 640x360 minimum window, an automatic wasted-space check |
 | T318 | Available (waiting on ) | T312 | 0 | Host, Join and Lobby screens on the ScreenFrame look: titled header, scaled controls, content width, consistent with New game and Options |
-| T320 | In-Progress [Claude] | T309 | 0 | Foot infantry of similar eras still read as the same dark blob at the default zoom (Swordsman, Longswordsman, Musketman, Rifleman, Minuteman): differentiate and measure at real zoom |
+| T320 | Needs-Review [Claude] | T309 | 0 | Foot infantry of similar eras still read as the same dark blob at the default zoom (Swordsman, Longswordsman, Musketman, Rifleman, Minuteman): differentiate and measure at real zoom |
 | T321 | Available (waiting on ) | T316 | 0 | Menu screens not covered by the T316 live-resize scenario: Saves dialog, popups other than the leave modal, in-game menus rebuilt on breakpoint change (SaveController compact flag is read once) |
 | T325 | Available (waiting on T305) | T279, T280, T305 | 0 | Automatic release drafts: a scheduled workflow tags green csharp-migration when it has new Done work and creates a DRAFT GitHub release with generated notes; the owner publishes by hand |
 | T326 | Available (waiting on ) | T323 | 0 | TooltipHost text width is re-measured on a live resize only while a tip is visible |
