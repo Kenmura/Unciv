@@ -1,4 +1,3 @@
-using Unciv.GodotClient.Settings;
 using Godot;
 using Unciv.Client.Net.Mods;
 using Unciv.Client.Net.Session;

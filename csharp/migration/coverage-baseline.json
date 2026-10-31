@@ -63,7 +63,7 @@
     "Unciv.Assets/Setup/HostSettingsForm.cs": {"branch": 92.86, "line": 100.0},
     "Unciv.Assets/Setup/JoinModel.cs": {"branch": 82.0, "line": 98.02},
     "Unciv.Assets/Setup/LobbyModel.cs": {"branch": 98.31, "line": 100.0},
-    "Unciv.Assets/Setup/NewGameForm.cs": {"branch": 90.3, "line": 97.92},
+    "Unciv.Assets/Setup/NewGameForm.cs": {"branch": 90.3, "line": 97.94},
     "Unciv.Assets/SocialModel.cs": {"branch": 77.78, "line": 87.18},
     "Unciv.Assets/StableHash.cs": {"branch": 100.0, "line": 100.0},
     "Unciv.Assets/TechScreenModel.cs": {"branch": 100.0, "line": 100.0},
