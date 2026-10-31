@@ -24,6 +24,15 @@ internal sealed class FakeProber : IEndpointProber
         lock (Dialled) Dialled.Add($"{host}:{port}");
         return Task.FromResult(Answer(host, port));
     }
+
+    /// <summary>T354: what a relay room "presents"; null (the default) is an unreachable room.</summary>
+    public Func<RelayRoute, string?> RelayAnswer { get; set; } = _ => null;
+
+    public Task<string?> PresentedFingerprintViaRelayAsync(RelayRoute route, string expectedFingerprint, TimeSpan timeout, CancellationToken cancellationToken)
+    {
+        lock (Dialled) Dialled.Add($"relay:{route.Relay}/{route.Room}");
+        return Task.FromResult(RelayAnswer(route));
+    }
 }
 
 /// <summary>T281 acceptance A2 at the coordinator level: consent, designated-only, one generic code, and the endpoint probe's limits.</summary>

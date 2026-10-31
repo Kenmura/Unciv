@@ -7,6 +7,7 @@ using Unciv.Logic;
 using Unciv.Net;
 using Unciv.Net.Identity;
 using Unciv.Net.Mods;
+using Unciv.Net.Relay;
 using Unciv.Net.Remote;
 using Unciv.Net.Standby;
 using Unciv.Queries;
@@ -67,6 +68,19 @@ public sealed class ClientSessionOptions
     /// announcement (<see cref="HostSuccessor"/>). Without it (or <see cref="OnHandoff"/>) a hand-off is treated like a plain <see cref="HostClosing"/>.
     /// </summary>
     public Func<string, CancellationToken, Task<ITransport>>? ConnectEndpoint { get; init; }
+
+    /// <summary>
+    /// T354: opens a connection to the successor's room on a relay after a <see cref="HostHandoff"/> (design/RELAY.md section 5): the announced route and the announced fingerprint of the successor, which the connection must
+    /// be pinned to before any game byte is sent (<see cref="Unciv.Client.Net.Transport.TcpTlsClientTransport.ConnectViaRelayAsync"/>). Used only together with <see cref="ConfirmRelay"/>; without both, a relay route is ignored and
+    /// only direct endpoints are tried.
+    /// </summary>
+    public Func<RelayRoute, string, CancellationToken, Task<ITransport>>? ConnectRelay { get; init; }
+
+    /// <summary>
+    /// T354: asked before this session dials a relay a hand-off names (the relay learns this player's address and the room): true when the player agreed to connect through it, now or earlier (a relay the player never agreed to
+    /// is refused unless they say yes, <see cref="Unciv.Client.Net.Hosting.RelaySettings.Choose"/>). The handshake clock stops while it runs, like the host-key prompt. A throw or false is "no": that attempt fails and the next one tries another target.
+    /// </summary>
+    public Func<RelayRoute, Task<bool>>? ConfirmRelay { get; init; }
 
     /// <summary>
     /// T273: called once per hand-off, after the old connection ended and before the session connects to the successor. The designated successor's process promotes its standby copy here (it must be
@@ -354,13 +368,13 @@ public sealed class ClientSession : IAsyncDisposable
     /// <summary>The latest backup-host announcement from the host this session is connected to (null until one arrives).</summary>
     public HostSuccessor? Successor { get; private set; }
 
-    /// <summary>Consents to the backup-host role offered by <see cref="StandbyOffered"/>: <paramref name="endpoints"/> are the addresses this player can be reached on, <paramref name="port"/> and <paramref name="fingerprint"/> those of its own listener. The host probes one endpoint before the standby counts as ready.</summary>
-    public ValueTask AcceptStandbyAsync(IReadOnlyList<string> endpoints, int port, string fingerprint)
+    /// <summary>Consents to the backup-host role offered by <see cref="StandbyOffered"/>: <paramref name="endpoints"/> are the addresses this player can be reached on, <paramref name="port"/> and <paramref name="fingerprint"/> those of its own listener. The host probes one endpoint before the standby counts as ready. T354: <paramref name="relay"/> is this player's unlisted room on a relay (<see cref="Unciv.Server.Transport.StandbyListener.Relay"/>), for a player with no reachable address: <paramref name="endpoints"/> may then be empty.</summary>
+    public ValueTask AcceptStandbyAsync(IReadOnlyList<string> endpoints, int port, string fingerprint, RelayRoute? relay = null)
     {
         // From here the host's replication stream of this game may be stored under StandbyRoot: in memory for this process and as a per-game record for the next one.
         standbyConsentedGame = gameId ?? AnyGame; // a session joins one game: with its id not known yet the accept covers the game the host's next status names
         if (gameId != null && options.StandbyRoot != null) StandbyStore.RecordConsent(options.StandbyRoot, gameId);
-        return SendAsync(new StandbyAccept { Endpoints = [.. endpoints], Port = port, Fingerprint = fingerprint });
+        return SendAsync(new StandbyAccept { Endpoints = [.. endpoints], Port = port, Fingerprint = fingerprint, Relay = relay });
     }
 
     /// <summary>Declines the offer, or withdraws an accepted standby.</summary>
@@ -391,6 +405,12 @@ public sealed class ClientSession : IAsyncDisposable
             {
                 var had = known.Pins.ContainsKey(endpoint);
                 if (known.PinVouched(endpoint, info.Fingerprint, connectedHostFingerprint, successor.Epoch) && !had) added = true;
+            }
+            if (RelayRoutes.Normalize(info.Relay) is { } route)
+            {
+                var address = KnownHosts.RelayAddress(route.Relay, route.Room);
+                var had = known.Pins.ContainsKey(address);
+                if (known.PinVouched(address, info.Fingerprint, connectedHostFingerprint, successor.Epoch) && !had) added = true;
             }
             if (added) options.PersistKnownHosts?.Invoke(known);
         }
@@ -716,28 +736,47 @@ public sealed class ClientSession : IAsyncDisposable
     }
 
     // The connection factory of the session, or, while a hand-off redirect runs, the successor: its own connector (the promoted process) or one of the announced endpoints (rotated per attempt).
-    private Task<ITransport> ConnectAsync(int attempt, CancellationToken token)
+    private async Task<ITransport> ConnectAsync(int attempt, CancellationToken token)
     {
-        if (redirect == null) return connect(token);
-        if (redirectConnector != null) return redirectConnector(token);
-        var endpoints = redirect.Successor.Endpoints;
-        var endpoint = endpoints[attempt % endpoints.Count];
-        hostAddress = endpoint;
-        expectedFingerprint = redirect.Successor.Fingerprint;
-        return options.ConnectEndpoint!(endpoint, token);
+        if (redirect == null) return await connect(token).ConfigureAwait(false);
+        if (redirectConnector != null) return await redirectConnector(token).ConfigureAwait(false);
+        var successor = redirect.Successor;
+        IReadOnlyList<string> endpoints = options.ConnectEndpoint == null ? [] : successor.Endpoints;
+        var route = options.ConnectRelay != null && options.ConfirmRelay != null ? RelayRoutes.Normalize(successor.Relay) : null;
+        var slot = attempt % Math.Max(1, endpoints.Count + (route == null ? 0 : 1)); // the announced endpoints in turn, then the relay room
+        expectedFingerprint = successor.Fingerprint;
+        if (slot < endpoints.Count)
+        {
+            hostAddress = endpoints[slot];
+            return await options.ConnectEndpoint!(endpoints[slot], token).ConfigureAwait(false);
+        }
+        if (route == null) throw new InvalidOperationException("The successor announced nothing this session can dial");
+        hostAddress = KnownHosts.RelayAddress(route.Relay, route.Room);
+        // The relay was named by the successor (through the host): it is dialled only with the player's agreement, and the handshake clock stops while they are asked.
+        handshakeTimer?.CancelAfter(Timeout.InfiniteTimeSpan);
+        bool agreed;
+        try { agreed = await options.ConfirmRelay!(route).ConfigureAwait(false); }
+        catch (Exception e) when (e is not OperationCanceledException) { agreed = false; }
+        handshakeTimer?.CancelAfter(options.HandshakeTimeout);
+        if (!agreed) throw new Unciv.Server.Transport.RelayException(Unciv.Server.Transport.RelayCodes.Declined, "The relay the successor is reachable on was not agreed to.");
+        return await options.ConnectRelay!(route, successor.Fingerprint, token).ConfigureAwait(false);
     }
+
+    // T354: whether this session has a way to reach the successor it was told about: one of its announced addresses (ConnectEndpoint), or its relay room (ConnectRelay with the player's say-so, ConfirmRelay).
+    private bool CanDial(SuccessorInfo successor) =>
+        (options.ConnectEndpoint != null && successor.Endpoints.Count > 0) || (options.ConnectRelay != null && options.ConfirmRelay != null && RelayRoutes.Normalize(successor.Relay) != null);
 
     private async Task<bool> PrepareRedirectAsync(CancellationToken token)
     {
         redirectPrepared = true;
         var handoff = redirect!;
-        hostAddress = handoff.Successor.Endpoints[0];
+        hostAddress = handoff.Successor.Endpoints.Count > 0 ? handoff.Successor.Endpoints[0] : "";
         expectedFingerprint = handoff.Successor.Fingerprint;
-        if (options.OnHandoff == null) return options.ConnectEndpoint != null;
+        if (options.OnHandoff == null) return CanDial(handoff.Successor);
         try
         {
             redirectConnector = await options.OnHandoff(handoff, token).ConfigureAwait(false);
-            return redirectConnector != null || options.ConnectEndpoint != null;
+            return redirectConnector != null || CanDial(handoff.Successor);
         }
         catch (Exception e) when (e is not OperationCanceledException)
         {
@@ -907,12 +946,15 @@ public sealed class ClientSession : IAsyncDisposable
     private void HandleHandoff(HostHandoff handoff)
     {
         var announced = Successor?.Successor;
-        var acceptable = (options.ConnectEndpoint != null || options.OnHandoff != null)
+        var announcedRelay = RelayRoutes.Normalize(announced?.Relay);
+        var relayAcceptable = handoff.Successor.Relay == null || (announcedRelay != null && RelayRoutes.Same(handoff.Successor.Relay, announcedRelay));
+        var acceptable = (options.OnHandoff != null || CanDial(handoff.Successor))
+            && relayAcceptable
             && announced != null && Successor!.Epoch == connectionEpoch && handoff.Epoch == connectionEpoch + 1
             && (gameId == null || string.Equals(gameId, handoff.GameId, StringComparison.Ordinal))
             && handoff.GameId.Length is > 0 and <= 200
             && string.Equals(announced.KeyId, handoff.Successor.KeyId, StringComparison.Ordinal) && HostKey.Matches(announced.Fingerprint, handoff.Successor.Fingerprint)
-            && handoff.Successor.Endpoints.Count is > 0 and <= 8 && handoff.Successor.Endpoints.All(it => announced.Endpoints.Contains(it, StringComparer.Ordinal));
+            && (handoff.Successor.Endpoints.Count > 0 || handoff.Successor.Relay != null) && handoff.Successor.Endpoints.Count <= 8 && handoff.Successor.Endpoints.All(it => announced.Endpoints.Contains(it, StringComparer.Ordinal));
         if (!acceptable)
         {
             Emit(new ProtocolError(ErrorCodes.InvalidMessage));
@@ -1013,6 +1055,8 @@ public sealed class ClientSession : IAsyncDisposable
         }
         if (welcome.Standby == true)
         {
+            // T354: following a hand-off, the announced address can still be the successor's standby listener for a moment (it is promoting): that is "not yet", so this attempt ends and the redirect retries with its normal back-off.
+            if (redirect != null && !redirectAnnounced) return false;
             await EndAsync(ClientCodes.NotHostYet, refused: true).ConfigureAwait(false);
             return false;
         }

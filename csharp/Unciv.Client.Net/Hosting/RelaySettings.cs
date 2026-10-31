@@ -1,5 +1,8 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Unciv.Client.Net.Session;
+using Unciv.Client.Net.Transport;
+using Unciv.Net;
 using Unciv.Net.Identity;
 using Unciv.Net.Relay;
 using Unciv.Server.Transport;
@@ -111,6 +114,39 @@ public sealed class RelaySettings
         if (Endpoint is { } configured && configured.Key == named.Key) return new RelayChoice(configured, new RelayDialOptions(), false);
         var remembered = AcceptedRelays.Contains(named.Key, StringComparer.OrdinalIgnoreCase);
         return new RelayChoice(named, new RelayDialOptions { TrustAnyCertificate = true }, !remembered);
+    }
+
+    /// <summary>
+    /// T354: the relay a host-migration route names, only if the player already agreed to it (it is the configured relay, or an earlier "Connect through relay X?" was answered yes). Null otherwise: a relay named by a peer
+    /// is never dialled unasked, so the host's standby probe (<see cref="TlsEndpointProber"/>) refuses it and the standby stays unreachable until the player agrees. Use as the prober's relay resolver.
+    /// </summary>
+    public RelayDialPlan? Agreed(RelayEndpoint named)
+    {
+        var choice = Choose(named.Host, named.Port);
+        return choice.NeedsPrompt ? null : new RelayDialPlan(choice.Endpoint, choice.Dial);
+    }
+
+    /// <summary>
+    /// T354: for <see cref="ClientSessionOptions.ConfirmRelay"/>. A relay the player agreed to (or configured) passes silently; any other is put to <paramref name="prompt"/> ("Connect through relay X?",
+    /// the relay learns the player's address and the room), and a yes is remembered (<paramref name="persist"/> then saves the settings). Never added to <see cref="Url"/>.
+    /// </summary>
+    public async Task<bool> ConfirmAsync(RelayRoute route, Func<RelayEndpoint, Task<bool>> prompt, Action<RelaySettings>? persist = null)
+    {
+        if (RelayRoutes.EndpointOf(route) is not { } named) return false;
+        var choice = Choose(named.Host, named.Port);
+        if (!choice.NeedsPrompt) return true;
+        if (!await prompt(choice.Endpoint).ConfigureAwait(false)) return false;
+        Remember(choice.Endpoint);
+        persist?.Invoke(this);
+        return true;
+    }
+
+    /// <summary>T354: for <see cref="ClientSessionOptions.ConnectRelay"/>: joins the successor's room on the relay, pinned to the successor's announced fingerprint before any game byte. Call <see cref="ConfirmAsync"/> first (the session does).</summary>
+    public Task<ITransport> ConnectAsync(RelayRoute route, string fingerprint, CancellationToken cancellationToken)
+    {
+        var named = RelayRoutes.EndpointOf(route) ?? throw new RelayException(RelayCodes.RoomUnknown, "That is not a relay route.");
+        var choice = Choose(named.Host, named.Port);
+        return TcpTlsClientTransport.ConnectViaRelayAsync(choice.Endpoint, route.Room, fingerprint, dial: choice.Dial, cancellationToken: cancellationToken);
     }
 
     /// <summary>The player answered yes to "Connect through relay X?": not asked again for that relay host and port.</summary>

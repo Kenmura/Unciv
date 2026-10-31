@@ -140,8 +140,8 @@ flowchart TD
 Unlinked tickets (no open dependency in either direction), by state:
 
 - ready: T355 T356 T357 T361 T366 T367 T372 T378 T379 T380 T381 T382
-- in progress: T300 T301 T303 T354
-- in review: T373
+- in progress: T300 T301 T303
+- in review: T354 T373
 - blocked: T290
 - waiting: T313 T314 T317 T318 T321 T326 T328 T329 T330 T331 T332 T333 T335 T341 T342 T343 T344 T345 T346 T348 T349 T350 T351 T352 T353 T362 T363 T375
 
@@ -238,7 +238,7 @@ xychart-beta
 | T351 | Available (waiting on ) | T261 | 0 | Call-level profiling inside AI unit moves (AutomateUnitMoves) and the spike turns |
 | T352 | Available (waiting on ) | none | 0 | Accessibility: colourblind-safe team colours and unit/tile cues, font size scaling, keyboard-only play |
 | T353 | Available (waiting on ) | none | 0 | Sound and music: effects and a soundtrack from CC0 or original sources (no Civ 5 audio) |
-| T354 | In-Progress [Claude] | T338 | 0 | Host migration over the relay: successor endpoint kind relay{relay,room}, unlisted standby room, probe and promotion through the relay |
+| T354 | Needs-Review [Claude] | T338 | 0 | Host migration over the relay: successor endpoint kind relay{relay,room}, unlisted standby room, probe and promotion through the relay |
 | T362 | Available (waiting on ) | T334 | 0 | Two real client processes host and join on the real GPU (manual two-profile smoke) |
 | T363 | Available (waiting on ) | none | 0 | QuickStart and harness scenario games still start on Vanilla/Gods & Kings: move them to BNW and regenerate goldens |
 | T373 | In-Review [Claude-reviewer] | none | 0 | Unit recognizability third pass: aircraft, Destroyer, Helicopter, Panzer and same-hue pairs still weak at zoom 14 |

@@ -25,6 +25,9 @@ public sealed class StandbyPromotion(string standbyRoot, ClientIdentity identity
     /// <summary>T282: the standby listener this player keeps open on the announced port (<see cref="StandbyListener"/>); promotion closes it just before the promoted host binds the same port.</summary>
     public StandbyListener? Listener { get; set; }
 
+    // T354: the standby's relay room once detached from the listener; kept across a failed port bind so a retry of the same hand-off still has it.
+    private RelayListener? adoptedRelay;
+
     /// <summary>The game directory of the promoted host (the standby directory).</summary>
     public string? Directory { get; private set; }
 
@@ -44,7 +47,7 @@ public sealed class StandbyPromotion(string standbyRoot, ClientIdentity identity
         if (!HostKey.Matches(fingerprint, handoff.Successor.Fingerprint)) throw new HostingException("This player's certificate is not the announced successor fingerprint");
         var directory = StandbyStore.DirectoryFor(standbyRoot, handoff.GameId);
         if (directory == null || !System.IO.Directory.Exists(directory)) throw new HostingException("There is no standby copy of this game");
-        var port = PortOf(handoff.Successor.Endpoints);
+        var port = handoff.Successor.Endpoints.Count == 0 ? 0 : PortOf(handoff.Successor.Endpoints); // a relay-only successor has no announced port: its local listener takes any free one
 
         var proof = new PromotionProof
         {
@@ -69,7 +72,9 @@ public sealed class StandbyPromotion(string standbyRoot, ClientIdentity identity
         try
         {
             Listener?.Stop();
-            host.Listen(certificate, port);
+            adoptedRelay ??= Listener?.DetachRelay(); // T354: the room the standby held on the relay is the new host's room, with the address the clients already have
+            host.Listen(certificate, port, adoptRelay: adoptedRelay);
+            adoptedRelay = null;
         }
         catch (Exception e) when (e is SocketException or IOException or InvalidOperationException or System.Security.Cryptography.CryptographicException)
         {

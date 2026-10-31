@@ -52,6 +52,11 @@ public sealed record StandbyRecord
 
     [JsonPropertyName("fingerprint")]
     public string Fingerprint { get; init; } = "";
+
+    /// <summary>T354: the candidate's unlisted room on a relay, or null.</summary>
+    [JsonPropertyName("relay")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public RelayRoute? Relay { get; init; }
 }
 
 /// <summary>Tunables of <see cref="StandbyCoordinator"/>; the defaults are the design's.</summary>
@@ -106,6 +111,12 @@ public sealed record StandbyLimits
 public interface IEndpointProber
 {
     Task<string?> PresentedFingerprintAsync(string host, int port, TimeSpan timeout, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// T354: the same probe through a relay room (design/RELAY.md section 5): join <paramref name="route"/>, then the identical handshake and <c>Hello</c> inside the splice. A prober answers null for a relay the host never agreed
+    /// to connect through (the route is chosen by the candidate, so it must not make the host dial any relay it is told to); the default knows no relay.
+    /// </summary>
+    Task<string?> PresentedFingerprintViaRelayAsync(RelayRoute route, string expectedFingerprint, TimeSpan timeout, CancellationToken cancellationToken) => Task.FromResult<string?>(null);
 }
 
 /// <summary>A prober for hosts without a network layer (and tests that must not dial): nothing is ever reachable.</summary>

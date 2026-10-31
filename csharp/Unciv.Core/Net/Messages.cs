@@ -375,6 +375,19 @@ public sealed record StandbyAccept : Message
     public required List<string> Endpoints { get; init; }
     public required int Port { get; init; }
     public required string Fingerprint { get; init; }
+
+    /// <summary>T354: the unlisted room this candidate keeps on a relay (design/RELAY.md section 5), for a candidate with no reachable address. Optional and additive: with it <c>Endpoints</c> may be empty (and <c>Port</c> is then ignored).</summary>
+    public RelayRoute? Relay { get; init; }
+}
+
+/// <summary>
+/// T354: where a successor can be reached through a relay (design/RELAY.md section 5, R14): <c>Relay</c> is <c>host[:port]</c> of the relay (no scheme, no fingerprint: a certificate pin is never taken from a peer, the player's
+/// own relay setting or an earlier agreement decides how the relay's certificate is checked) and <c>Room</c> the room code in display form. The successor's host key, pinned from the announcement, still authenticates it end to end.
+/// </summary>
+public sealed record RelayRoute
+{
+    public required string Relay { get; init; }
+    public required string Room { get; init; }
 }
 
 /// <summary>Candidate to host: refuses the offer, or later withdraws. The host runs without a backup host.</summary>
@@ -453,6 +466,9 @@ public sealed record SuccessorInfo
     public required string KeyId { get; init; }
     public required List<string> Endpoints { get; init; }
     public required string Fingerprint { get; init; }
+
+    /// <summary>T354: the successor's room on a relay, when it has one (an additive field: absent for a direct-only successor, which then is announced exactly as before).</summary>
+    public RelayRoute? Relay { get; init; }
 }
 
 /// <summary>One human seat of the roster a <see cref="HostSuccessor"/> carries (what a later election counts).</summary>

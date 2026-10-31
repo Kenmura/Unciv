@@ -1,4 +1,5 @@
 using Unciv.Net.Identity;
+using Unciv.Net.Relay;
 using Unciv.Net.Turns;
 
 namespace Unciv.Net.Standby;
@@ -17,6 +18,7 @@ public sealed class StandbyCoordinator
     private bool accepted;
     private bool reachable;
     private List<string> endpoints = [];
+    private RelayRoute? relay;
     private string fingerprint = "";
     private int probeCursor;
     private long lastProbeMillis = long.MinValue;
@@ -135,8 +137,9 @@ public sealed class StandbyCoordinator
             if (keyId == null || senderKeyId == null || !string.Equals(keyId, senderKeyId, StringComparison.Ordinal)) return ErrorCodes.NotDesignated;
             var normalized = Normalize(accept);
             var normalizedFingerprint = HostKey.Normalize(accept.Fingerprint);
-            if (normalized == null || normalizedFingerprint == null) return ErrorCodes.InvalidEndpoint;
-            if (accepted && endpoints.SequenceEqual(normalized, StringComparer.Ordinal) && string.Equals(fingerprint, normalizedFingerprint, StringComparison.Ordinal))
+            var normalizedRelay = RelayRoutes.Normalize(accept.Relay);
+            if (normalized == null || normalizedFingerprint == null || (accept.Relay != null && normalizedRelay == null) || (normalized.Count == 0 && normalizedRelay == null)) return ErrorCodes.InvalidEndpoint;
+            if (accepted && endpoints.SequenceEqual(normalized, StringComparer.Ordinal) && string.Equals(fingerprint, normalizedFingerprint, StringComparison.Ordinal) && RelayRoutes.Same(relay, normalizedRelay))
             {
                 // A repeated accept (client retry) changes nothing: it must not cancel a probe in flight or undo a ready standby.
                 if (reachable) return null;
@@ -145,6 +148,7 @@ public sealed class StandbyCoordinator
             else
             {
                 endpoints = normalized;
+                relay = normalizedRelay;
                 fingerprint = normalizedFingerprint;
                 accepted = true;
                 reachable = false;
@@ -198,7 +202,7 @@ public sealed class StandbyCoordinator
         int count;
         lock (gate)
         {
-            count = endpoints.Count;
+            count = TargetCount;
             // The follow-up dials are tentative: a standby that was reachable stays so (for a client joining meanwhile) until every endpoint has failed.
             if (gen == generation && code is ErrorCodes.ProbeFailed or ErrorCodes.ProbeFingerprint && count > 1 && string.Equals(before, StandbyStates.Ready, StringComparison.Ordinal)) reachable = true;
         }
@@ -212,9 +216,13 @@ public sealed class StandbyCoordinator
         }
     }
 
+    // The announced endpoints, then the relay room (when there is one): the probe tries one of them per call, in turn.
+    private int TargetCount => endpoints.Count + (relay == null ? 0 : 1);
+
     private async Task<string?> ProbeCoreAsync(int gen, CancellationToken cancellationToken, bool followUp = false)
     {
-        string endpoint;
+        string? endpoint;
+        RelayRoute? route;
         string expected;
         lock (gate)
         {
@@ -223,21 +231,29 @@ public sealed class StandbyCoordinator
             if (!followUp && lastProbeMillis != long.MinValue && now - lastProbeMillis < limits.ProbeMinIntervalMillis)
                 return ErrorCodes.ProbeRateLimited; // never downgrades a ready standby: a refused probe says nothing about reachability
             lastProbeMillis = now;
-            endpoint = endpoints[probeCursor % endpoints.Count];
+            var index = probeCursor % TargetCount;
+            endpoint = index < endpoints.Count ? endpoints[index] : null;
+            route = endpoint == null ? relay : null;
             probeCursor++;
             expected = fingerprint;
         }
-
-        var separator = endpoint.LastIndexOf(':');
-        var host = endpoint[..separator].Trim('[', ']');
-        var port = int.Parse(endpoint[(separator + 1)..], System.Globalization.CultureInfo.InvariantCulture);
 
         string? presented = null;
         using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         timeout.CancelAfter(limits.ProbeTimeout);
         try
         {
-            presented = await Prober.PresentedFingerprintAsync(host, port, limits.ProbeTimeout, timeout.Token).ConfigureAwait(false);
+            if (endpoint != null)
+            {
+                var separator = endpoint.LastIndexOf(':');
+                var host = endpoint[..separator].Trim('[', ']');
+                var port = int.Parse(endpoint[(separator + 1)..], System.Globalization.CultureInfo.InvariantCulture);
+                presented = await Prober.PresentedFingerprintAsync(host, port, limits.ProbeTimeout, timeout.Token).ConfigureAwait(false);
+            }
+            else if (route != null)
+            {
+                presented = await Prober.PresentedFingerprintViaRelayAsync(route, expected, limits.ProbeTimeout, timeout.Token).ConfigureAwait(false);
+            }
         }
         catch (Exception e) when (e is not OutOfMemoryException)
         {
@@ -273,7 +289,7 @@ public sealed class StandbyCoordinator
             return new HostSuccessor
             {
                 Epoch = epoch,
-                Successor = keyId != null && accepted && reachable ? new SuccessorInfo { KeyId = keyId, Endpoints = [.. endpoints], Fingerprint = fingerprint } : null,
+                Successor = keyId != null && accepted && reachable ? new SuccessorInfo { KeyId = keyId, Endpoints = [.. endpoints], Fingerprint = fingerprint, Relay = relay } : null,
                 Status = StateLocked(),
                 Roster = [.. roster],
             };
@@ -295,7 +311,7 @@ public sealed class StandbyCoordinator
     {
         lock (gate)
         {
-            return keyId == null ? null : new StandbyRecord { KeyId = keyId, Accepted = accepted, Endpoints = [.. endpoints], Fingerprint = fingerprint };
+            return keyId == null ? null : new StandbyRecord { KeyId = keyId, Accepted = accepted, Endpoints = [.. endpoints], Fingerprint = fingerprint, Relay = relay };
         }
     }
 
@@ -308,10 +324,12 @@ public sealed class StandbyCoordinator
             if (record == null || record.KeyId.Length == 0) return;
             keyId = record.KeyId;
             var normalizedFingerprint = HostKey.Normalize(record.Fingerprint);
-            accepted = record.Accepted && record.Endpoints.Count > 0 && normalizedFingerprint != null;
+            var storedRelay = RelayRoutes.Normalize(record.Relay);
+            accepted = record.Accepted && (record.Endpoints.Count > 0 || storedRelay != null) && normalizedFingerprint != null && (record.Relay == null || storedRelay != null);
             if (accepted && record.Endpoints.Any(e => !ValidStoredEndpoint(e))) accepted = false; // a hand-edited file must not reach the dialler
             if (accepted && normalizedFingerprint != null)
             {
+                relay = storedRelay;
                 endpoints = [.. record.Endpoints];
                 fingerprint = normalizedFingerprint;
             }
@@ -333,6 +351,7 @@ public sealed class StandbyCoordinator
         accepted = false;
         reachable = false;
         endpoints = [];
+        relay = null;
         fingerprint = "";
         probeCursor = 0;
         generation++;
@@ -341,9 +360,10 @@ public sealed class StandbyCoordinator
     /// <summary>The announced endpoints as <c>host:port</c>, or null when the list or port is unusable: 1 to <see cref="StandbyLimits.MaxEndpoints"/> distinct plain host names or IPs, a port of at least <see cref="StandbyLimits.MinPort"/>, a well-formed fingerprint.</summary>
     private List<string>? Normalize(StandbyAccept accept)
     {
-        if (accept.Port < limits.MinPort || accept.Port > 65535) return null;
+        var direct = accept.Endpoints.Count > 0;
+        if (direct && (accept.Port < limits.MinPort || accept.Port > 65535)) return null;
         if (HostKey.Normalize(accept.Fingerprint) == null) return null;
-        if (accept.Endpoints.Count == 0 || accept.Endpoints.Count > limits.MaxEndpoints) return null;
+        if (accept.Endpoints.Count > limits.MaxEndpoints || (!direct && accept.Relay == null)) return null;
         var result = new List<string>();
         foreach (var endpoint in accept.Endpoints)
         {

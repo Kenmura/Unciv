@@ -8,6 +8,7 @@ using Unciv.Client.Net.Transport;
 using Unciv.Commands.Log;
 using Unciv.Commands.Turn;
 using Unciv.Core.Tests.Net.ClientNet;
+using Unciv.Core.Tests.Relay;
 using Unciv.Json;
 using Unciv.Logic;
 using Unciv.Logic.Civilization;
@@ -17,6 +18,7 @@ using Unciv.Models.Ruleset;
 using Unciv.Net;
 using Unciv.Net.Identity;
 using Unciv.Net.Persistence;
+using Unciv.Net.Relay;
 using Unciv.Net.Standby;
 using Unciv.Server;
 using Unciv.Server.Transport;
@@ -49,7 +51,7 @@ internal sealed class EventTap : IAsyncDisposable
             if (hit != null) return hit;
             await Task.Delay(20);
         }
-        throw new TimeoutException($"No {typeof(T).Name}; saw: {string.Join(", ", seen.Select(it => it.GetType().Name))}");
+        throw new TimeoutException($"No {typeof(T).Name}; saw: {string.Join(", ", seen.Select(it => it is JoinRefusedEvent r ? "Refused:" + r.Code : it is SessionEnded e ? "Ended:" + e.Reason : it.GetType().Name))}");
     }
 
     public async ValueTask DisposeAsync()
@@ -186,7 +188,7 @@ public sealed class HostHandoffTests : IDisposable
         public int Prompts { get; set; }
     }
 
-    private async Task<Seat> JoinAsync(InProcessHost host, ClientIdentity identity, string name, string? dataRoot = null, X509Certificate2? ownCertificate = null, bool advertise = true)
+    private async Task<Seat> JoinAsync(InProcessHost host, ClientIdentity identity, string name, string? dataRoot = null, X509Certificate2? ownCertificate = null, bool advertise = true, RelaySettings? relaySettings = null, Func<RelayEndpoint, Task<bool>>? relayPrompt = null)
     {
         var known = new KnownHosts();
         List<int> epochs = [];
@@ -210,10 +212,13 @@ public sealed class HostHandoffTests : IDisposable
             StandbyRoot = dataRoot,
             AdvertiseHostMigration = advertise,
             ReconnectDelay = (_, _) => Task.Delay(50),
+            MaxReconnectAttempts = 100, // a client can reach the successor's standby room for a moment before it has promoted
             KeepAliveInterval = Timeout.InfiniteTimeSpan,
             PersistKnownEpoch = epochs.Add,
             PersistEpochProof = proofs.Add,
             OnHandoff = promotion == null ? null : (handoff, token) => promotion.Handler(handoff, token),
+            ConfirmRelay = relaySettings == null ? null : route => relaySettings.ConfirmAsync(route, relayPrompt ?? (_ => Task.FromResult(false))),
+            ConnectRelay = relaySettings == null ? null : relaySettings.ConnectAsync,
             ConnectEndpoint = (endpoint, token) =>
             {
                 var separator = endpoint.LastIndexOf(':');
@@ -312,6 +317,161 @@ public sealed class HostHandoffTests : IDisposable
         Assert.Equal(RecoveryOutcome.Recovered, reopened.Report.Outcome);
         Assert.Equal(0, reopened.Report.DroppedLogLines);
         Assert.Equal(afterSeq, reopened.Store.LastSeq);
+    }
+
+
+    // ------------------------------------------------------------------ T354 (R14): the successor is only reachable through a relay
+
+    private sealed record RelayScene(InProcessHost Host, Seat Successor, Seat Third, RelayRig Rig, RelayEndpoint Endpoint, RelayListener StandbyRoom, StandbyListener Standby);
+
+    /// <summary>
+    /// The host with Babylon, a successor (Greece) that has no reachable address and keeps an unlisted standby room on a local relay, and a third player (Rome) whose relay agreements are <paramref name="thirdSettings"/>.
+    /// The host's own probe goes through the relay too (it has agreed to it).
+    /// </summary>
+    private async Task<RelayScene> ReadyViaRelayAsync(string name, RelaySettings thirdSettings, Func<RelayEndpoint, Task<bool>>? thirdPrompt)
+    {
+        var rig = Track(await RelayRig.StartAsync(RelayMode.SelfSigned, o => o with { PublicNames = [RelayRig.PublicName, "127.0.0.1"] }));
+        var endpoint = new RelayEndpoint("127.0.0.1", rig.Port, rig.PinnedFingerprint);
+        var successorCert = NewCertificate();
+        var host = StartHost(name);
+        host.Host.Standby.Prober = new TlsEndpointProber(new RelaySettings { Url = endpoint.ToString() }.Agreed);
+        host.Listen(NewCertificate(), 0);
+        var dataRoot = Path.Combine(root, name + "-successor");
+        var successor = await JoinAsync(host, greece, "Friend", dataRoot, successorCert);
+        var third = await JoinAsync(host, rome, "Third", relaySettings: thirdSettings, relayPrompt: thirdPrompt);
+        Assert.Null(await host.Host.DesignateBackupAsync("Greece", babylon.PlayerKey));
+        await successor.Tap.WaitAsync<StandbyOffered>();
+
+        var room = new RelayListener(endpoint, successorCert, host.GameId, new RelayListenerOptions { MinBackoff = TimeSpan.FromMilliseconds(50), MaxBackoff = TimeSpan.FromMilliseconds(200) });
+        var standby = Track(new StandbyListener(successorCert, null, relay: room));
+        standby.Start();
+        successor.Promotion!.Listener = standby;
+        using (var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(30))) await room.WaitForRoomAsync(timeout.Token);
+        await successor.Session.AcceptStandbyAsync([], 0, HostCertificate.GetFingerprint(successorCert), RelayRoutes.Of(endpoint, room.Room!));
+        await WaitUntilAsync(() => host.Host.Standby.State == StandbyStates.Ready, "the standby never became ready through the relay");
+        await third.Tap.WaitAsync<SuccessorChanged>(it => it.Successor.Successor?.Relay != null);
+        return new RelayScene(host, successor, third, rig, endpoint, room, standby);
+    }
+
+    [Fact]
+    public async Task GracefulHandoff_ToASuccessorOnlyReachableThroughTheRelay_ReconnectsEveryClientWithTheSameKeys()
+    {
+        // Rome has the relay configured (a friend group on one relay), so nothing is asked.
+        var asked = 0;
+        var romeSettings = new RelaySettings();
+        var scene = await ReadyViaRelayAsync("r14", romeSettings, _ => { asked++; return Task.FromResult(true); });
+        var (host, successor, third) = (scene.Host, scene.Successor, scene.Third);
+        romeSettings.Url = scene.Endpoint.ToString();
+        var announced = host.Host.Standby.Announcement(0, []).Successor!;
+        Assert.Empty(announced.Endpoints);
+        Assert.Equal(RelayRoutes.Of(scene.Endpoint, scene.StandbyRoom.Room!), announced.Relay);
+        Assert.Equal(announced.Relay, host.Host.Standby.AnnouncementForJoin(0, [])!.Successor!.Relay); // a late joiner is told the same
+
+        await PlayTurnsAsync(host, 2);
+        var (oldSeq, oldHash) = await StateAsync(host);
+        await WaitUntilAsync(() => successor.Session.StandbyHaveSeq >= oldSeq, "the standby copy never caught up");
+
+        Assert.Null(await host.HandOffAndStopAsync(babylon.PlayerKey, TimeSpan.FromSeconds(15)));
+
+        var handed = await third.Tap.WaitAsync<HostHandedOff>();
+        Assert.Equal((announced.KeyId, announced.Fingerprint, announced.Relay), (handed.Handoff.Successor.KeyId, handed.Handoff.Successor.Fingerprint, handed.Handoff.Successor.Relay));
+        Assert.Empty(handed.Handoff.Successor.Endpoints);
+        await successor.Tap.WaitAsync<HostChanged>(it => it.Epoch == 1);
+        await third.Tap.WaitAsync<HostChanged>(it => it.Epoch == 1);
+        Assert.DoesNotContain(third.Tap.All(), it => it is HostClosed);
+
+        // The promoted host answers in the room the clients were told: the standby's registration, adopted.
+        var promoted = Track(successor.Promotion!.Host!);
+        Assert.Same(scene.StandbyRoom, promoted.Relay);
+        Assert.Null(scene.Standby.Relay);
+        Assert.Equal(announced.Relay!.Room, RelayProtocol.FormatRoom(RelayProtocol.NormalizeRoom(promoted.Relay!.Room)!));
+        Assert.Equal(1, promoted.Host.Store is FileGameStore store ? store.ReadMeta().HostEpoch : -1);
+        var (newSeq, newHash) = await StateAsync(promoted);
+        Assert.Equal((oldSeq, oldHash), (newSeq, newHash));
+
+        // Same keys, same seats, no prompt of any kind: Rome came through the relay, the successor through its own loopback.
+        Assert.Equal(0, successor.Prompts + third.Prompts);
+        Assert.Equal(0, asked);
+        foreach (var (seat, civ) in new[] { (successor, "Greece"), (third, "Rome") })
+        {
+            await WaitUntilAsync(() => promoted.Host.Sessions.Values.Any(it => it.BoundCivId == civ && it.PreviousSnapshot != null && seat.Session.Game.ViewHash == it.PreviousSnapshot.ViewHash && seat.Session.Game.Seq == oldSeq), $"{civ} did not resume on the new host");
+            Assert.Contains(promoted.Host.Sessions.Values, it => it.BoundCivId == civ && it.PlayerKeyId == (civ == "Greece" ? greece.PlayerKey : rome.PlayerKey));
+            Assert.Contains(1, seat.PersistedEpochs);
+        }
+        Assert.Contains(third.PersistedProofs, it => it.Epoch == 1 && it.KeyId == greece.PlayerKey);
+        Assert.True(third.Known.Pins.ContainsKey(KnownHosts.RelayAddress(scene.Endpoint.Key, announced.Relay.Room))); // pinned from the announcement (vouched), never prompted
+
+        await PlayTurnsAsync(promoted, 1);
+        var (afterSeq, _) = await StateAsync(promoted);
+        Assert.True(afterSeq > oldSeq);
+        await WaitUntilAsync(() => third.Session.Game.Seq == afterSeq, "the follower did not get the new host's deltas");
+    }
+
+    [Fact]
+    public async Task Handoff_ThroughARelayThePlayerNeverAgreedTo_AsksOnce_AndRemembersAYes()
+    {
+        var asked = new List<string>();
+        var romeSettings = new RelaySettings();
+        var scene = await ReadyViaRelayAsync("r14-ask", romeSettings, relay => { asked.Add(relay.Key); return Task.FromResult(true); });
+        var (host, successor, third) = (scene.Host, scene.Successor, scene.Third);
+        await PlayTurnsAsync(host, 1);
+        var (seq, _) = await StateAsync(host);
+        await WaitUntilAsync(() => successor.Session.StandbyHaveSeq >= seq, "the standby copy never caught up");
+
+        Assert.Null(await host.HandOffAndStopAsync(babylon.PlayerKey, TimeSpan.FromSeconds(15)));
+
+        await third.Tap.WaitAsync<HostChanged>(it => it.Epoch == 1);
+        Assert.Equal([scene.Endpoint.Key], asked); // the trust prompt path: asked exactly once, before the relay was dialled
+        Assert.Equal([scene.Endpoint.Key], romeSettings.AcceptedRelays);
+        Assert.Null(romeSettings.Url); // never added to her own relay setting
+        var promoted = Track(successor.Promotion!.Host!);
+        await WaitUntilAsync(() => promoted.Host.Sessions.Values.Any(it => it.BoundCivId == "Rome" && it.PlayerKeyId == rome.PlayerKey), "Rome did not resume on the new host");
+        Assert.Equal(0, third.Prompts);
+    }
+
+    [Fact]
+    public async Task Handoff_ThroughARelayThePlayerRefuses_NeverDialsIt_AndThatSeatDoesNotFollow()
+    {
+        var asked = 0;
+        var romeSettings = new RelaySettings();
+        var scene = await ReadyViaRelayAsync("r14-no", romeSettings, _ => { asked++; return Task.FromResult(false); });
+        var (host, successor, third) = (scene.Host, scene.Successor, scene.Third);
+        await PlayTurnsAsync(host, 1);
+        var (seq, _) = await StateAsync(host);
+        await WaitUntilAsync(() => successor.Session.StandbyHaveSeq >= seq, "the standby copy never caught up");
+
+        Assert.Null(await host.HandOffAndStopAsync(babylon.PlayerKey, TimeSpan.FromSeconds(15)));
+
+        await successor.Tap.WaitAsync<HostChanged>(it => it.Epoch == 1);
+        await third.Tap.WaitAsync<SessionEnded>();
+        Assert.True(asked >= 1);
+        Assert.Empty(romeSettings.AcceptedRelays);
+        var promoted = Track(successor.Promotion!.Host!);
+        Assert.DoesNotContain(promoted.Host.Sessions.Values, it => it.PlayerKeyId == rome.PlayerKey); // the relay was never contacted for her
+        Assert.DoesNotContain(third.Tap.All(), it => it is HostChanged);
+    }
+
+    [Fact]
+    public async Task TheHostsProbe_RefusesARelayItNeverAgreedTo_SoTheStandbyNeverBecomesReady()
+    {
+        var rig = Track(await RelayRig.StartAsync(RelayMode.SelfSigned, o => o with { PublicNames = [RelayRig.PublicName, "127.0.0.1"] }));
+        var endpoint = new RelayEndpoint("127.0.0.1", rig.Port, rig.PinnedFingerprint);
+        var successorCert = NewCertificate();
+        var host = StartHost("r14-probe");
+        host.Host.Standby.Prober = new TlsEndpointProber(new RelaySettings().Agreed); // this host agreed to no relay
+        host.Listen(NewCertificate(), 0);
+        var successor = await JoinAsync(host, greece, "Friend", Path.Combine(root, "r14-probe-successor"), successorCert);
+        Assert.Null(await host.Host.DesignateBackupAsync("Greece", babylon.PlayerKey));
+        await successor.Tap.WaitAsync<StandbyOffered>();
+        var room = new RelayListener(endpoint, successorCert, host.GameId);
+        var standby = Track(new StandbyListener(successorCert, null, relay: room));
+        standby.Start();
+        using (var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(30))) await room.WaitForRoomAsync(timeout.Token);
+
+        await successor.Session.AcceptStandbyAsync([], 0, HostCertificate.GetFingerprint(successorCert), RelayRoutes.Of(endpoint, room.Room!));
+        await successor.Tap.WaitAsync<ProtocolError>(it => it.Code == ErrorCodes.ProbeFailed);
+        Assert.Equal(StandbyStates.Unreachable, host.Host.Standby.State);
+        Assert.Null(host.Host.Standby.Announcement(0, []).Successor); // never announced, so no client is ever pointed at that relay
     }
 
     [Fact]
@@ -567,10 +727,14 @@ public sealed class HostHandoffTests : IDisposable
 
     private static SuccessorInfo Info(string keyId, string fingerprint) => new() { KeyId = keyId, Endpoints = ["succ.example:47900"], Fingerprint = fingerprint };
 
+    private static SuccessorInfo RelayInfo(string keyId, string fingerprint, RelayRoute route) => new() { KeyId = keyId, Endpoints = [], Fingerprint = fingerprint, Relay = route };
+
+    private static readonly RelayRoute SuccessorRoom = new() { Relay = "relay.example.org:47830", Room = "K7QF-3MXP4A" };
+
     private static readonly string SuccessorFp = HostKey.Fingerprint(new byte[] { 7, 7, 7 });
 
     /// <summary>A client in a game on a scripted host that announced <c>succ.example:47900</c>; the scripted successor answers redirects.</summary>
-    private async Task<(ClientNetRig Rig, FakeHostConnection Old, EventTap Tap, ClientIdentity Successor, Queue<FakeHostConnection> Redirects)> ClientInGameAsync(bool failingPromotion = false)
+    private async Task<(ClientNetRig Rig, FakeHostConnection Old, EventTap Tap, ClientIdentity Successor, Queue<FakeHostConnection> Redirects)> ClientInGameAsync(bool failingPromotion = false, RelayRoute? announceRelay = null, Func<RelayRoute, Task<bool>>? confirmRelay = null, List<(RelayRoute Route, string Fingerprint)>? relayDials = null)
     {
         var successor = ClientIdentity.Generate();
         toDispose.Add(new Disposer(successor.Dispose));
@@ -594,6 +758,14 @@ public sealed class HostHandoffTests : IDisposable
                     redirects.Enqueue(new FakeHostConnection(host));
                     return Task.FromResult<ITransport>(client);
                 },
+                ConfirmRelay = confirmRelay,
+                ConnectRelay = confirmRelay == null ? null : (route, fingerprint, _) =>
+                {
+                    relayDials?.Add((route, fingerprint));
+                    var (client, host) = InMemoryTransport.CreatePair();
+                    redirects.Enqueue(new FakeHostConnection(host));
+                    return Task.FromResult<ITransport>(client);
+                },
             };
             return built;
         }));
@@ -604,7 +776,7 @@ public sealed class HostHandoffTests : IDisposable
         Assert.True((await join).Joined);
         await old.SendAsync(ClientNetRig.SnapshotMessage(ClientNetRig.Snap(5, 1)));
         await tap.WaitAsync<SnapshotReplaced>();
-        await old.SendAsync(new HostSuccessor { Epoch = 0, Status = StandbyStates.Ready, Roster = [], Successor = Info(successor.PlayerKey, SuccessorFp) });
+        await old.SendAsync(new HostSuccessor { Epoch = 0, Status = StandbyStates.Ready, Roster = [], Successor = announceRelay == null ? Info(successor.PlayerKey, SuccessorFp) : RelayInfo(successor.PlayerKey, SuccessorFp, announceRelay) });
         await tap.WaitAsync<SuccessorChanged>();
         return (rig, old, tap, successor, redirects);
     }
@@ -704,6 +876,105 @@ public sealed class HostHandoffTests : IDisposable
         await old.CloseAsync();
         await tap.WaitAsync<ProtocolError>(it => it.Code == ClientCodes.BadPromotion);
         Assert.Empty(redirects); // never connected to anything claiming to be the new host
+    }
+
+    [Fact]
+    public async Task Client_FollowsAHandoffToARelayOnlySuccessor_ThroughTheRelayHookPinnedToTheAnnouncedFingerprint()
+    {
+        var dials = new List<(RelayRoute Route, string Fingerprint)>();
+        var asked = new List<RelayRoute>();
+        var (rig, old, tap, successor, redirects) = await ClientInGameAsync(announceRelay: SuccessorRoom, confirmRelay: route => { asked.Add(route); return Task.FromResult(true); }, relayDials: dials);
+        var announced = RelayInfo(successor.PlayerKey, SuccessorFp, SuccessorRoom);
+        await old.SendAsync(HandoffTo(announced with { Relay = new RelayRoute { Relay = "RELAY.example.org", Room = "k7qf3mxp4a" } })); // the same room, spelled differently
+        await old.CloseAsync();
+        await tap.WaitAsync<HostHandedOff>();
+
+        var next = await WaitRedirectAsync(redirects);
+        Assert.Equal([SuccessorRoom], asked); // the player was asked about exactly this relay before it was dialled
+        Assert.Equal([(SuccessorRoom, SuccessorFp)], dials);
+        await next.ReceiveAsync<Hello>();
+        var proof = new PromotionProof { GameId = "game-1", Epoch = 1, KeyId = successor.PlayerKey, Fingerprint = SuccessorFp, Signature = successor.SignPromotion("game-1", 1, SuccessorFp) };
+        await next.SendAsync(new Welcome { Protocol = ProtocolVersion.Current, SessionId = "s2", Challenge = "c2", HostKeyFingerprint = SuccessorFp, RequiresPassword = false, Epoch = 1, Promotion = proof });
+        await next.ReceiveAsync<Join>();
+        var auth = await next.ReceiveAsync<Auth>();
+        Assert.True(PlayerKeys.VerifyProof(rig.PlayerKey, SuccessorFp, "s2", "c2", auth.Proof));
+        await next.SendAsync(new JoinOk());
+        var resume = await next.ReceiveAsync<Resume>();
+        Assert.Equal(("game-1", 5L), (resume.GameId, resume.LastSeq));
+        await next.SendAsync(ClientNetRig.SnapshotMessage(ClientNetRig.Snap(5, 1)));
+        Assert.Equal(1, (await tap.WaitAsync<HostChanged>()).Epoch);
+        Assert.Equal(SuccessorRoom, RelayRoutes.Normalize(rig.Session.Successor!.Successor!.Relay));
+    }
+
+    [Fact]
+    public async Task Client_ReachingTheSuccessorsStandbyListenerBeforeItPromoted_RetriesInsteadOfGivingUp()
+    {
+        var (rig, old, tap, successor, redirects) = await ClientInGameAsync();
+        await using var _ = rig;
+        await old.SendAsync(HandoffTo(Info(successor.PlayerKey, SuccessorFp)));
+        await old.CloseAsync();
+        var early = await WaitRedirectAsync(redirects);
+        await early.ReceiveAsync<Hello>();
+        await early.SendAsync(new Welcome { Protocol = ProtocolVersion.Current, SessionId = "standby", Challenge = "", HostKeyFingerprint = SuccessorFp, RequiresPassword = false, Standby = true });
+
+        var next = await WaitRedirectAsync(redirects); // a second attempt, not a refusal
+        await next.ReceiveAsync<Hello>();
+        Assert.DoesNotContain(tap.All(), it => it is JoinRefusedEvent or SessionEnded);
+    }
+
+    [Fact]
+    public async Task Client_WhoDeclinesTheRelayTheSuccessorIsOn_NeverDialsItAndEndsInsteadOfConnecting()
+    {
+        // A "no" and a prompt that fails both mean no.
+        foreach (var throwing in new[] { false, true })
+        {
+            var dials = new List<(RelayRoute Route, string Fingerprint)>();
+            var (rig, old, tap, successor, redirects) = await ClientInGameAsync(announceRelay: SuccessorRoom, confirmRelay: _ => throwing ? throw new InvalidOperationException("prompt failed") : Task.FromResult(false), relayDials: dials);
+            await using var _ = rig;
+            await old.SendAsync(HandoffTo(RelayInfo(successor.PlayerKey, SuccessorFp, SuccessorRoom)));
+            await old.CloseAsync();
+            await tap.WaitAsync<SessionEnded>();
+            Assert.Empty(dials);
+            Assert.Empty(redirects);
+            Assert.DoesNotContain(tap.All(), it => it is HostChanged);
+        }
+    }
+
+    [Fact]
+    public async Task Client_WithoutTheRelayHooks_IgnoresARelayOnlySuccessor_AndAClientWithThemRefusesAnyRouteNobodyAnnounced()
+    {
+        // No hooks wired: the hand-off names nothing this client may dial.
+        var (rig, old, tap, successor, redirects) = await ClientInGameAsync(announceRelay: SuccessorRoom);
+        await using (rig)
+        {
+            await old.SendAsync(HandoffTo(RelayInfo(successor.PlayerKey, SuccessorFp, SuccessorRoom)));
+            await tap.WaitAsync<ProtocolError>(it => it.Code == ErrorCodes.InvalidMessage);
+            Assert.Empty(redirects);
+        }
+
+        var (rig2, old2, tap2, successor2, redirects2) = await ClientInGameAsync(announceRelay: SuccessorRoom, confirmRelay: _ => Task.FromResult(true));
+        await using (rig2)
+        {
+            var announced = RelayInfo(successor2.PlayerKey, SuccessorFp, SuccessorRoom);
+            var bad = new[]
+            {
+                HandoffTo(announced with { Relay = SuccessorRoom with { Room = "K7QF-3MXP4B" } }), // another room
+                HandoffTo(announced with { Relay = SuccessorRoom with { Relay = "evil-relay.example:47830" } }), // another relay
+                HandoffTo(announced with { Relay = new RelayRoute { Relay = "unciv-relay://relay.example.org", Room = "K7QF-3MXP4A" } }), // not a route
+                HandoffTo(announced with { Relay = null }), // neither an address nor a room
+                HandoffTo(announced with { Endpoints = ["evil.example:47900"] }), // an address nobody announced
+            };
+            var seen = 0;
+            foreach (var handoff in bad)
+            {
+                await old2.SendAsync(handoff);
+                seen++;
+                for (var attempt = 0; attempt < 500 && tap2.All().Count(it => it is ProtocolError { Code: ErrorCodes.InvalidMessage }) < seen; attempt++) await Task.Delay(20);
+                Assert.Equal(seen, tap2.All().Count(it => it is ProtocolError { Code: ErrorCodes.InvalidMessage }));
+            }
+            Assert.Empty(redirects2);
+            Assert.DoesNotContain(tap2.All(), it => it is HostHandedOff);
+        }
     }
 
     private static async Task<FakeHostConnection> WaitRedirectAsync(Queue<FakeHostConnection> redirects)

@@ -233,17 +233,29 @@ public sealed class InProcessHost : IAsyncDisposable
     /// <summary>
     /// Starts accepting friends over TLS/TCP (port 0 picks a free one). Remote players must present a key bound in <c>game.json</c>.
     /// T338: with <paramref name="relayEndpoint"/> the host also dials out to that relay and registers a room, so friends reach it with no open port; the local port stays as it is.
+    /// T354: <paramref name="adoptRelay"/> takes over a registration that already exists (the promoted successor's standby room, see <see cref="StandbyListener.DetachRelay"/>); it must have been created with this game's id and certificate.
     /// </summary>
-    public void Listen(X509Certificate2 certificate, int port = 47821, RelayEndpoint? relayEndpoint = null, RelayListenerOptions? relayOptions = null, Action<string>? relayLog = null)
+    public void Listen(X509Certificate2 certificate, int port = 47821, RelayEndpoint? relayEndpoint = null, RelayListenerOptions? relayOptions = null, Action<string>? relayLog = null, RelayListener? adoptRelay = null)
     {
         if (listener != null) throw new InvalidOperationException("Already listening");
+        if (adoptRelay != null && relayEndpoint != null) throw new ArgumentException("Give a relay to adopt or a relay to dial, not both");
         fingerprint = HostCertificate.GetFingerprint(certificate);
         store.WriteMeta(store.ReadMeta() with { HostFingerprint = fingerprint });
         listener = new TcpTlsListener(certificate, port, options.HandshakeTimeout);
         listener.Start();
         background.Add(RunAcceptLoopAsync(listener, cts.Token));
-        if (relayEndpoint != null)
+        if (adoptRelay != null)
         {
+            // T354: the promoted successor keeps the unlisted room it held as a standby (the address the clients were told), now answering the game.
+            relay = adoptRelay;
+            background.Add(RunRelayAcceptLoopAsync(relay, cts.Token));
+            relay.Start();
+        }
+        else if (relayEndpoint != null)
+        {
+            // T354: this host's own relay is one it agreed to by configuring it, so a standby probe may go through it; any other relay stays refused until the UI layer installs a prober that knows the player's agreements.
+            if (host.Standby.Prober is TlsEndpointProber)
+                host.Standby.Prober = new TlsEndpointProber(named => string.Equals(named.Key, relayEndpoint.Key, StringComparison.OrdinalIgnoreCase) ? new RelayDialPlan(relayEndpoint, relayOptions?.Dial ?? new RelayDialOptions()) : null);
             relay = new RelayListener(relayEndpoint, certificate, store.GameId, relayOptions, relayLog);
             background.Add(RunRelayAcceptLoopAsync(relay, cts.Token));
             relay.Start();

@@ -36,6 +36,9 @@ public static class RelayCodes
     public const string HostTimeout = "relay-host-timeout";
     public const string Failed = "relay-failed";
 
+    /// <summary>T354: the player did not agree to connect through a relay a hand-off named (nothing was dialled).</summary>
+    public const string Declined = "relay-declined";
+
     /// <summary>T339: the relay runs with <c>--listing off</c>: it has no directory.</summary>
     public const string ListingOff = "relay-listing-off";
 
