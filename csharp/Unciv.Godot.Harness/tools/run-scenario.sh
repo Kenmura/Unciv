@@ -55,7 +55,9 @@ trap 'exit 143' TERM
 run() {
     local display="" status
     display_file="$(mktemp)"
-    Xvfb -displayfd 3 -nolisten tcp -screen 0 1280x720x24 3>"$display_file" 2>/dev/null &
+    # T381: the X screen must be at least as large as the biggest scenario window (phone-menus: 2400x1080). On a touch profile the client takes its
+    # safe-area insets from the display; a window larger than the screen read as a 1120 px inset and the menus filled only the top-left 1280x720 of it.
+    Xvfb -displayfd 3 -nolisten tcp -screen 0 2560x1440x24 3>"$display_file" 2>/dev/null &
     xvfb_pid=$!
     for _ in $(seq 100); do
         display="$(head -n1 "$display_file")"
