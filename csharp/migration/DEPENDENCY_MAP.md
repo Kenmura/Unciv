@@ -112,7 +112,8 @@ flowchart TD
 Unlinked tickets (no open dependency in either direction), by state:
 
 - ready: T355 T356 T357
-- in progress: T300 T301 T303 T389 T390
+- in progress: T300 T301 T303 T389
+- in review: T390
 - blocked: T290
 - waiting: T313 T314 T317 T318 T321 T326 T328 T329 T330 T331 T332 T333 T335 T341 T342 T343 T344 T345 T346 T348 T349 T350 T351 T352 T353 T362 T363
 
@@ -201,4 +202,4 @@ xychart-beta
 | T362 | Available (waiting on ) | T334 | 0 | Two real client processes host and join on the real GPU (manual two-profile smoke) |
 | T363 | Available (waiting on ) | none | 0 | QuickStart and harness scenario games still start on Vanilla/Gods & Kings: move them to BNW and regenerate goldens |
 | T389 | In-Progress [Claude] | none | 0 | Unit legibility pass 5: plain horses from the front, camel neck, rider size, baked boosts |
-| T390 | In-Progress [Claude] | none | 0 | Harness and agent scratch output fills /tmp (tmpfs quota hit twice): clean up after runs and cap sizes |
+| T390 | Needs-Review [Claude] | none | 0 | Harness and agent scratch output fills /tmp (tmpfs quota hit twice): clean up after runs and cap sizes |
