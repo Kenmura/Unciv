@@ -341,7 +341,7 @@ public sealed record RelayOptions
             if (!raw.TryGetValue(name, out var v)) return null;
             var (_, min, max) = Numbers.First(n => n.Name == name);
             if (!long.TryParse(v[^1], NumberStyles.None, CultureInfo.InvariantCulture, out var value) || value < min || value > max)
-                throw new RelayUsageException($"--{name} must be a whole number from {min.ToString(CultureInfo.InvariantCulture)} to {max.ToString(CultureInfo.InvariantCulture)}, got '{v[^1]}'");
+                throw new RelayUsageException($"--{name} (or {EnvName(name)}) must be a whole number from {min.ToString(CultureInfo.InvariantCulture)} to {max.ToString(CultureInfo.InvariantCulture)}, got '{v[^1]}'");
             return value;
         }
         int Int(string name, int fallback) => (int?)Number(name) ?? fallback;

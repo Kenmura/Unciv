@@ -163,7 +163,7 @@ Why these matter:
   (see Troubleshooting). Several names are allowed, comma-separated.
 - `PROXY_PROTOCOL` and `TRUSTED_PROXY` (setup A): nginx tells the relay each player's real address in a PROXY protocol header, so that limits and bans apply per player and not to nginx.
   The relay accepts that header only from `TRUSTED_PROXY` addresses; the shipped value is the private networks Docker uses for its bridge, which is where nginx's connection appears to come from.
-  If your logs show every player with the same address `172.x.x.x`, or `proxy` errors, see Troubleshooting.
+  The shipped value is only safe while `RELAY_TUNNEL_PUBLISH` stays on `127.0.0.1` (setup A): if you publish the tunnel on `0.0.0.0` together with `PROXY_PROTOCOL`, anyone with a private source address could forge a client address. If your logs show every player with the same address `172.x.x.x`, or `proxy` errors, see Troubleshooting.
 - `RELAY_TUNNEL_PUBLISH` is `host-address:host-port`; the container always listens on 47830 inside. `[::]:47830` also publishes IPv6.
 
 Optional but useful: `UNCIV_RELAY_NAME`, `UNCIV_RELAY_MOTD`, `UNCIV_RELAY_LISTING` (`open`, `allowlist` or `off`: the public game list), the limits (`UNCIV_RELAY_MAX_ROOMS`, ...), and
@@ -182,7 +182,7 @@ docker compose ps
 docker compose logs relay
 ```
 
-`ps` shows the container `Up ... (healthy)` after about 15 seconds. The log shows `LISTENING tunnel 47830` and `LISTENING http 47831` (and, in setup C, `RELAY-FINGERPRINT ...`).
+`ps` shows the container `Up ... (healthy)` after about 40 seconds (`starting` until then). The log shows `LISTENING tunnel 47830` and `LISTENING http 47831` (and, in setup C, `RELAY-FINGERPRINT ...`).
 If the container keeps restarting, the log says why in plain words (for example `choose a TLS mode`, or a typo in a variable): fix `.env` and run `docker compose up -d` again.
 
 Quick local check (works in every setup):
@@ -354,12 +354,13 @@ Compare `.env.example` with your `.env` after an update (`diff .env.example .env
 The restart tells every host to reconnect (they do, with backoff, and take their room back); players in a running game see a short pause.
 
 **Backups.** Everything that matters is the data volume `unciv-relay_relay-data`: `relay-secret` (keeps room codes stable across restarts: back it up), `relay.pfx` (setup C: the fingerprint
-players pinned), and your list files. Your `.env` is the rest. To make a backup file in the current folder and to restore it:
+players pinned), and your list files. Your `.env` is the rest. To make a backup file in `~/unciv-relay-backups` (outside the git clone: the file holds the relay's secret and private key, so keep it private and never commit it) and to restore it:
 
 ```
-docker run --rm -v unciv-relay_relay-data:/data -v "$PWD":/backup alpine tar czf /backup/relay-data-backup.tgz -C /data .
+mkdir -p ~/unciv-relay-backups
+docker run --rm -v unciv-relay_relay-data:/data -v ~/unciv-relay-backups:/backup:z alpine tar czf /backup/relay-data-backup.tgz -C /data .
 docker compose stop
-docker run --rm -v unciv-relay_relay-data:/data -v "$PWD":/backup alpine sh -c 'rm -rf /data/* && tar xzf /backup/relay-data-backup.tgz -C /data && chown -R 10001:10001 /data'
+docker run --rm -v unciv-relay_relay-data:/data -v ~/unciv-relay-backups:/backup:z alpine sh -c 'rm -rf /data/* && tar xzf /backup/relay-data-backup.tgz -C /data && chown -R 10001:10001 /data'
 docker compose start
 ```
 

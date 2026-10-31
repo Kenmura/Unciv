@@ -2,3 +2,6 @@
 .env
 certs/*
 !certs/.gitkeep
+# backups hold relay-secret and the self-signed private key
+*.tgz
+*.tar.gz
