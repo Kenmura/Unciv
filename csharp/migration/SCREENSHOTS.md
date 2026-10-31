@@ -97,6 +97,7 @@
 - [T299 (ticket not Done or unknown)](#t299-ticket-not-done-or-unknown)
 - [T312 (ticket not Done or unknown)](#t312-ticket-not-done-or-unknown)
 - [T334 (ticket not Done or unknown)](#t334-ticket-not-done-or-unknown)
+- [T339 (ticket not Done or unknown)](#t339-ticket-not-done-or-unknown)
 - [Missing screenshots](#missing-screenshots)
 <!-- /toc -->
 
@@ -209,9 +210,9 @@ Join screen (address or invite, password, known hosts), fingerprint prompt, host
 
 Scenario `join`.
 
-![The join screen as it opens: an address-or-invite field, a password field, Join and Back; no known hosts yet.](../Unciv.Godot.Harness/golden/join/empty.png)
+![The join screen as it opens: an address-or-invite field, a password field, Join and Back; no known hosts yet. T339: a Browse public games button opens the relay's game list.](../Unciv.Godot.Harness/golden/join/empty.png)
 
-*The join screen as it opens: an address-or-invite field, a password field, Join and Back; no known hosts yet.* (`join/empty.png`)
+*The join screen as it opens: an address-or-invite field, a password field, Join and Back; no known hosts yet. T339: a Browse public games button opens the relay's game list.* (`join/empty.png`)
 
 ![First time at an address: the host's key fingerprint is shown with the advice to continue only if the host told you that fingerprint; nothing has been sent yet.](../Unciv.Godot.Harness/golden/join/trust.png)
 
@@ -753,9 +754,9 @@ Host screen: game, map, rules and network settings, port-forward hint, Start hos
 
 Scenario `host-screen`.
 
-![Network tab: turn timer (5 min chosen), the scale-with-the-game checkbox (on) and its shortest turn (1 min chosen), password and port.](../Unciv.Godot.Harness/golden/host-screen/network.png)
+![Network tab: turn timer (5 min chosen), the scale-with-the-game checkbox (on) and its shortest turn (1 min chosen), password and port. T339: the List this game publicly option is off and disabled, with the reason, while no relay is set.](../Unciv.Godot.Harness/golden/host-screen/network.png)
 
-*Network tab: turn timer (5 min chosen), the scale-with-the-game checkbox (on) and its shortest turn (1 min chosen), password and port.* (`host-screen/network.png`)
+*Network tab: turn timer (5 min chosen), the scale-with-the-game checkbox (on) and its shortest turn (1 min chosen), password and port. T339: the List this game publicly option is off and disabled, with the reason, while no relay is set.* (`host-screen/network.png`)
 
 ![Network tab scrolled down: the addresses of this computer (the internet address chosen) and the port-forward hint.](../Unciv.Godot.Harness/golden/host-screen/network-address.png)
 
@@ -1750,9 +1751,9 @@ Host screen dynamic turn timer: checkbox and shortest-turn choice under the turn
 
 Scenario `host-screen`.
 
-![Turn timer 5 min with 'Scale each turn's time with the game' checked and the shortest turn set to 1 min.](../Unciv.Godot.Harness/golden/host-screen/network.png)
+![Turn timer 5 min with 'Scale each turn's time with the game' checked and the shortest turn set to 1 min. T339: the List this game publicly option is off and disabled, with the reason, while no relay is set.](../Unciv.Godot.Harness/golden/host-screen/network.png)
 
-*Turn timer 5 min with 'Scale each turn's time with the game' checked and the shortest turn set to 1 min.* (`host-screen/network.png`)
+*Turn timer 5 min with 'Scale each turn's time with the game' checked and the shortest turn set to 1 min. T339: the List this game publicly option is off and disabled, with the reason, while no relay is set.* (`host-screen/network.png`)
 
 ## T256 (ticket not Done or unknown)
 
@@ -1997,6 +1998,52 @@ Scenario `two-instances`.
 ![Main menu with no profile (unchanged behaviour): no profile line.](../Unciv.Godot.Harness/golden/two-instances/menu-default.png)
 
 *Main menu with no profile (unchanged behaviour): no profile line.* (`two-instances/menu-default.png`)
+
+## T339 (ticket not Done or unknown)
+
+Browse games: the public game list of the configured relay, verified, with search, filters, a detail pane, a join dialog and a screen for each state (no relay, offline, too old, error, empty, no match).
+
+Scenario `browse`.
+
+![No relay address is set (there is no default relay): says so and offers Open Options; nothing was sent.](../Unciv.Godot.Harness/golden/browse/no-relay.png)
+
+*No relay address is set (there is no default relay): says so and offers Open Options; nothing was sent.* (`browse/no-relay.png`)
+
+![The relay could not be reached: points at the relay address and the internet connection; Refresh tries again.](../Unciv.Godot.Harness/golden/browse/offline.png)
+
+*The relay could not be reached: points at the relay address and the internet connection; Refresh tries again.* (`browse/offline.png`)
+
+![The relay is older than this game and cannot show its list.](../Unciv.Godot.Harness/golden/browse/too-old.png)
+
+*The relay is older than this game and cannot show its list.* (`browse/too-old.png`)
+
+![The relay answered something that is not its protocol: a plain error sentence and no list.](../Unciv.Godot.Harness/golden/browse/error.png)
+
+*The relay answered something that is not its protocol: a plain error sentence and no list.* (`browse/error.png`)
+
+![The relay is fine but nobody lists a game: says how to list one.](../Unciv.Godot.Harness/golden/browse/empty.png)
+
+*The relay is fine but nobody lists a game: says how to list one.* (`browse/empty.png`)
+
+![Five listed games with name, host, password flag, rules, speed and players/slots; a game on another protocol is greyed out with the reason, and Join is off until a game is picked.](../Unciv.Godot.Harness/golden/browse/list.png)
+
+*Five listed games with name, host, password flag, rules, speed and players/slots; a game on another protocol is greyed out with the reason, and Join is off until a game is picked.* (`browse/list.png`)
+
+![A game with a mod this machine lacks: the details name the mod, say joining offers to download it, label the player counts as reported by the host and show the host key as first time seen.](../Unciv.Godot.Harness/golden/browse/selected-mod.png)
+
+*A game with a mod this machine lacks: the details name the mod, say joining offers to download it, label the player counts as reported by the host and show the host key as first time seen.* (`browse/selected-mod.png`)
+
+![The search matches nothing: told apart from an empty relay.](../Unciv.Godot.Harness/golden/browse/no-match.png)
+
+*The search matches nothing: told apart from an empty relay.* (`browse/no-match.png`)
+
+![Join dialog for a host not met before: says the name and key come from whoever listed the game and that joining trusts the key from now on.](../Unciv.Godot.Harness/golden/browse/join-stranger.png)
+
+*Join dialog for a host not met before: says the name and key come from whoever listed the game and that joining trusts the key from now on.* (`browse/join-stranger.png`)
+
+![Join dialog for a password game from a known host: asks for the password and refuses an empty one.](../Unciv.Godot.Harness/golden/browse/join-password.png)
+
+*Join dialog for a password game from a known host: asks for the password and refuses an empty one.* (`browse/join-password.png`)
 
 ## Missing screenshots
 

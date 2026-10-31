@@ -208,6 +208,25 @@ public sealed class LayoutMatrixScenario : Scenario
         }))));
         steps.AddRange(check(at, "join", () => M().Top.NotNull()));
         steps.Add(new Act("back", () => M().Pop()));
+        // T339: the browse screen with a list of games, the longest names the rules allow, and its join dialog
+        steps.Add(new Act("open browse", () => M().Push(new BrowseScreen(T(), new BrowseScreenEnvironment
+        {
+            Relay = () => new Unciv.Net.Relay.RelayEndpoint("relay.example.org", 47830),
+            Fetch = (_, _, _) => Task.FromResult(new DirectoryResult(
+                new RelayInfo("Community relay with a rather long name", "admin@example.org", "open", 7, 3),
+                [
+                    BrowseScenario.Game("K7M2-9XQ4AB", BrowseScenario.StrangerKey, new string('W', 40), new string('H', 32), 1, 4, mods: ["Fun Mod"], password: true),
+                    BrowseScenario.Game("22AA-33BBCC", BrowseScenario.FriendKey, "Weekly league", "Bob", 2, 6),
+                    BrowseScenario.Game("66GG-77HHJJ", BrowseScenario.FarKey, "From the future", "Dave", 1, 4, proto: Unciv.Net.ProtocolVersion.Current + 1),
+                ], 0, false, 42)),
+            Context = () => new BrowseContext(Unciv.Net.ProtocolVersion.Current, [BrowseScenario.Vanilla], [], (_, _) => "hash", _ => false),
+        }))));
+        steps.Add(new WaitUntil("the list is shown", () => M().Top is BrowseScreen { Status: BrowseStatus.Ready }, 600));
+        steps.Add(new Act("pick the first game", () => ((BrowseScreen)M().Top.NotNull()).RowButton(0)?.EmitSignal(BaseButton.SignalName.Pressed)));
+        steps.AddRange(check(at, "browse", () => M().Top.NotNull()));
+        steps.Add(new Act("open the join dialog", () => ((BrowseScreen)M().Top.NotNull()).OpenJoinDialog()));
+        steps.AddRange(check(at, "browse join dialog", () => ((BrowseScreen)M().Top.NotNull()).Dialog.NotNull()));
+        steps.Add(new Act("back", () => M().Pop()));
         steps.Add(new Act("open options", () => M().Push(new OptionsScreen(run.Settings, T(), null, ["Retro", "Neon"]))));
         steps.AddRange(check(at, "options", () => M().Top.NotNull()));
         // T322: on every page the rows keep within the form width cap (a label next to its control, not across a 4K window)

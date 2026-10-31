@@ -9,6 +9,7 @@ using Unciv.GodotClient.Localization;
 using Unciv.GodotClient.Ui;
 using Unciv.Models.Translations;
 using Unciv.Net.Identity;
+using Unciv.Net.Lobby;
 using Unciv.Net.Relay;
 using TabBar = Unciv.GodotClient.Ui.TabBar;
 
@@ -34,6 +35,9 @@ public sealed class HostScreenEnvironment
 
     /// <summary>T338: the relay to host through (null: not set or switched off, hosting is direct only).</summary>
     public Func<RelayEndpoint?> Relay { get; init; } = () => null;
+
+    /// <summary>T339: true when a relay address is set at all (even if hosting through it is switched off); it only picks which sentence explains a disabled "List this game publicly".</summary>
+    public Func<bool> RelaySet { get; init; } = () => false;
 
     public Func<IReadOnlyList<LocalAddress>> Addresses { get; init; } = LocalAddresses.Enumerate;
 }
@@ -65,6 +69,8 @@ public partial class HostScreen : Control
     private readonly Label hostingStatus = new() { Name = "HostingStatus", AutowrapMode = TextServer.AutowrapMode.WordSmart };
     private readonly Label addressNote = new() { Name = "AddressNote", AutowrapMode = TextServer.AutowrapMode.WordSmart };
     private readonly VBoxContainer hostingAddresses = new() { Name = "HostingAddresses" };
+    private readonly Label listingStatus = new() { Name = "ListingStatus", AutowrapMode = TextServer.AutowrapMode.WordSmart };
+    private LobbySettings? hostedSettings;
     private HostedGameInfo? resumedInfo;
     private ClientIdentity? identity;
     private X509Certificate2? certificate;
@@ -196,6 +202,7 @@ public partial class HostScreen : Control
         if (signature == slotSignature) return;
         slotSignature = signature;
         FillSlots();
+        UpdateListing();
     }
 
     public override void _ExitTree()
@@ -257,6 +264,7 @@ public partial class HostScreen : Control
             SetMessage("Opening the lobby ...", false);
             await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
             var started = await HostingSession.StartLobbyAsync(settings, Identity(), Certificate(), env.DisplayName, Form.Port, env.Relay());
+            hostedSettings = settings;
             ShowHosting(started, null);
         }
         catch (Exception e) when (e is not OutOfMemoryException)
@@ -306,6 +314,7 @@ public partial class HostScreen : Control
         hostingScroll.Visible = false;
         settingsColumn.Visible = true;
         resumedInfo = null;
+        hostedSettings = null;
         slotSignature = "";
         Refresh();
         SetMessage("Hosting stopped.", false);
@@ -332,6 +341,7 @@ public partial class HostScreen : Control
         hostingStatus.Text = $"{"Friends connect to port".TrText()} {started.Port.ToString(CultureInfo.InvariantCulture)}. {"Host key".TrText()}: {started.Fingerprint}";
         RefreshInvite();
         FillSlots();
+        UpdateListing();
         SetMessage("", false);
         HostingStarted?.Invoke(started);
     }
@@ -361,11 +371,43 @@ public partial class HostScreen : Control
         CopyRelayInviteButton.Pressed += CopyRelayInvite;
         RelayInviteBox.AddChild(CopyRelayInviteButton);
         hostingPanel.AddChild(RelayInviteBox);
+        ListedCheck = new CheckBox { Name = "ListedCheck", Text = "List this game publicly".Tr() };
+        ListedCheck.Toggled += on =>
+        {
+            Form.ListPublicly = on;
+            UpdateListing();
+        };
+        hostingPanel.AddChild(ListedCheck);
+        hostingPanel.AddChild(listingStatus);
         hostingPanel.AddChild(new Label { Text = "Players:".Tr() });
         hostingPanel.AddChild(slotsBox);
         StopButton = new Button { Text = "Stop hosting".Tr(), Name = "StopHostingButton" };
         StopButton.Pressed += () => _ = StopAsync();
         hostingPanel.AddChild(StopButton);
+    }
+
+    /// <summary>T339: the "List this game publicly" box of the hosting panel (live: ticking it publishes, unticking removes the listing).</summary>
+    public CheckBox ListedCheck { get; private set; } = null!; // JUSTIFY: T339 assigned by BuildHostingPanel, which the constructor runs
+
+    /// <summary>T339: the same box on the Network tab (before hosting starts).</summary>
+    public CheckBox ListPubliclyCheck { get; private set; } = null!; // JUSTIFY: T339 assigned by FillNetwork, which the constructor runs
+
+    /// <summary>T339: what the screen says about the public listing while hosting (empty when there is no relay to list on).</summary>
+    public string ListingText => listingStatus.Text;
+
+    private bool CanList => env.Relay() != null;
+
+    // T339: publishes the lobby on the relay's directory (or removes it). Called on every change of the seats; the listener coalesces to one message per 5 s.
+    private void UpdateListing()
+    {
+        bool relayed = Session is { Lobby: not null, Relay: not null };
+        ListedCheck.Visible = relayed;
+        listingStatus.Visible = relayed;
+        if (!relayed || Session is not { } session || hostedSettings == null) return;
+        ListedCheck.SetPressedNoSignal(Form.ListPublicly);
+        var listing = Form.ListPublicly ? ListingFactory.From(hostedSettings, env.DisplayName, session.Slots) : null;
+        session.SetListing(listing);
+        listingStatus.Text = (listing != null ? "Listed on the relay while you host. Untick to remove it." : Form.ListPublicly ? "This game's name cannot be listed." : BrowseModel.ListingHelp(true, true)).Tr();
     }
 
     public VBoxContainer RelayInviteBox { get; private set; } = null!; // JUSTIFY: T338 assigned by BuildHostingPanel, which the constructor runs
@@ -634,6 +676,16 @@ public partial class HostScreen : Control
             Form.Port = HostSettingsForm.TryParsePort(value, out int port, out _) ? port : -1;
         });
         PublicAddressField = AddField(networkPage, "Public address or name (optional, used in the invite)", "PublicAddressField", Form.PublicAddress, "e.g. 203.0.113.7", value => Form.PublicAddress = value);
+
+        if (!CanList) Form.ListPublicly = false; // nothing to list on
+        ListPubliclyCheck = new CheckBox { Name = "ListPubliclyCheck", Text = "List this game publicly".Tr(), ButtonPressed = Form.ListPublicly && CanList, Disabled = !CanList };
+        ListPubliclyCheck.Toggled += on =>
+        {
+            Form.ListPublicly = on;
+            Change(null);
+        };
+        networkPage.AddChild(ListPubliclyCheck);
+        networkPage.AddChild(new Label { Name = "ListingHelp", Text = BrowseModel.ListingHelp(env.RelaySet(), CanList).Tr(), AutowrapMode = TextServer.AutowrapMode.WordSmart }.FitMin(theme, 420));
 
         AddHeading(networkPage, "Addresses of this computer");
         if (Addresses.Count == 0)

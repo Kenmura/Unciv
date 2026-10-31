@@ -143,7 +143,9 @@ public sealed class HostScreenScenario : Scenario
                     Type(screen.PasswordField, "hunter2");
                     Type(screen.PortField, Port.ToString(System.Globalization.CultureInfo.InvariantCulture));
                 }),
-                new Capture("network", "Network tab: turn timer, scaling with the game and its shortest turn, password and port"),
+                new AssertQuery("T339: listing the game publicly is off, disabled with its reason while no relay is set", () =>
+                    !screen.ListPubliclyCheck.ButtonPressed && screen.ListPubliclyCheck.Disabled && !screen.Form.ListPublicly && screen.FindChild("ListingHelp", true, false) is Label help && help.Text.Contains("set a relay address", StringComparison.Ordinal)),
+                new Capture("network", "Network tab: turn timer, scaling with the game and its shortest turn, password and port, and the (disabled, off) option to list the game publicly with the reason it is disabled"),
                 new Act("scroll to the addresses", () => screen.Reveal(screen.AddressButton(Wan).NotNull())),
                 new Click(() => Centre(() => screen.AddressButton(Wan))),
                 new AssertQuery("the settings reached the form and build the lobby settings", () =>

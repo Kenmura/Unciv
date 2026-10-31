@@ -109,6 +109,9 @@ public partial class JoinScreen : Control
         buttons.AddChild(CancelButton);
         buttons.AddChild(BackButton);
         formPanel.AddChild(buttons);
+        BrowseButton = new Button { Text = "Browse public games".Tr(), Name = "BrowseButton" };
+        BrowseButton.Pressed += () => BrowseRequested?.Invoke();
+        formPanel.AddChild(BrowseButton);
         formPanel.AddChild(new Label { Name = "SecondInstanceHelp", Text = UserProfile.SecondInstanceHelp.Tr(), AutowrapMode = TextServer.AutowrapMode.WordSmart });
         hostsTitle.Text = "Known hosts".Tr();
         formPanel.AddChild(hostsTitle);
@@ -161,6 +164,9 @@ public partial class JoinScreen : Control
 
     public Button BackButton { get; }
 
+    /// <summary>T339: opens the Browse games screen (the public list of the configured relay).</summary>
+    public Button BrowseButton { get; }
+
     public Button TrustButton { get; }
 
     public Button DistrustButton { get; }
@@ -200,6 +206,9 @@ public partial class JoinScreen : Control
     /// <summary>Raised when the player leaves the screen.</summary>
     public event Action? BackRequested;
 
+    /// <summary>T339: raised by the Browse public games button.</summary>
+    public event Action? BrowseRequested;
+
     /// <summary>Raised when the host admitted this player; the receiver owns the session from here (lobby screen, leave, dispose).</summary>
     public event Action<ClientSession>? Joined;
 
@@ -232,6 +241,15 @@ public partial class JoinScreen : Control
             row.AddChild(forget);
             hostsBox.AddChild(row);
         }
+    }
+
+    /// <summary>T339: starts the join the Browse games screen prepared. <paramref name="invite"/> is a relay invite that carries the listed host's key, so the game's own TLS is checked against it (no first-use prompt: the player already agreed in the browser's dialog).</summary>
+    public void Begin(string invite, string? password)
+    {
+        if (busy) return;
+        AddressField.Text = invite;
+        PasswordField.Text = password ?? "";
+        Join();
     }
 
     /// <summary>Starts the join with what is typed. Does nothing while an attempt runs.</summary>

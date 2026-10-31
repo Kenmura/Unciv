@@ -36,6 +36,12 @@ public static class RelayCodes
     public const string HostTimeout = "relay-host-timeout";
     public const string Failed = "relay-failed";
 
+    /// <summary>T339: the relay runs with <c>--listing off</c>: it has no directory.</summary>
+    public const string ListingOff = "relay-listing-off";
+
+    /// <summary>T339: the relay accepted the connection but did not answer a directory request in time.</summary>
+    public const string NoAnswer = "relay-no-answer";
+
     /// <summary>Maps the relay's wire code to ours.</summary>
     public static string FromWire(string? wire) => wire switch
     {
@@ -164,6 +170,27 @@ public sealed class RelayChannel : IAsyncDisposable
     }
 
     public Task<JsonObject?> ReadAsync(CancellationToken cancellationToken) => ReadLineAsync(Stream, cancellationToken);
+
+    /// <summary>
+    /// T339: the one reply line of a directory request (op <c>get</c>), up to <paramref name="maxBytes"/> (512 KiB by design/RELAY.md section 3). The relay closes the connection after it, so reading in chunks is fine.
+    /// Null when the stream ended first.
+    /// </summary>
+    public async Task<JsonObject?> ReadLargeAsync(int maxBytes, CancellationToken cancellationToken)
+    {
+        var bytes = new MemoryStream();
+        var buffer = new byte[16 * 1024];
+        while (true)
+        {
+            var read = await Stream.ReadAsync(buffer, cancellationToken).ConfigureAwait(false);
+            if (read == 0) return null;
+            var end = Array.IndexOf(buffer, (byte)'\n', 0, read);
+            bytes.Write(buffer, 0, end < 0 ? read : end);
+            if (bytes.Length > maxBytes) throw new RelayException(RelayCodes.Failed, "The relay sent an over-long reply.");
+            if (end >= 0) break;
+        }
+        try { return JsonNode.Parse(bytes.GetBuffer().AsSpan(0, (int)bytes.Length)) as JsonObject ?? throw new RelayException(RelayCodes.Failed, "The relay sent something that is not a JSON object."); }
+        catch (JsonException e) { throw new RelayException(RelayCodes.Failed, "The relay sent something that is not JSON.", inner: e); }
+    }
 
     public async Task SendAsync(JsonObject message, CancellationToken cancellationToken)
     {

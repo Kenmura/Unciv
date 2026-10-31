@@ -114,6 +114,7 @@ public partial class App : Node
             Clock = WallClockMillis,
             SetClipboard = DisplayServer.ClipboardSet,
             Relay = () => RelaySettings.Load(UserPaths.Relay, UserPaths.RelayDefault).HostThroughRelay ? RelaySettings.Load(UserPaths.Relay, UserPaths.RelayDefault).Endpoint : null,
+            RelaySet = () => RelaySettings.Load(UserPaths.Relay, UserPaths.RelayDefault).Endpoint != null,
         };
         var screen = new HostScreen(theme, new HostSettingsForm(NewGameForm.FromRulesetCache()), environment);
         screen.BackRequested += () => screens.Pop();
@@ -137,11 +138,12 @@ public partial class App : Node
         var identity = HostFiles.LoadIdentity(UserPaths.Identity);
         var form = NewGameForm.FromRulesetCache();
         var known = JoinFiles.LoadKnownHosts(UserPaths.KnownHosts);
+        (string Ruleset, IReadOnlyList<string> Mods, string? Hash)? browsed = null; // T339: the rules of the game picked in the browser, when this machine has them all
         var environment = new JoinScreenEnvironment
         {
             Identity = identity,
             DisplayName = UserPaths.Profile ?? (System.Environment.UserName is { Length: > 0 } user ? user : "Player"),
-            RulesetHash = () => new LobbySettings { Ruleset = form.BaseRuleset, Mods = [.. form.Mods] }.ComputeRulesetHash(),
+            RulesetHash = () => browsed?.Hash ?? new LobbySettings { Ruleset = form.BaseRuleset, Mods = [.. form.Mods] }.ComputeRulesetHash(),
             KnownHosts = known,
             PersistKnownHosts = known => JoinFiles.SaveKnownHosts(UserPaths.KnownHosts, known),
             LastAddress = JoinFiles.LoadLastAddress(UserPaths.LastJoin),
@@ -153,8 +155,43 @@ public partial class App : Node
         };
         var screen = new JoinScreen(theme, environment);
         screen.BackRequested += () => screens.Pop();
-        screen.Joined += session => OpenJoinedLobby(session, identity, ConfigureForSync(form, screen));
+        screen.Joined += session => OpenJoinedLobby(session, identity, browsed is { Hash: not null } picked && screen.SyncedRules == null ? ConfigureFor(picked.Ruleset, picked.Mods) : ConfigureForSync(form, screen));
+        screen.BrowseRequested += () => OpenBrowse(known, (game, relay, password) =>
+        {
+            var info = game.Info;
+            var hash = BrowseModel.RulesetHash(info.Ruleset, info.Mods, form.BaseRulesets, form.AvailableMods);
+            browsed = hash == null ? null : (info.Ruleset, info.Mods, hash);
+            screen.Begin(BrowseModel.InviteFor(game, relay), password);
+        });
         screens.Push(screen);
+    }
+
+    // T339: the Browse games screen over the join screen; a confirmed join pops back to the join screen, which runs the connection (trust, mods, refusals) as for any invite.
+    private void OpenBrowse(KnownHosts known, Action<Unciv.Net.Relay.ListedGame, Unciv.Net.Relay.RelayEndpoint, string?> join)
+    {
+        var browse = new BrowseScreen(theme, new BrowseScreenEnvironment
+        {
+            Relay = () => RelaySettings.Load(UserPaths.Relay, UserPaths.RelayDefault).Endpoint,
+            Fetch = (relay, query, token) => RelayDirectoryClient.FetchAsync(relay, query, cancellationToken: token),
+            Context = () => BrowseModel.ContextFor(NewGameForm.FromRulesetCache(), known),
+        });
+        browse.BackRequested += () => screens.Pop();
+        browse.OptionsRequested += OpenOptions;
+        browse.JoinRequested += (row, password) =>
+        {
+            if (RelaySettings.Load(UserPaths.Relay, UserPaths.RelayDefault).Endpoint is not { } relay) return;
+            screens.Pop();
+            join(row.Game, relay, password);
+        };
+        screens.Push(browse);
+    }
+
+    private static NewGameForm ConfigureFor(string ruleset, IReadOnlyList<string> mods)
+    {
+        var picked = NewGameForm.FromRulesetCache();
+        picked.SetBaseRuleset(ruleset);
+        foreach (var mod in mods) picked.SetMod(mod, true);
+        return picked;
     }
 
     // T338: a relay target dials the relay named by the invite (the configured one, or one the player agreed to before); the game's own TLS then runs through it and pins the host key.

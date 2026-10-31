@@ -1119,7 +1119,7 @@
     "shots": [
       {
         "golden": "host-screen/network.png",
-        "caption": "Network tab: turn timer (5 min chosen), the scale-with-the-game checkbox (on) and its shortest turn (1 min chosen), password and port."
+        "caption": "Network tab: turn timer (5 min chosen), the scale-with-the-game checkbox (on) and its shortest turn (1 min chosen), password and port. T339: the List this game publicly option is off and disabled, with the reason, while no relay is set."
       },
       {
         "golden": "host-screen/network-address.png",
@@ -1237,7 +1237,7 @@
     "shots": [
       {
         "golden": "join/empty.png",
-        "caption": "The join screen as it opens: an address-or-invite field, a password field, Join and Back; no known hosts yet."
+        "caption": "The join screen as it opens: an address-or-invite field, a password field, Join and Back; no known hosts yet. T339: a Browse public games button opens the relay's game list."
       },
       {
         "golden": "join/trust.png",
@@ -1273,7 +1273,7 @@
     "shots": [
       {
         "golden": "host-screen/network.png",
-        "caption": "Turn timer 5 min with 'Scale each turn's time with the game' checked and the shortest turn set to 1 min."
+        "caption": "Turn timer 5 min with 'Scale each turn's time with the game' checked and the shortest turn set to 1 min. T339: the List this game publicly option is off and disabled, with the reason, while no relay is set."
       }
     ]
   },
@@ -1925,6 +1925,52 @@
       {
         "doc": "layout/3840x2160-2.jpg",
         "caption": "3840x2160: main menu, new game, host, lobby, join, options."
+      }
+    ]
+  },
+  "T339": {
+    "scenario": "browse",
+    "about": "Browse games: the public game list of the configured relay, verified, with search, filters, a detail pane, a join dialog and a screen for each state (no relay, offline, too old, error, empty, no match).",
+    "shots": [
+      {
+        "golden": "browse/no-relay.png",
+        "caption": "No relay address is set (there is no default relay): says so and offers Open Options; nothing was sent."
+      },
+      {
+        "golden": "browse/offline.png",
+        "caption": "The relay could not be reached: points at the relay address and the internet connection; Refresh tries again."
+      },
+      {
+        "golden": "browse/too-old.png",
+        "caption": "The relay is older than this game and cannot show its list."
+      },
+      {
+        "golden": "browse/error.png",
+        "caption": "The relay answered something that is not its protocol: a plain error sentence and no list."
+      },
+      {
+        "golden": "browse/empty.png",
+        "caption": "The relay is fine but nobody lists a game: says how to list one."
+      },
+      {
+        "golden": "browse/list.png",
+        "caption": "Five listed games with name, host, password flag, rules, speed and players/slots; a game on another protocol is greyed out with the reason, and Join is off until a game is picked."
+      },
+      {
+        "golden": "browse/selected-mod.png",
+        "caption": "A game with a mod this machine lacks: the details name the mod, say joining offers to download it, label the player counts as reported by the host and show the host key as first time seen."
+      },
+      {
+        "golden": "browse/no-match.png",
+        "caption": "The search matches nothing: told apart from an empty relay."
+      },
+      {
+        "golden": "browse/join-stranger.png",
+        "caption": "Join dialog for a host not met before: says the name and key come from whoever listed the game and that joining trusts the key from now on."
+      },
+      {
+        "golden": "browse/join-password.png",
+        "caption": "Join dialog for a password game from a known host: asks for the password and refuses an empty one."
       }
     ]
   }

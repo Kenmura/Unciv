@@ -1,5 +1,6 @@
 using System.Globalization;
 using Unciv.Net.Lobby;
+using Unciv.Net.Relay;
 
 namespace Unciv.GodotClient.Setup;
 
@@ -52,6 +53,9 @@ public sealed class HostSettingsForm
     /// <summary>A public address or name the host typed for the invite; empty means use an address of this machine.</summary>
     public string PublicAddress { get; set; } = "";
 
+    /// <summary>T339: list this game in the relay's public directory (design/RELAY.md section 7). Off by default, per game; it has an effect only while the game is hosted through a relay.</summary>
+    public bool ListPublicly { get; set; }
+
     /// <summary>The TCP port friends connect to. The screen offers 1 to 65535; 0 (a free port) is for tests.</summary>
     public int Port { get; set; } = DefaultPort;
 
@@ -68,6 +72,7 @@ public sealed class HostSettingsForm
         if (TurnTimerMinSeconds < 0) problems.Add("The shortest turn cannot be negative.");
         if (DynamicTurnTimer && TurnTimerSeconds > 0 && TurnTimerMinSeconds > TurnTimerSeconds) problems.Add("The shortest turn cannot be longer than the turn timer.");
         if (Port is < 0 or > 65535) problems.Add("The port must be a number from 1 to 65535.");
+        if (ListPublicly && !ListingRules.TextOk(ListingRules.Clean(GameName, 40), 3, 40)) problems.Add("A publicly listed game needs a name of 3 to 40 plain characters (letters, digits, punctuation).");
         if (!IsUsableInviteAddress(PublicAddress)) problems.Add("The public address must be a host name or IP address only (no port, slash or spaces).");
         return problems;
     }
