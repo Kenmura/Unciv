@@ -112,7 +112,8 @@ flowchart TD
 Unlinked tickets (no open dependency in either direction), by state:
 
 - ready: T355 T356 T357
-- in progress: T300 T301 T303 T386 T387 T388
+- in progress: T300 T301 T303 T386 T387
+- in review: T388
 - blocked: T290
 - waiting: T313 T314 T317 T318 T321 T326 T328 T329 T330 T331 T332 T333 T335 T341 T342 T343 T344 T345 T346 T348 T349 T350 T351 T352 T353 T362 T363
 
@@ -202,4 +203,4 @@ xychart-beta
 | T363 | Available (waiting on ) | none | 0 | QuickStart and harness scenario games still start on Vanilla/Gods & Kings: move them to BNW and regenerate goldens |
 | T386 | In-Progress [Claude] | none | 0 | Remove dead entry points and dev leftovers: QuickStart/Main scenes, UNCIV_MENU_READY marker, dev-facing text; decide on the Developer Console |
 | T387 | In-Progress [Claude] | none | 0 | Unit legibility pass 4: mounted figures from above, Keshik slab, sheet crowding, baked boosts |
-| T388 | In-Progress [Claude] | none | 0 | layout-matrix scenario times out intermittently (stuck at the relay / host-lobby steps): reproduce, find the cause, make it deterministic |
+| T388 | Needs-Review [Claude] | none | 0 | layout-matrix scenario times out intermittently (stuck at the relay / host-lobby steps): reproduce, find the cause, make it deterministic |
