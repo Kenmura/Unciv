@@ -47,6 +47,11 @@ public partial class MapOverlayLayer : Node3D
 
     private BorderStrips? borderStrips;
     private MapView? borderMap;
+
+    public override void _ExitTree()
+    {
+        if (borderMap != null) borderMap.ViewChanged -= ApplyBorderView;
+    }
     private float uiScale = 1f;
 
     /// <summary>The border strips of the last <see cref="Rebuild"/>, or null before it.</summary>
@@ -151,6 +156,7 @@ public partial class MapOverlayLayer : Node3D
         }
         AddChild(strips);
         borderStrips = strips;
+        if (borderMap != null) borderMap.ViewChanged -= ApplyBorderView;
         borderMap = map;
         map.ViewChanged -= ApplyBorderView;
         map.ViewChanged += ApplyBorderView;

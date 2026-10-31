@@ -119,13 +119,27 @@ public class BorderChainsTests
     [Fact]
     public void ABigMapChainsEverySideWithoutGaps()
     {
-        var tiles = Disc(30, (x, y) => ((x + 100) / 4 + (y + 100) / 5) % 4 is var v && v == 3 ? null : "Civ" + v);
+        // Twelve territories grown round seeds well inside the map, so none reaches the rim; the rim itself is owned by a thirteenth civ
+        (int X, int Y)[] seeds = [(-18, -9), (-6, -12), (7, -10), (19, -7), (-20, 3), (-8, 1), (5, 3), (17, 7), (-14, 14), (-2, 13), (9, 14), (20, 14)];
+        var tiles = Disc(30, (x, y) =>
+        {
+            var best = -1;
+            var bestDistance = int.MaxValue;
+            for (var i = 0; i < seeds.Length; i++)
+            {
+                var d = Dist(x - seeds[i].X, y - seeds[i].Y);
+                if (d < bestDistance) { bestDistance = d; best = i; }
+            }
+            return Dist(x, y) >= 29 ? "Rim" : bestDistance <= 6 ? "Civ" + best : null;
+        });
         var edges = MapOverlays.BorderEdges(tiles);
         var chains = BorderChains.Build(edges);
         Assert.Equal(edges.Count, chains.Sum(it => it.Sides.Count));
         // Only a civ that reaches the rim of the map (where the neighbours are unknown) can have an open chain
-        var rimOwners = tiles.Where(it => Dist(it.X, it.Y) == 30 && it.Owner != null).Select(it => it.Owner).ToHashSet();
-        Assert.All(chains.Where(it => !rimOwners.Contains(it.Owner)), it => Assert.True(it.Closed, "an inland territory has no open chain"));
+        var rimOwners = tiles.Where(it => Dist(it.X, it.Y) >= 29 && it.Owner != null).Select(it => it.Owner).ToHashSet();
+        var inland = chains.Where(it => !rimOwners.Contains(it.Owner)).ToList();
+        Assert.True(inland.Count >= 12, "the twelve inland territories are checked");
+        Assert.All(inland, it => Assert.True(it.Closed, "an inland territory has no open chain"));
     }
 
     [Fact]

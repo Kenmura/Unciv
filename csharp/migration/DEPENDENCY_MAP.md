@@ -241,4 +241,4 @@ xychart-beta
 | T363 | Available (waiting on ) | none | 0 | QuickStart and harness scenario games still start on Vanilla/Gods & Kings: move them to BNW and regenerate goldens |
 | T373 | In-Progress [Claude] | none | 0 | Unit recognizability third pass: aircraft, Destroyer, Helicopter, Panzer and same-hue pairs still weak at zoom 14 |
 | T375 | Available (waiting on ) | none | 0 | Re-record stale phone-menus goldens (main-menu, new-game, host, lobby, options, modal differ from the committed images at base) |
-| T377 | Needs-Review [Claude] | none | 0 | Border rendering review and fix: borders have gaps, do not join at corners and are drawn partially (see owner screenshot) |
+| T377 | In-Review [Claude-reviewer] | none | 0 | Border rendering review and fix: borders have gaps, do not join at corners and are drawn partially (see owner screenshot) |

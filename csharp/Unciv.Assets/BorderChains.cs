@@ -29,9 +29,10 @@ public static class BorderChains
     {
         var open = new List<BorderChain>();
         var closed = new List<BorderChain>();
+        var known = new HashSet<(long, long)>();
         foreach (var group in edges.GroupBy(it => it.Owner, StringComparer.Ordinal))
         {
-            var sides = group.Select(MakeSide).ToList();
+            var sides = group.Select(it => MakeSide(it, known)).ToList();
             var outgoing = new Dictionary<(long, long), List<int>>();
             var arrivals = new HashSet<(long, long)>();
             for (var i = 0; i < sides.Count; i++)
@@ -49,10 +50,10 @@ public static class BorderChains
         return [.. open.Concat(closed)];
     }
 
-    private static Side MakeSide(BorderEdge edge)
+    private static Side MakeSide(BorderEdge edge, HashSet<(long, long)> known)
     {
         var (a, b) = MapOverlays.EdgeEnds(edge.X, edge.Y, edge.Dx, edge.Dy);
-        return new Side(edge, new BorderPoint(a.X, a.Z), new BorderPoint(b.X, b.Z), Key(a), Key(b));
+        return new Side(edge, new BorderPoint(a.X, a.Z), new BorderPoint(b.X, b.Z), Key(a, known), Key(b, known));
     }
 
     private static BorderChain Follow(string owner, int first, List<Side> sides, Dictionary<(long, long), List<int>> outgoing, bool[] used)
@@ -91,5 +92,17 @@ public static class BorderChains
         return best;
     }
 
-    private static (long, long) Key((float X, float Z) point) => ((long)MathF.Round(point.X * Resolution, MidpointRounding.AwayFromZero), (long)MathF.Round(point.Z * Resolution, MidpointRounding.AwayFromZero));
+    /// <summary>
+    /// The same corner reaches here from up to three tiles through different float arithmetic and can land on either side of a rounding boundary: a key that has a known neighbour cell is that corner.
+    /// Distinct corners are at least half a world unit apart, far more than a cell.
+    /// </summary>
+    private static (long, long) Key((float X, float Z) point, HashSet<(long, long)> known)
+    {
+        var key = ((long)MathF.Round(point.X * Resolution, MidpointRounding.AwayFromZero), (long)MathF.Round(point.Z * Resolution, MidpointRounding.AwayFromZero));
+        for (var dx = -1L; dx <= 1; dx++)
+            for (var dz = -1L; dz <= 1; dz++)
+                if (known.Contains((key.Item1 + dx, key.Item2 + dz))) return (key.Item1 + dx, key.Item2 + dz);
+        known.Add(key);
+        return key;
+    }
 }
