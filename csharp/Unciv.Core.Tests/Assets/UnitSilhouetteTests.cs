@@ -662,7 +662,7 @@ public sealed class UnitSilhouetteTests
     [Fact]
     public void TheLookAlikeGroupsOfT369AreToldApartAtFirstSight()
     {
-        // Warrior, Marauder, Brute, Jaguar, Pictish, Maori and Mohawk; the armoured shield infantry; the modern riflemen; the great people; the ancient galleys: at least 0.25 as pictures (rigid: outline plus colour)
+        // Warrior, Marauder, Brute, Jaguar, Pictish, Maori and Mohawk; the armoured shield infantry; the modern riflemen; the great people; the ancient galleys: at least 0.27 as pictures (rigid: outline plus colour)
         string[][] groups =
         [
             ["Warrior", "Marauder", "Brute", "Jaguar", "Pictish Warrior", "Maori Warrior", "Mohawk Warrior"],
