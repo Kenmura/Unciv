@@ -71,6 +71,9 @@ public sealed partial class RelayServer : IAsyncDisposable
 
     public RelayLog Log { get; }
 
+    /// <summary>Test seam (T367): wraps the stream of every accepted tunnel connection before anything is read, so a test can make one connection's writes fail.</summary>
+    public Func<Stream, Stream>? StreamWrapper { get; set; }
+
     /// <summary>The bound tunnel port after <see cref="Start"/>.</summary>
     public int TunnelPort { get; private set; }
 
@@ -147,7 +150,9 @@ public sealed partial class RelayServer : IAsyncDisposable
         var path = Path.Combine(options.DataDir, "relay-secret");
         if (File.Exists(path))
         {
-            var existing = Convert.FromHexString(File.ReadAllText(path).Trim());
+            byte[] existing;
+            try { existing = Convert.FromHexString(File.ReadAllText(path).Trim()); }
+            catch (FormatException) { throw new RelayUsageException($"{path} is not a hex string: fix or delete it (deleting it changes every peer id the relay hands out)"); }
             if (existing.Length >= 16) return existing;
         }
         var fresh = new byte[32];
@@ -242,6 +247,7 @@ public sealed partial class RelayServer : IAsyncDisposable
     {
         var remote = (IPEndPoint)tcp.Client.RemoteEndPoint!;
         using var conn = new RelayConn(tcp, remote.Address);
+        if (StreamWrapper != null) conn.Stream = StreamWrapper(conn.Stream);
         lock (gate) liveConnections.Add(conn);
         string? counted = null;
         try

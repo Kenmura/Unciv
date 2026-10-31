@@ -147,7 +147,7 @@ public sealed partial class RelayServer
         try { await conn.SendAsync(new JsonObject { ["ok"] = true }, stopping.Token).ConfigureAwait(false); }
         catch
         {
-            pending.Accepted.TrySetResult(null); // the claimed joiner must not wait forever for a host data channel that died
+            pending.Accepted.TrySetResult(null); // (T367: tested with a failing stream) the claimed joiner must not wait forever for a host data channel that died
             throw;
         }
         pending.Accepted.TrySetResult(new AcceptResult(conn, done));
