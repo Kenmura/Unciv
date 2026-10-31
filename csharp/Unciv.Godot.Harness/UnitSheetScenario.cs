@@ -18,7 +18,7 @@ namespace Unciv.GodotHarness;
 /// (a Settler must never be taken for an Archer). One figure per unit by default (the far-zoom lone figure: a pair or trio of figures is how the game draws a strong unit, not what tells units apart), the
 /// formations on request. Not part of CI and never compared to goldens (a real GPU draws it): <c>tools/unit-sheet.sh</c> runs it on the host and writes <c>unit-sheet-N.png</c>. Environment: <c>UNCIV_SHEET_OUT</c>
 /// (folder, required), <c>UNCIV_SHEET_RES</c> (WxH, default 1920x1080), <c>UNCIV_SHEET_ZOOM</c> (camera size in world units, default fitted to the page; <see cref="MapView.DefaultZoom"/> is the game's),
-/// <c>UNCIV_SHEET_YAW</c> (degrees the units face, default 0), <c>UNCIV_SHEET_FORMATIONS</c> (1: draw the formations of the game).
+/// <c>UNCIV_SHEET_ONLY</c> (comma separated unit names: only those), <c>UNCIV_SHEET_YAW</c> (degrees the units face, default 0), <c>UNCIV_SHEET_FORMATIONS</c> (1: draw the formations of the game).
 /// </summary>
 public sealed class UnitSheetScenario : Scenario
 {
@@ -46,6 +46,8 @@ public sealed class UnitSheetScenario : Scenario
         RulesetClass Of(string unit) => ruleset.Units.ContainsKey(unit) ? ruleset : gods;
         var colours = new[] { PlaceholderPalette.AttackTint, PlaceholderPalette.ReachableTint };
         var units = UnitVisualsScenario.SheetUnits;
+        if (GpuBenchScenario.Bench("UNCIV_SHEET_ONLY") is { Length: > 0 } only) // T369: a focused sheet of the named units (comma separated), for judging one group at the real zoom
+            units = [.. only.Split(',').Select(n => units.First(u => u.Unit == n.Trim()))];
         bool formations = GpuBenchScenario.Bench("UNCIV_SHEET_FORMATIONS") == "1";
         int pages = (units.Count + MaxColumns * MaxRows - 1) / (MaxColumns * MaxRows);
         int perPage = (units.Count + pages - 1) / pages;

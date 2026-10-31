@@ -169,7 +169,8 @@ flowchart TD
 Unlinked tickets (no open dependency in either direction), by state:
 
 - ready: T320 T324 T361 T366 T367
-- in progress: T300 T301 T303 T369
+- in progress: T300 T301 T303
+- in review: T369
 - blocked: T290
 - waiting: T313 T314 T317 T318 T321 T326 T328 T329 T330 T331 T332 T333 T335 T341 T342 T343 T344 T345 T346 T348 T349 T350 T351 T352 T353 T362 T363
 
@@ -267,4 +268,4 @@ xychart-beta
 | T356 | Available (waiting on T338, T339) | T337, T338, T339 | 0 | Deploy the relay on the owner's server: concrete nginx config, manual connectivity matrix, result recorded |
 | T362 | Available (waiting on ) | T334 | 0 | Two real client processes host and join on the real GPU (manual two-profile smoke) |
 | T363 | Available (waiting on ) | none | 0 | QuickStart and harness scenario games still start on Vanilla/Gods & Kings: move them to BNW and regenerate goldens |
-| T369 | In-Progress [Claude] | T309 | 0 | Tell the look-alike unit groups apart: furry warriors, armoured shield infantry, ancient galleys, great people |
+| T369 | Needs-Review [Claude] | T309 | 0 | Tell the look-alike unit groups apart: furry warriors, armoured shield infantry, ancient galleys, great people |

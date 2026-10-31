@@ -49,6 +49,12 @@ public sealed class UnitSilhouetteTests
     private const float MinOutlinePlusColour = 0.20f;
     /// <summary>T307: the civ's colour may cover at most this share of a rigid model's surface (the old Battering Ram was a flat team-coloured roof seen from above).</summary>
     private const float MaxTeamColourShare = 0.35f;
+    /// <summary>T369: any two foot units as pictures (z-buffered vertex colours at 40x56, the civ colour neutral; measured minimum 0.238, Archer and Composite Bowman).</summary>
+    private const float MinPictureDistance = 0.23f;
+    /// <summary>T369: inside the groups the owner named as look-alikes (the barbarian raiders, the armoured shield infantry, the great people, the modern riflemen, the five foot infantry of similar eras).</summary>
+    private const float MinGroupPictureDistance = 0.27f;
+    /// <summary>T369: the five ancient galleys: outline plus mean colour at 120x168.</summary>
+    private const float MinGalleyDistance = 0.30f;
     private static readonly string[] Siege = ["Battering Ram", "Catapult", "Ballista", "Trebuchet", "Hwach'a", "Cannon"];
 
     private static readonly string Pack = FindPack();
@@ -211,6 +217,122 @@ public sealed class UnitSilhouetteTests
         var rotation = node.TryGetProperty("rotation", out var r) ? new Quaternion(r[0].GetSingle(), r[1].GetSingle(), r[2].GetSingle(), r[3].GetSingle()) : Quaternion.Identity;
         var translation = node.TryGetProperty("translation", out var t) ? Vec(t) : Vector3.Zero;
         return Matrix4x4.CreateScale(scale) * Matrix4x4.CreateFromQuaternion(rotation) * Matrix4x4.CreateTranslation(translation);
+    }
+
+    private static readonly Dictionary<string, (Vector3[] Colour, float[] Depth)[]> ColourCache = [];
+
+    /// <summary>T369: what the eye sees at the default zoom is colour first. The unit's four views as z-buffered pictures at 40x56: the vertex colour (COLOR_0 times the material factor) of the nearest surface, the civ colour
+    /// (TeamColor, every civ differs) as neutral grey, and the depth along the camera; an empty pixel has depth -1.</summary>
+    private static (Vector3[] Colour, float[] Depth)[] ColourViews(string unit)
+    {
+        lock (ColourCache)
+        {
+            if (ColourCache.TryGetValue(unit, out var cached)) return cached;
+            var glb = File.ReadAllBytes(Path.Combine(Pack, "models", "unit", unit + ".glb"));
+            var jsonLength = BinaryPrimitives.ReadInt32LittleEndian(glb.AsSpan(12));
+            using var doc = JsonDocument.Parse(glb.AsMemory(20, jsonLength));
+            var root = doc.RootElement;
+            var binStart = 20 + jsonLength + 8;
+            var accessors = root.GetProperty("accessors");
+            var views = root.GetProperty("bufferViews");
+            var tris = new List<(Vector3 A, Vector3 B, Vector3 C, Vector3 Ca, Vector3 Cb, Vector3 Cc)>();
+            var pending = new Stack<(int, Matrix4x4)>();
+            foreach (var n in root.GetProperty("scenes")[0].GetProperty("nodes").EnumerateArray()) pending.Push((n.GetInt32(), Matrix4x4.Identity));
+            while (pending.Count > 0)
+            {
+                var (index, parent) = pending.Pop();
+                var node = root.GetProperty("nodes")[index];
+                var world = Local(node) * parent;
+                if (node.TryGetProperty("mesh", out var mesh))
+                {
+                    var matrix = node.TryGetProperty("skin", out _) ? parent : world;
+                    foreach (var prim in root.GetProperty("meshes")[mesh.GetInt32()].GetProperty("primitives").EnumerateArray())
+                    {
+                        var material = root.GetProperty("materials")[prim.GetProperty("material").GetInt32()];
+                        var isTeam = material.GetProperty("name").GetString() == "TeamColor";
+                        var factor = material.TryGetProperty("pbrMetallicRoughness", out var pbr) && pbr.TryGetProperty("baseColorFactor", out var f) ? new Vector3(f[0].GetSingle(), f[1].GetSingle(), f[2].GetSingle()) : Vector3.One;
+                        var attributes = prim.GetProperty("attributes");
+                        var pos = ReadVec3(accessors[attributes.GetProperty("POSITION").GetInt32()], views, glb, binStart);
+                        var colours = isTeam || !attributes.TryGetProperty("COLOR_0", out var ca) ? null : ReadColours(accessors[ca.GetInt32()], views, glb, binStart);
+                        Vector3 ColourOf(int i) => isTeam ? new Vector3(0.5f) : (colours == null ? Vector3.One : colours[i]) * factor;
+                        var idx = ReadIndices(accessors[prim.GetProperty("indices").GetInt32()], views, glb, binStart);
+                        for (var i = 0; i + 2 < idx.Length; i += 3)
+                            tris.Add((Vector3.Transform(pos[idx[i]], matrix), Vector3.Transform(pos[idx[i + 1]], matrix), Vector3.Transform(pos[idx[i + 2]], matrix), ColourOf(idx[i]), ColourOf(idx[i + 1]), ColourOf(idx[i + 2])));
+                    }
+                }
+                if (node.TryGetProperty("children", out var children)) foreach (var c in children.EnumerateArray()) pending.Push((c.GetInt32(), world));
+            }
+            var result = new (Vector3[], float[])[4];
+            for (var side = 0; side < 4; side++)
+            {
+                var yaw = Matrix4x4.CreateRotationY(side * MathF.PI / 2f);
+                var colour = new Vector3[W * H];
+                var depth = new float[W * H];
+                Array.Fill(depth, -1f);
+                var seen = new float[W * H];
+                Array.Fill(seen, float.NegativeInfinity);
+                foreach (var t in tris)
+                {
+                    var a = Vector3.Transform(t.A, yaw);
+                    var b = Vector3.Transform(t.B, yaw);
+                    var c = Vector3.Transform(t.C, yaw);
+                    Vector2 Screen(Vector3 v) { var p = Project(v); return new Vector2(W / 2f + p.X * (H / 1.15f), H * 0.78f - p.Y * (H / 1.15f)); }
+                    float Near(Vector3 v) => v.Z * MathF.Cos(Pitch) + v.Y * MathF.Sin(Pitch);
+                    var (sa, sb, sc) = (Screen(a), Screen(b), Screen(c));
+                    var area = Edge(sa, sb, sc);
+                    if (MathF.Abs(area) < 1e-6f) continue;
+                    var x0 = global::System.Math.Max(0, (int)MathF.Floor(MathF.Min(sa.X, MathF.Min(sb.X, sc.X))));
+                    var x1 = global::System.Math.Min(W - 1, (int)MathF.Ceiling(MathF.Max(sa.X, MathF.Max(sb.X, sc.X))));
+                    var y0 = global::System.Math.Max(0, (int)MathF.Floor(MathF.Min(sa.Y, MathF.Min(sb.Y, sc.Y))));
+                    var y1 = global::System.Math.Min(H - 1, (int)MathF.Ceiling(MathF.Max(sa.Y, MathF.Max(sb.Y, sc.Y))));
+                    for (var y = y0; y <= y1; y++)
+                        for (var x = x0; x <= x1; x++)
+                        {
+                            var p = new Vector2(x + 0.5f, y + 0.5f);
+                            var w0 = Edge(sb, sc, p) / area;
+                            var w1 = Edge(sc, sa, p) / area;
+                            var w2 = 1f - w0 - w1;
+                            if (w0 < 0 || w1 < 0 || w2 < 0) continue;
+                            var near = w0 * Near(a) + w1 * Near(b) + w2 * Near(c);
+                            if (near <= seen[y * W + x]) continue;
+                            seen[y * W + x] = near;
+                            depth[y * W + x] = near;
+                            colour[y * W + x] = w0 * t.Ca + w1 * t.Cb + w2 * t.Cc;
+                        }
+                }
+                result[side] = (colour, depth);
+            }
+            return ColourCache[unit] = result;
+        }
+    }
+
+    private static Vector3[] ReadColours(JsonElement accessor, JsonElement views, byte[] glb, int binStart)
+    {
+        var offset = Offset(accessor, views, binStart);
+        var components = accessor.GetProperty("type").GetString() == "VEC4" ? 4 : 3;
+        var bytes = accessor.GetProperty("componentType").GetInt32() == 5121; // normalised unsigned bytes (what the unit builders write) or floats
+        var stride = components * (bytes ? 1 : 4);
+        float Channel(int i, int k) => bytes ? glb[offset + i * stride + k] / 255f : BitConverter.ToSingle(glb, offset + i * stride + k * 4);
+        return [.. Enumerable.Range(0, accessor.GetProperty("count").GetInt32()).Select(i => new Vector3(Channel(i, 0), Channel(i, 1), Channel(i, 2)))];
+    }
+
+    /// <summary>T369: the distance of two units as the eye sees them: over the pixels either unit covers (four views, 40x56), the mean colour difference (0 to 1; the grass behind a pixel only one covers counts as a full 1).</summary>
+    private static float PictureDistance(string a, string b)
+    {
+        var (va, vb) = (ColourViews(a), ColourViews(b));
+        return Enumerable.Range(0, 4).Average(side =>
+        {
+            var sum = 0f;
+            var union = 0;
+            for (var i = 0; i < W * H; i++)
+            {
+                var (ina, inb) = (va[side].Depth[i] >= 0f ? 1 : 0, vb[side].Depth[i] >= 0f ? 1 : 0);
+                if (ina + inb == 0) continue;
+                union++;
+                sum += ina + inb == 2 ? MathF.Min(1f, Vector3.Distance(va[side].Colour[i], vb[side].Colour[i]) / 1.2f) : 1f;
+            }
+            return union == 0 ? 0f : sum / union;
+        });
     }
 
     /// <summary>1 - intersection over union of two masks, averaged over the four sides.</summary>
@@ -519,6 +641,50 @@ public sealed class UnitSilhouetteTests
                 var outline = Distance(Masks(a.Name, FineScale), Masks(b.Name, FineScale));
                 var colour = Vector3.Distance(MeanColour(a.Name), MeanColour(b.Name));
                 if (outline + colour < MinOutlinePlusColour) failures.Add(string.Create(CultureInfo.InvariantCulture, $"{a.Name} and {b.Name}: outline {outline:0.000} plus colour {colour:0.000}, need {MinOutlinePlusColour:0.00}"));
+            }
+        Assert.True(failures.Count == 0, string.Join("\n", failures));
+    }
+
+    [Fact]
+    public void EveryFootUnitIsToldApartFromEveryOtherByColourAsWellAsOutline()
+    {
+        var (foot, _) = Units();
+        var failures = new List<string>();
+        foreach (var a in foot)
+            foreach (var b in foot.Where(b => string.CompareOrdinal(b.Name, a.Name) > 0))
+            {
+                var d = PictureDistance(a.Name, b.Name);
+                if (d < MinPictureDistance) failures.Add(string.Create(CultureInfo.InvariantCulture, $"{a.Name} and {b.Name} look alike as pictures: {d:0.000}, need {MinPictureDistance:0.00}"));
+            }
+        Assert.True(failures.Count == 0, "units too alike in colour and shape:\n" + string.Join("\n", failures));
+    }
+
+    [Fact]
+    public void TheLookAlikeGroupsOfT369AreToldApartAtFirstSight()
+    {
+        // Warrior, Marauder, Brute, Jaguar, Pictish, Maori and Mohawk; the armoured shield infantry; the modern riflemen; the great people; the ancient galleys: at least 0.25 as pictures (rigid: outline plus colour)
+        string[][] groups =
+        [
+            ["Warrior", "Marauder", "Brute", "Jaguar", "Pictish Warrior", "Maori Warrior", "Mohawk Warrior"],
+            ["Spearman", "Hoplite", "Legion", "Persian Immortal", "Swordsman", "Longswordsman", "Samurai", "Landsknecht", "Pikeman"],
+            ["Great Artist", "Great Merchant", "Great Engineer", "Great Prophet", "Great General", "Great Scientist", "Missionary", "Inquisitor", "Settler"],
+            ["Mehal Sefari", "Foreign Legion", "Paratrooper", "Great War Infantry", "Marine", "Infantry", "Rifleman", "Mechanized Infantry"],
+            ["Musketman", "Minuteman", "Rifleman", "Swordsman", "Longswordsman"],
+        ];
+        var failures = new List<string>();
+        foreach (var group in groups)
+            for (var i = 0; i < group.Length; i++)
+                for (var j = i + 1; j < group.Length; j++)
+                {
+                    var d = PictureDistance(group[i], group[j]);
+                    if (d < MinGroupPictureDistance) failures.Add(string.Create(CultureInfo.InvariantCulture, $"{group[i]} and {group[j]}: {d:0.000}, need {MinGroupPictureDistance:0.00}"));
+                }
+        string[] galleys = ["Trireme", "Galley", "Quinquereme", "Dromon", "Galleass"];
+        for (var i = 0; i < galleys.Length; i++)
+            for (var j = i + 1; j < galleys.Length; j++)
+            {
+                var d = Distance(Masks(galleys[i], FineScale), Masks(galleys[j], FineScale)) + Vector3.Distance(MeanColour(galleys[i]), MeanColour(galleys[j]));
+                if (d < MinGalleyDistance) failures.Add(string.Create(CultureInfo.InvariantCulture, $"{galleys[i]} and {galleys[j]}: outline plus colour {d:0.000}, need {MinGalleyDistance:0.00}"));
             }
         Assert.True(failures.Count == 0, string.Join("\n", failures));
     }
