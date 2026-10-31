@@ -11,6 +11,17 @@
 # Local mods are not bundled: players drop mod folders into the user data folder's mods directory (user://mods).
 set -euo pipefail
 
+# T361 (T360 memory settings; the env vars alone do not cap the nodes, so every dotnet build below also passes -m: and -nodeReuse:false): one MSBuild node, no node reuse, no build server, no shared compiler, workstation GC; the servers dotnet may leave behind are shut down on exit
+export MSBUILDDISABLENODEREUSE=1 MSBUILDNODECOUNT="${UNCIV_MSBUILD_NODES:-1}" MSBUILDUSESERVER=0 UseSharedCompilation=false DOTNET_gcServer=0
+cfg_home=""; keystore=""; stage=""
+cleanup() {
+    [[ -z "$cfg_home" ]] || rm -rf "$cfg_home"
+    [[ -z "$keystore" ]] || rm -f "$keystore"
+    [[ -z "$stage" ]] || rm -rf "$stage"
+    dotnet build-server shutdown >/dev/null 2>&1 || true
+}
+trap cleanup EXIT
+
 project="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 platform="${1:-linux}"
 case "$platform" in
@@ -54,7 +65,6 @@ if $android; then
     # with 4.7.2: "A valid Java SDK path is required in Editor Settings"), so run it with a throw-away config home holding just those two paths.
     # The developer's own editor settings are left alone.
     cfg_home="$(mktemp -d)"; keystore=""
-    trap 'rm -rf "$cfg_home"; [[ -z "$keystore" ]] || rm -f "$keystore"' EXIT
     mkdir -p "$cfg_home/godot"
     printf '[gd_resource type="EditorSettings" format=3]\n\n[resource]\nexport/android/java_sdk_path = "%s"\nexport/android/android_sdk_path = "%s"\n' \
         "$JAVA_HOME" "$sdk" > "$cfg_home/godot/editor_settings-4.7.tres"
@@ -62,7 +72,7 @@ fi
 
 if $android; then mkdir -p "$out"; rm -f "$out/$exe"; else rm -rf "$out"; mkdir -p "$out"; fi
 if $android; then build_config=Debug; else build_config=Release; fi
-(cd "$project/.." && dotnet build Unciv.Godot -warnaserror -c "$build_config")
+(cd "$project/.." && dotnet build Unciv.Godot -m:"${UNCIV_MSBUILD_NODES:-1}" -nodeReuse:false -p:UseSharedCompilation=false -warnaserror -c "$build_config")
 # Godot's .NET export insists on a solution file next to project.godot; generate a throw-away one (git-ignored) rather than keep one in the tree.
 if [[ ! -f "$project/Unciv.Godot.sln" ]]; then
     (cd "$project" && dotnet new sln -n Unciv.Godot --format sln >/dev/null && dotnet sln Unciv.Godot.sln add Unciv.Godot.csproj >/dev/null)
@@ -120,7 +130,6 @@ fi
 # T258: the release archive (T279 uploads these). One top-level folder so extraction never spills into the current directory.
 archive_dir="$project/build"
 stage="$(mktemp -d)"
-trap 'rm -rf "$stage"' EXIT
 ln -s "$out" "$stage/Unciv-$platform"
 if [[ "$platform" == linux ]]; then
     archive="$archive_dir/Unciv-client-linux.tar.gz"

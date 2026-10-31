@@ -134,8 +134,8 @@ flowchart TD
 Unlinked tickets (no open dependency in either direction), by state:
 
 - ready: T355 T356 T357 T385 T386 T387
-- in progress: T300 T301 T303 T361
-- in review: T381 T384
+- in progress: T300 T301 T303
+- in review: T361 T381 T384
 - blocked: T290
 - waiting: T313 T314 T317 T318 T321 T326 T328 T329 T330 T331 T332 T333 T335 T341 T342 T343 T344 T345 T346 T348 T349 T350 T351 T352 T353 T362 T363 T375
 
@@ -226,7 +226,7 @@ xychart-beta
 | T351 | Available (waiting on ) | T261 | 0 | Call-level profiling inside AI unit moves (AutomateUnitMoves) and the spike turns |
 | T352 | Available (waiting on ) | none | 0 | Accessibility: colourblind-safe team colours and unit/tile cues, font size scaling, keyboard-only play |
 | T353 | Available (waiting on ) | none | 0 | Sound and music: effects and a soundtrack from CC0 or original sources (no Civ 5 audio) |
-| T361 | In-Progress [Claude] | T360 | 0 | Godot package.sh / run-scenario.sh / run-smoke.sh dotnet calls: apply the T360 memory settings |
+| T361 | Needs-Review [Claude] | T360 | 0 | Godot package.sh / run-scenario.sh / run-smoke.sh dotnet calls: apply the T360 memory settings |
 | T362 | Available (waiting on ) | T334 | 0 | Two real client processes host and join on the real GPU (manual two-profile smoke) |
 | T363 | Available (waiting on ) | none | 0 | QuickStart and harness scenario games still start on Vanilla/Gods & Kings: move them to BNW and regenerate goldens |
 | T375 | Available (waiting on ) | none | 0 | Re-record stale phone-menus goldens (main-menu, new-game, host, lobby, options, modal differ from the committed images at base) |

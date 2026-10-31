@@ -11,6 +11,9 @@
 # Output: out/<name>/<step>.png and out/<name>/result.json (git-ignored). Run inside dotnet-dev (see csharp/migration/GODOT.md).
 set -euo pipefail
 
+# T361 (T360 memory settings; the env vars alone do not cap the nodes, so every dotnet build below also passes -m: and -nodeReuse:false): one MSBuild node, no node reuse, no build server, no shared compiler, workstation GC; the servers dotnet may leave behind are shut down on exit
+export MSBUILDDISABLENODEREUSE=1 MSBUILDNODECOUNT="${UNCIV_MSBUILD_NODES:-1}" MSBUILDUSESERVER=0 UseSharedCompilation=false DOTNET_gcServer=0
+
 if [[ $# -lt 1 || "$1" == -* ]]; then echo "usage: $0 <scenario> [--update-golden | --expect-golden-failure]" >&2; exit 64; fi
 name="$1"; mode="${2:-}"
 project="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -19,7 +22,7 @@ out="${HARNESS_OUT:-$project/out}"
 golden="$project/golden"
 mkdir -p "$out"
 
-if [[ -z "${HARNESS_SKIP_BUILD:-}" ]]; then (cd "$project" && dotnet build -warnaserror); fi
+if [[ -z "${HARNESS_SKIP_BUILD:-}" ]]; then (cd "$project" && dotnet build -m:"${UNCIV_MSBUILD_NODES:-1}" -nodeReuse:false -p:UseSharedCompilation=false -warnaserror); fi
 
 extra=(); cleanup_golden=""; cleanup_out=""
 [[ -n "${HARNESS_GOLDEN_TOLERANCE:-}" ]] && extra+=("--golden-tolerance=$HARNESS_GOLDEN_TOLERANCE")
@@ -43,6 +46,7 @@ cleanup() {
     [[ -n "$godot_pid" ]] && { kill "$godot_pid" 2>/dev/null || true; wait "$godot_pid" 2>/dev/null || true; }
     [[ -n "$xvfb_pid" ]] && { kill "$xvfb_pid" 2>/dev/null || true; wait "$xvfb_pid" 2>/dev/null || true; }
     [[ -n "$display_file" ]] && rm -f "$display_file"
+    dotnet build-server shutdown >/dev/null 2>&1 || true
     [[ -n "$cleanup_golden" ]] && rm -rf "$cleanup_golden"
     [[ -n "$cleanup_out" ]] && rm -rf "$cleanup_out"
     return 0

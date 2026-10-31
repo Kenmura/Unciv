@@ -6,6 +6,10 @@
 #   tools/review-sheet.sh [scenario ...]    default: every scenario in scenarios.txt
 set -uo pipefail
 
+# T361 (T360 memory settings; the env vars alone do not cap the nodes, so every dotnet build below also passes -m: and -nodeReuse:false): one MSBuild node, no node reuse, no build server, no shared compiler, workstation GC; the servers dotnet may leave behind are shut down on exit
+export MSBUILDDISABLENODEREUSE=1 MSBUILDNODECOUNT="${UNCIV_MSBUILD_NODES:-1}" MSBUILDUSESERVER=0 UseSharedCompilation=false DOTNET_gcServer=0
+trap 'dotnet build-server shutdown >/dev/null 2>&1 || true' EXIT
+
 project="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 godot="${GODOT:-$("$project/tools/setup-godot.sh" --print-path)}"
 export HARNESS_OUT="${HARNESS_OUT:-$project/out}"
@@ -14,7 +18,7 @@ out="$HARNESS_OUT"
 if [[ $# -gt 0 ]]; then scenarios=("$@"); else mapfile -t scenarios < <(grep -v '^[[:space:]]*\(#\|$\)' "$project/scenarios.txt"); fi
 if [[ ${#scenarios[@]} -eq 0 ]]; then echo "no scenarios" >&2; exit 64; fi
 
-(cd "$project" && dotnet build -warnaserror) || exit 1
+(cd "$project" && dotnet build -m:"${UNCIV_MSBUILD_NODES:-1}" -nodeReuse:false -p:UseSharedCompilation=false -warnaserror) || exit 1
 export HARNESS_SKIP_BUILD=1
 
 status=0
