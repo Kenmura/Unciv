@@ -15,7 +15,7 @@ public partial class OptionsScreen : Control
 {
     private readonly ScreenFrame frame;
 
-    public OptionsScreen(ClientSettingsService service, UiTheme theme, ClientLocalization? localization = null, IEnumerable<string>? packDirectories = null, Unciv.Models.Ruleset.Ruleset? tutorialRuleset = null)
+    public OptionsScreen(ClientSettingsService service, UiTheme theme, ClientLocalization? localization = null, IEnumerable<string>? packDirectories = null, Unciv.Models.Ruleset.Ruleset? tutorialRuleset = null, RelaySettingsStore? relay = null)
     {
         Name = "OptionsScreen";
         Theme = theme.Theme;
@@ -25,7 +25,7 @@ public partial class OptionsScreen : Control
         frame = new ScreenFrame(theme, "Options");
         frame.Fill();
         AddChild(frame);
-        Panel = new SettingsPanel(service, theme, localization, packDirectories, tutorialRuleset);
+        Panel = new SettingsPanel(service, theme, localization, packDirectories, tutorialRuleset, relay);
         var cap = new WidthCap(theme, UiTokens.MaxOptionsWidth); // T322: tabs and page stay together on a 4K or ultrawide window
         cap.AddChild(Panel);
         frame.SetContent(cap);

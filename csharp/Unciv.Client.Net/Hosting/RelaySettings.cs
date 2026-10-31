@@ -1,5 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Unciv.Net.Identity;
 using Unciv.Net.Relay;
 using Unciv.Server.Transport;
 
@@ -41,6 +42,32 @@ public sealed class RelaySettings
     /// <summary>Why <see cref="Url"/> was rejected, or null when it is empty or fine. For the settings field.</summary>
     public static string? Problem(string? url) =>
         string.IsNullOrWhiteSpace(url) || RelayEndpoint.TryParse(url, out _) ? null : "A relay address looks like unciv-relay://relay.example.org or unciv-relay://203.0.113.10:47830?fp=FINGERPRINT.";
+
+    /// <summary>T371: why a typed relay fingerprint was rejected, or null when it is empty or a fingerprint. For the settings field.</summary>
+    public static string? FingerprintProblem(string? fingerprint) =>
+        string.IsNullOrWhiteSpace(fingerprint) || HostKey.Normalize(fingerprint) != null ? null : "A relay fingerprint is the 52 letters and digits the relay's operator published, with or without dashes.";
+
+    /// <summary>T371: the setting text for the address field and the fingerprint field: <c>unciv-relay://host[:port]</c> plus <c>?fp=...</c> when a fingerprint is given. A fingerprint already in the address is replaced by a given one and kept otherwise.</summary>
+    public static string Compose(string? address, string? fingerprint)
+    {
+        var text = address?.Trim() ?? "";
+        var print = fingerprint?.Trim() ?? "";
+        if (print.Length == 0 || text.Length == 0) return text;
+        var query = text.IndexOf('?', StringComparison.Ordinal);
+        return (query >= 0 ? text[..query] : text) + "?fp=" + (HostKey.Normalize(print) ?? print);
+    }
+
+    /// <summary>T371: splits a relay URL into the address part and the fingerprint (empty when there is none). Text that is not a relay URL is returned as it is, with no fingerprint.</summary>
+    public static (string Address, string Fingerprint) Split(string? url)
+    {
+        var text = url?.Trim() ?? "";
+        if (!RelayEndpoint.TryParse(text, out var endpoint) || endpoint!.Fingerprint == null) return (text, "");
+        var query = text.IndexOf('?', StringComparison.Ordinal);
+        return (query >= 0 ? text[..query] : text, endpoint.Fingerprint);
+    }
+
+    /// <summary>T371: the player no longer agrees to connect through <paramref name="key"/> (<c>host:port</c>); the next invite naming it asks again.</summary>
+    public bool Forget(string key) => AcceptedRelays.RemoveAll(it => string.Equals(it, key, StringComparison.OrdinalIgnoreCase)) > 0;
 
     /// <summary>Reads <paramref name="path"/>; a missing or damaged file is "no relay" (a damaged one is never trusted into a default), then <paramref name="defaultPath"/> for an owner's own build.</summary>
     public static RelaySettings Load(string path, string? defaultPath = null)

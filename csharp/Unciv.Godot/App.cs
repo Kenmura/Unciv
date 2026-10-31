@@ -153,6 +153,13 @@ public partial class App : Node
             RememberAddress = address => JoinFiles.SaveLastAddress(UserPaths.LastJoin, address),
             Relay = () => RelaySettings.Load(UserPaths.Relay, UserPaths.RelayDefault).Endpoint,
             Connect = (target, token) => ConnectAsync(target, known, token),
+            RelayNeedsPrompt = relay => RelaySettings.Load(UserPaths.Relay, UserPaths.RelayDefault).Choose(relay.Host, relay.Port).NeedsPrompt,
+            RememberRelay = relay =>
+            {
+                var current = RelaySettings.Load(UserPaths.Relay, UserPaths.RelayDefault);
+                current.Remember(relay);
+                current.Save(UserPaths.Relay);
+            },
             ModFiles = RulesetLocator.FileSource(),
             ModsDirectory = UserPaths.Mods,
         };
@@ -200,12 +207,13 @@ public partial class App : Node
     }
 
     // T338: a relay target dials the relay named by the invite (the configured one, or one the player agreed to before); the game's own TLS then runs through it and pins the host key.
-    // Asking "use this relay?" for an unknown relay is a UI step that is not built yet (T371); until then an invite's relay is used for this attempt only (nothing is remembered), which exposes only that this player's address met that relay.
+    // T371: the join screen asked "Connect through relay X?" and remembered the answer before this runs, so an unknown relay here (a host-migration endpoint on another relay, never asked about) fails closed.
     private static async Task<Unciv.Net.ITransport> ConnectAsync(JoinTarget target, KnownHosts known, CancellationToken token)
     {
         if (!target.IsRelay || target.Room is not { } room) return await TcpTlsClientTransport.ConnectAsync(target.Host, target.Port, cancellationToken: token);
         var settings = RelaySettings.Load(UserPaths.Relay, UserPaths.RelayDefault);
         var choice = settings.Choose(target.Host, target.Port);
+        if (choice.NeedsPrompt) throw new InvalidOperationException("The relay " + choice.Endpoint.Key + " was not agreed to");
         return await TcpTlsClientTransport.ConnectViaRelayAsync(choice.Endpoint, room, target.Fingerprint, known, choice.Dial, cancellationToken: token);
     }
 
@@ -259,7 +267,7 @@ public partial class App : Node
 
     private void OpenOptions()
     {
-        var options = new OptionsScreen(settings, theme, localization, null, vanilla);
+        var options = new OptionsScreen(settings, theme, localization, null, vanilla, new RelaySettingsStore(() => RelaySettings.Load(UserPaths.Relay, UserPaths.RelayDefault), relay => relay.Save(UserPaths.Relay)));
         options.CloseRequested += () => screens.Pop();
         screens.Push(options);
     }

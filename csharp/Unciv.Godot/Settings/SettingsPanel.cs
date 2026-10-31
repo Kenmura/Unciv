@@ -105,7 +105,7 @@ public partial class SettingsPanel : HBoxContainer
     private ScrollContainer? currentPage;
     private bool refreshing;
 
-    public SettingsPanel(ClientSettingsService service, UiTheme theme, ClientLocalization? localization = null, IEnumerable<string>? packDirectories = null, Unciv.Models.Ruleset.Ruleset? tutorialRuleset = null)
+    public SettingsPanel(ClientSettingsService service, UiTheme theme, ClientLocalization? localization = null, IEnumerable<string>? packDirectories = null, Unciv.Models.Ruleset.Ruleset? tutorialRuleset = null, RelaySettingsStore? relay = null)
     {
         this.service = service;
         this.theme = theme;
@@ -123,6 +123,7 @@ public partial class SettingsPanel : HBoxContainer
         BuildKeys();
         if (localization != null) BuildLanguage(localization);
         packNames = OptionsModel.PackNames(packDirectories ?? GodotAssetFiles.ListDirectories("assets/packs"));
+        if (relay != null) BuildMultiplayer(relay);
         BuildAdvanced();
         SelectTab(0);
 
@@ -389,6 +390,17 @@ public partial class SettingsPanel : HBoxContainer
         var page = AddPage("Language");
         AddRow(page, "Language", new LanguagePicker(service, localization));
     }
+
+    // T371: the relay address, fingerprint and switch, and the relays agreed to; absent when the owner passes no relay store (tests of the other pages).
+    private void BuildMultiplayer(RelaySettingsStore relay)
+    {
+        var page = AddPage("Multiplayer");
+        Relay = new RelaySettingsEditor(theme, relay, page);
+        refreshers.Add(Relay.Retranslate);
+    }
+
+    /// <summary>T371: the Multiplayer page's relay fields, or null when this panel has none.</summary>
+    public RelaySettingsEditor? Relay { get; private set; }
 
     private void BuildAdvanced()
     {

@@ -98,6 +98,7 @@
 - [T312 (ticket not Done or unknown)](#t312-ticket-not-done-or-unknown)
 - [T334 (ticket not Done or unknown)](#t334-ticket-not-done-or-unknown)
 - [T339 (ticket not Done or unknown)](#t339-ticket-not-done-or-unknown)
+- [T371 (ticket not Done or unknown)](#t371-ticket-not-done-or-unknown)
 - [Missing screenshots](#missing-screenshots)
 <!-- /toc -->
 
@@ -2044,6 +2045,32 @@ Scenario `browse`.
 ![Join dialog for a password game from a known host: asks for the password and refuses an empty one.](../Unciv.Godot.Harness/golden/browse/join-password.png)
 
 *Join dialog for a password game from a known host: asks for the password and refuses an empty one.* (`browse/join-password.png`)
+
+## T371 (ticket not Done or unknown)
+
+Relay settings (Options, Multiplayer tab: address, fingerprint, Reach me through the relay, relays agreed to with Forget) and the relay trust prompt for an invite that names a relay that is not the configured one.
+
+Scenario `relay`.
+
+![Fresh install: no default relay, empty address and fingerprint fields, the switch disabled, and what the relay's operator can see.](../Unciv.Godot.Harness/golden/relay/settings-empty.png)
+
+*Fresh install: no default relay, empty address and fingerprint fields, the switch disabled, and what the relay's operator can see.* (`relay/settings-empty.png`)
+
+![A bare host name is refused beside the field with an example address; the typed text stays and nothing is saved.](../Unciv.Godot.Harness/golden/relay/settings-invalid.png)
+
+*A bare host name is refused beside the field with an example address; the typed text stays and nothing is saved.* (`relay/settings-invalid.png`)
+
+![A valid address and relay fingerprint are saved as soon as they are valid; no problem text and the switch is usable.](../Unciv.Godot.Harness/golden/relay/settings-saved.png)
+
+*A valid address and relay fingerprint are saved as soon as they are valid; no problem text and the switch is usable.* (`relay/settings-saved.png`)
+
+![Relays the player agreed to use for an invite are listed with a Forget button each.](../Unciv.Godot.Harness/golden/relay/settings-accepted.png)
+
+*Relays the player agreed to use for an invite are listed with a Forget button each.* (`relay/settings-accepted.png`)
+
+![An invite names another relay: the prompt names it, says what its operator can see and that yes is remembered for that relay only; nothing has been sent yet.](../Unciv.Godot.Harness/golden/relay/prompt.png)
+
+*An invite names another relay: the prompt names it, says what its operator can see and that yes is remembered for that relay only; nothing has been sent yet.* (`relay/prompt.png`)
 
 ## Missing screenshots
 

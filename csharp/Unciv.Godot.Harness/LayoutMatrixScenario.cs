@@ -205,8 +205,19 @@ public sealed class LayoutMatrixScenario : Scenario
             KnownHosts = new KnownHosts(),
             PersistKnownHosts = _ => { },
             Connect = (_, _) => throw new InvalidOperationException("not connecting"),
+            RelayNeedsPrompt = _ => true,
         }))));
         steps.AddRange(check(at, "join", () => M().Top.NotNull()));
+        // T371: the relay trust prompt (the invite names a relay that is not the configured one) at every size
+        steps.Add(new Act("type a relay invite and join", () =>
+        {
+            var screen = (JoinScreen)M().Top.NotNull();
+            screen.AddressField.Text = InviteCode.FormatRelay("relay.other.example.net", 47830, "K7M2-9XQ4AB", HostKey.Fingerprint([1, 2, 3, 4]));
+            screen.Join();
+        }));
+        steps.Add(new WaitUntil("the relay prompt is open", () => M().Top is JoinScreen { RelayPrompt.Length: > 0 }, 600));
+        steps.AddRange(check(at, "join relay prompt", () => M().Top.NotNull()));
+        steps.Add(new Act("decline the relay", () => ((JoinScreen)M().Top.NotNull()).RelayNoButton.EmitSignal(BaseButton.SignalName.Pressed)));
         steps.Add(new Act("back", () => M().Pop()));
         // T339: the browse screen with a list of games, the longest names the rules allow, and its join dialog
         steps.Add(new Act("open browse", () => M().Push(new BrowseScreen(T(), new BrowseScreenEnvironment
@@ -227,10 +238,10 @@ public sealed class LayoutMatrixScenario : Scenario
         steps.Add(new Act("open the join dialog", () => ((BrowseScreen)M().Top.NotNull()).OpenJoinDialog()));
         steps.AddRange(check(at, "browse join dialog", () => ((BrowseScreen)M().Top.NotNull()).Dialog.NotNull()));
         steps.Add(new Act("back", () => M().Pop()));
-        steps.Add(new Act("open options", () => M().Push(new OptionsScreen(run.Settings, T(), null, ["Retro", "Neon"]))));
+        steps.Add(new Act("open options", () => M().Push(new OptionsScreen(run.Settings, T(), null, ["Retro", "Neon"], null, new RelaySettingsStore(() => new RelaySettings { Url = "unciv-relay://relay.example.org:47831?fp=" + BrowseScenario.StrangerKey, AcceptedRelays = ["a.very.long.relay.host.name.example.net:47830", "friend.example.net:47830"] }, _ => { })))));
         steps.AddRange(check(at, "options", () => M().Top.NotNull()));
         // T322: on every page the rows keep within the form width cap (a label next to its control, not across a 4K window)
-        for (int tab = 0; tab < 7; tab++) // 7 tabs; the Language tab is absent without a localization and SelectTab then ignores the index
+        for (int tab = 0; tab < 8; tab++) // 8 tabs with Language; it is absent without a localization and SelectTab then ignores the index
         {
             int index = tab;
             steps.Add(new Act($"{at.Size} options page {index}: select", () => ((OptionsScreen)M().Top.NotNull()).Panel.SelectTab(index)));

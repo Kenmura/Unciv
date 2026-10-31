@@ -1973,5 +1973,31 @@
         "caption": "Join dialog for a password game from a known host: asks for the password and refuses an empty one."
       }
     ]
+  },
+  "T371": {
+    "scenario": "relay",
+    "about": "Relay settings (Options, Multiplayer tab: address, fingerprint, Reach me through the relay, relays agreed to with Forget) and the relay trust prompt for an invite that names a relay that is not the configured one.",
+    "shots": [
+      {
+        "golden": "relay/settings-empty.png",
+        "caption": "Fresh install: no default relay, empty address and fingerprint fields, the switch disabled, and what the relay's operator can see."
+      },
+      {
+        "golden": "relay/settings-invalid.png",
+        "caption": "A bare host name is refused beside the field with an example address; the typed text stays and nothing is saved."
+      },
+      {
+        "golden": "relay/settings-saved.png",
+        "caption": "A valid address and relay fingerprint are saved as soon as they are valid; no problem text and the switch is usable."
+      },
+      {
+        "golden": "relay/settings-accepted.png",
+        "caption": "Relays the player agreed to use for an invite are listed with a Forget button each."
+      },
+      {
+        "golden": "relay/prompt.png",
+        "caption": "An invite names another relay: the prompt names it, says what its operator can see and that yes is remembered for that relay only; nothing has been sent yet."
+      }
+    ]
   }
 }

@@ -89,6 +89,15 @@ public sealed class JoinModelTests
     }
 
     [Fact]
+    public void RelayPromptText_NamesTheRelayAndWhatItSees()
+    {
+        var text = JoinModel.RelayPromptText("relay.example.net:47830");
+        Assert.Contains("relay.example.net:47830", text, StringComparison.Ordinal);
+        Assert.Contains("IP address", text, StringComparison.Ordinal);
+        Assert.Contains("does not change your relay setting", text, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void KeyChangedText_OffersNoWayToContinue()
     {
         var text = JoinModel.KeyChangedText("host:1");

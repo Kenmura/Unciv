@@ -169,6 +169,40 @@ public sealed class RelayClientTests
     }
 
     [Fact]
+    public void RelaySettings_SettingsFields_ComposeSplitAndValidate()
+    {
+        var fp = HostKey.Fingerprint([1, 2, 3, 4]);
+        var url = RelaySettings.Compose("  unciv-relay://relay.example.org:47831 ", fp);
+        Assert.Equal("unciv-relay://relay.example.org:47831?fp=" + fp, url);
+        Assert.Equal(fp, RelayEndpoint.TryParse(url, out var parsed) ? parsed!.Fingerprint : null);
+        Assert.Equal(("unciv-relay://relay.example.org:47831", fp), RelaySettings.Split(url));
+        Assert.Equal("unciv-relay://r.example.org?fp=" + fp, RelaySettings.Compose("unciv-relay://r.example.org?fp=" + HostKey.Fingerprint([9, 9]), fp)); // a given fingerprint replaces the pasted one
+        Assert.Equal("unciv-relay://r.example.org?fp=" + fp, RelaySettings.Compose("unciv-relay://r.example.org?fp=" + fp, "")); // none given: the pasted one stays
+        Assert.Equal("unciv-relay://r.example.org", RelaySettings.Compose("unciv-relay://r.example.org", "  "));
+        Assert.Equal("", RelaySettings.Compose(null, fp));
+        Assert.Equal(("not a relay?fp=x", ""), RelaySettings.Split("not a relay?fp=x"));
+        Assert.Equal(("", ""), RelaySettings.Split(null));
+        Assert.Equal(("unciv-relay://r.example.org", ""), RelaySettings.Split("unciv-relay://r.example.org"));
+        Assert.Null(RelaySettings.FingerprintProblem(""));
+        Assert.Null(RelaySettings.FingerprintProblem(fp));
+        Assert.NotNull(RelaySettings.FingerprintProblem("abc"));
+        Assert.Null(RelaySettings.Problem(url));
+    }
+
+    [Fact]
+    public void RelaySettings_ForgetOneRelay_AsksAgainNextTime()
+    {
+        var settings = new RelaySettings();
+        var friend = new RelayEndpoint("Friend.example.net", 47830);
+        Assert.True(settings.Choose(friend.Host, friend.Port).NeedsPrompt);
+        settings.Remember(friend);
+        Assert.False(settings.Choose("friend.example.net", 47830).NeedsPrompt);
+        Assert.False(settings.Forget("other.example.net:1"));
+        Assert.True(settings.Forget("FRIEND.example.net:47830"));
+        Assert.True(settings.Choose("friend.example.net", 47830).NeedsPrompt);
+    }
+
+    [Fact]
     public void RelaySettings_FreshInstallHasNoRelay_AndTheOwnersDefaultFileOnlyFillsAMissingOne()
     {
         var dir = Directory.CreateTempSubdirectory("unciv-relay-settings-").FullName;

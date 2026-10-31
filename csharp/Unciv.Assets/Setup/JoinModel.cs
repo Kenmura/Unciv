@@ -150,6 +150,10 @@ public static class JoinModel
     public static string TrustText(string address, string fingerprint) =>
         $"You have never connected to {address} before.\n\nThe host's key fingerprint is:\n{HostKey.Normalize(fingerprint) ?? fingerprint}\n\nOnly continue if the host told you this exact fingerprint (an invite code carries it for you). If it differs, someone may be sitting between you and the host.";
 
+    /// <summary>T371 (design/RELAY.md sections 4 and 9): asked once per relay when an invite names a relay that is not the configured one.</summary>
+    public static string RelayPromptText(string relayKey) =>
+        $"This invite connects through the relay {relayKey}, which is not the relay in your settings.\n\nThe relay's operator can see your IP address, which game room you join, when and for how long. It cannot read the game, passwords or your name, and cannot pretend to be the host: the host's key from the invite is still checked. Answering yes is remembered for this relay only; it does not change your relay setting.";
+
     /// <summary>The hard stop for a host whose key is not the one pinned earlier. It offers no "continue anyway"; forgetting the old key is a separate, deliberate action.</summary>
     public static string KeyChangedText(string address) =>
         $"The key of {address} has changed since you last joined.\n\nThat happens when the host reinstalled or moved to another computer, but also when someone is pretending to be the host. You were not connected. Ask the host to confirm the change; only then forget the old key and join again.";

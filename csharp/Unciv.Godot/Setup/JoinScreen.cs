@@ -39,6 +39,12 @@ public sealed class JoinScreenEnvironment
     /// <summary>T338: the relay a typed room code goes through (null: none set, so a bare room code gets an explanation).</summary>
     public Func<RelayEndpoint?> Relay { get; init; } = () => null;
 
+    /// <summary>T371: true when an invite names a relay the player never agreed to (the configured relay and the ones answered yes before are not asked about).</summary>
+    public Func<RelayEndpoint, bool> RelayNeedsPrompt { get; init; } = _ => false;
+
+    /// <summary>T371: the player agreed to connect through this relay; it is remembered per relay host and port and never becomes the relay setting.</summary>
+    public Action<RelayEndpoint> RememberRelay { get; init; } = _ => { };
+
     /// <summary>T247: where mods are installed (the file source the rulesets load from, and its mods folder). Without it a host with other mods is refused as before; with it the screen offers to download them.</summary>
     public IRulesetFileSource? ModFiles { get; init; }
 
@@ -62,6 +68,8 @@ public partial class JoinScreen : Control
     private readonly VBoxContainer formPanel = new() { Name = "JoinForm" };
     private readonly VBoxContainer trustPanel = new() { Name = "TrustPanel", Visible = false };
     private readonly Label trustLabel = new() { Name = "TrustText", AutowrapMode = TextServer.AutowrapMode.WordSmart };
+    private readonly VBoxContainer relayPanel = new() { Name = "RelayPromptPanel", Visible = false };
+    private readonly Label relayLabel = new() { Name = "RelayPromptText", AutowrapMode = TextServer.AutowrapMode.WordSmart };
     private readonly VBoxContainer modPanel = new() { Name = "ModSyncPanel", Visible = false };
     private readonly Label modLabel = new() { Name = "ModSyncText", AutowrapMode = TextServer.AutowrapMode.WordSmart };
     private readonly VBoxContainer stopPanel = new() { Name = "KeyChangedPanel", Visible = false };
@@ -70,6 +78,7 @@ public partial class JoinScreen : Control
     private ClientSession? connecting;
     private TaskCompletionSource<bool>? trustAnswer;
     private TaskCompletionSource<bool>? modAnswer;
+    private TaskCompletionSource<bool>? relayAnswer;
     private string? changedAddress;
     private bool busy;
 
@@ -128,6 +137,17 @@ public partial class JoinScreen : Control
         trustButtons.AddChild(DistrustButton);
         trustPanel.AddChild(trustButtons);
 
+        column.AddChild(relayPanel);
+        relayPanel.AddChild(relayLabel);
+        var relayButtons = new HBoxContainer();
+        RelayYesButton = new Button { Text = "Connect through this relay".Tr(), Name = "RelayYesButton" };
+        RelayYesButton.Pressed += () => AnswerRelay(true);
+        RelayNoButton = new Button { Text = "Do not connect".Tr(), Name = "RelayNoButton" };
+        RelayNoButton.Pressed += () => AnswerRelay(false);
+        relayButtons.AddChild(RelayNoButton);
+        relayButtons.AddChild(RelayYesButton);
+        relayPanel.AddChild(relayButtons);
+
         column.AddChild(modPanel);
         modPanel.AddChild(modLabel);
         var modButtons = new HBoxContainer();
@@ -170,6 +190,14 @@ public partial class JoinScreen : Control
     public Button TrustButton { get; }
 
     public Button DistrustButton { get; }
+
+    /// <summary>T371: the answers of the relay prompt (an invite naming a relay that is not the configured one).</summary>
+    public Button RelayYesButton { get; }
+
+    public Button RelayNoButton { get; }
+
+    /// <summary>The relay prompt's text while it is open, else empty.</summary>
+    public string RelayPrompt => relayPanel.Visible ? relayLabel.Text : "";
 
     public Button DownloadButton { get; }
 
@@ -273,6 +301,15 @@ public partial class JoinScreen : Control
         var sync = env.ModFiles != null && env.ModsDirectory != null
             ? new ModSyncService(env.ModFiles, env.ModsDirectory, plan => AskModsAsync(plan, cancellation))
             : null;
+        if (target.Relay is { } named && env.RelayNeedsPrompt(named))
+        {
+            if (!await AskRelayAsync(named, cancellation).ConfigureAwait(true) || cancellation.IsCancellationRequested)
+            {
+                if (!cancellation.IsCancellationRequested) EndAttempt("Not connected: you did not agree to use that relay.");
+                return;
+            }
+            env.RememberRelay(named);
+        }
         string? hashAfterSync = null; // after a mod download the host's own hash: the rules now are the host's
         SyncedRules = null;
         for (var round = 0; ; round++)
@@ -381,6 +418,33 @@ public partial class JoinScreen : Control
         return answer.Task;
     }
 
+    // The player's yes is the only thing that lets an invite's unknown relay see this machine's address (design/RELAY.md section 4).
+    private Task<bool> AskRelayAsync(RelayEndpoint relay, CancellationToken cancellation)
+    {
+        var answer = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        cancellation.Register(() => answer.TrySetResult(false));
+        void Show()
+        {
+            if (cancellation.IsCancellationRequested) return;
+            relayAnswer = answer;
+            relayLabel.Text = JoinModel.RelayPromptText(relay.Key);
+            ShowPanel(relayPanel);
+            messageLabel.Text = "";
+        }
+        if (context == null) Callable.From(Show).CallDeferred();
+        else context.Post(static state => ((Action)state!)(), (Action)Show);
+        return answer.Task;
+    }
+
+    private void AnswerRelay(bool agreed)
+    {
+        var answer = relayAnswer;
+        relayAnswer = null;
+        ShowPanel(formPanel);
+        if (agreed) messageLabel.Text = "Connecting...".Tr();
+        answer?.TrySetResult(agreed);
+    }
+
     private void AnswerMods(bool download)
     {
         var answer = modAnswer;
@@ -447,6 +511,11 @@ public partial class JoinScreen : Control
             trustAnswer = null;
             answer.TrySetResult(false);
         }
+        if (relayAnswer is { } relayReply)
+        {
+            relayAnswer = null;
+            relayReply.TrySetResult(false);
+        }
         if (modAnswer is { } modsAnswer)
         {
             modAnswer = null;
@@ -471,6 +540,7 @@ public partial class JoinScreen : Control
     {
         formPanel.Visible = panel == formPanel;
         trustPanel.Visible = panel == trustPanel;
+        relayPanel.Visible = panel == relayPanel;
         modPanel.Visible = panel == modPanel;
         stopPanel.Visible = panel == stopPanel;
     }

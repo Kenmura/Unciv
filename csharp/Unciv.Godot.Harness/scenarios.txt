@@ -52,6 +52,8 @@ lobby
 mp-turn
 mp-social
 join
+browse
+relay
 viewport
 rival-ribbon
 map-markers
