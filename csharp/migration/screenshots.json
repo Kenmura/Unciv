@@ -208,6 +208,10 @@
       {
         "golden": "saveload/damaged.png",
         "caption": "The damaged and truncated files listed in the warning colour as Damaged next to the good saves."
+      },
+      {
+        "golden": "saveload/loaded.png",
+        "caption": "T385: the game screen after loading Alpha. No floating Saves button bottom right and no status label bottom left; the outcome shows as a toast under the notifications."
       }
     ]
   },

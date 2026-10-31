@@ -63,7 +63,6 @@ public static class SaveMetadata
 public sealed class SaveStore(string folder)
 {
     public const string AutosaveName = "Autosave";
-    public const string QuickSaveName = "QuickSave";
     public const int MaxNameLength = 100;
     public const long MaxSaveBytes = 256L * 1024 * 1024;
 

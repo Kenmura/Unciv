@@ -65,7 +65,8 @@ public partial class App : Node
         screens.CanQuitOnBack = () => activeSession == null && !menuSaves.IsDialogOpen; // C099: in a game back is Escape (the game menu); only the main menu leaves the app
         AddChild(screens);
 
-        menuSaves = new SaveController(store, settings, theme, text => LocalHost.FromSave(text, WallClockMillis), ShowGame) { ButtonVisible = false };
+        menuSaves = new SaveController(store, settings, theme, text => LocalHost.FromSave(text, WallClockMillis), ShowGame);
+        menuSaves.StatusChanged += text => { if (GodotObject.IsInstanceValid(menu)) menu.SetStatus(text); };
         screens.AddChild(menuSaves);
         ShowMenu(first: true);
 
@@ -309,6 +310,7 @@ public partial class App : Node
             saves.Attach(next);
             activeSession = next;
         };
+        saves.StatusChanged += screen.Notifications.PushToast; // T385: no floating message label; a status that ends outside the dialog is a toast
         activeSaves = saves;
         activeSession = session;
         screens.Reset(root);

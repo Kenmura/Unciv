@@ -12,15 +12,14 @@ using Unciv.GodotClient.Localization;
 namespace Unciv.GodotClient.Saves;
 
 /// <summary>
-/// C016: save and load for the running game. A "Saves" button opens a dialog with the list of saves (name, turn, civ, ruleset and mods, date), Save (under the typed
-/// name), Load, Delete (asks again), Resume last and Close; F5 quick saves, F9 quick loads, F10 opens the dialog; an autosave is written whenever a new turn begins
+/// C016: save and load for the running game. The dialog (opened by the main menu, the in-game menu and Ctrl+S / Ctrl+L, T385: there is no floating button and no F5/F9/F10 key here)
+/// lists the saves (name, turn, civ, ruleset and mods, date) with Save (under the typed name), Load, Delete (asks again), Resume last and Close; an autosave is written whenever a new turn begins
 /// that the settings' autosave interval selects. The game is read and replaced only through <see cref="IGameSession"/>: saving is <see cref="IGameSession.ExportSaveAsync"/>,
 /// loading hands the file text to the composition root's <c>loader</c> and then to <c>onLoaded</c>, which shows the new session (the screen's Start). All file work is in
 /// <see cref="SaveStore"/>; every failure ends as a message on screen, never an exception or a changed game.
 /// </summary>
 public partial class SaveController : Control
 {
-    private const float Margin = 12f;
     private const float DialogShare = 0.8f;
     private const float CompactDialogShare = 0.94f;
     private const float CompactWidth = 800f;
@@ -30,8 +29,6 @@ public partial class SaveController : Control
     private readonly UiTheme theme;
     private readonly Func<string, IGameSession> loader;
     private readonly Action<IGameSession> onLoaded;
-    private readonly Label messageLabel = new() { Name = "SaveMessage" };
-    private readonly Button openButton = new() { Text = "Saves".Tr(), Name = "SavesButton" };
     private IGameSession? session;
     private int lastTurn = -1;
     private string? pendingDelete;
@@ -62,20 +59,13 @@ public partial class SaveController : Control
         this.onLoaded = onLoaded;
         Name = "SaveController";
         MouseFilter = MouseFilterEnum.Ignore;
-        AddChild(messageLabel);
-        AddChild(openButton);
-        openButton.Pressed += ToggleDialog;
     }
 
     /// <summary>Always set after an action, success or failure.</summary>
-    public string Message => messageLabel.Text;
+    public string Message { get; private set; } = "";
 
-    /// <summary>Whether the corner "Saves" button shows (the main menu has its own buttons for the same dialog).</summary>
-    public bool ButtonVisible
-    {
-        get => openButton.Visible;
-        set => openButton.Visible = value;
-    }
+    /// <summary>T385: the status of an action that ended while the dialog was closed (a failed autosave, a load, a refused resume); the host shows it (a toast in a game, a line on the main menu). With the dialog open the status is shown in the dialog instead.</summary>
+    public event Action<string>? StatusChanged;
 
     public bool IsDialogOpen => dialog != null;
 
@@ -102,8 +92,6 @@ public partial class SaveController : Control
     private void Layout()
     {
         Size = GetViewportRect().Size;
-        openButton.Position = new Vector2(Size.X - openButton.Size.X - Margin, Size.Y - openButton.Size.Y - Margin);
-        messageLabel.Position = new Vector2(Margin, Size.Y - Margin - 56f);
         if (dialogPanel != null)
         {
             var panelSize = (Size * (compact ? CompactDialogShare : DialogShare)).Floor();
@@ -154,7 +142,7 @@ public partial class SaveController : Control
         }
         var result = store.Autosave(text, turn, MaxNumberedAutosaves);
         if (result.Ok) progress.MarkSaved(seq);
-        Say(result.Ok ? $"Autosaved turn {turn.ToString(CultureInfo.InvariantCulture)}." : "Autosave failed: " + result.Error);
+        Say(result.Ok ? $"Autosaved turn {turn.ToString(CultureInfo.InvariantCulture)}." : "Autosave failed: " + result.Error, notify: !result.Ok);
     }
 
     /// <summary>C099: the app is going to the background (Android may kill it there): writes the autosave now, whatever the turn. A session that cannot be saved (a joined game) is left alone.</summary>
@@ -209,14 +197,10 @@ public partial class SaveController : Control
         await loaded.ResyncAsync(); // the snapshot the screen is about to draw is current
         Attach(loaded);
         onLoaded(loaded);
-        Say($"Loaded \"{name}\" (turn {loaded.Snapshot.Turn.ToString(CultureInfo.InvariantCulture)}).");
         CloseDialog();
+        Say($"Loaded \"{name}\" (turn {loaded.Snapshot.Turn.ToString(CultureInfo.InvariantCulture)}).");
         return true;
     }
-
-    public Task<bool> QuickSaveAsync() => SaveAsync(SaveStore.QuickSaveName);
-
-    public Task<bool> QuickLoadAsync() => LoadAsync(SaveStore.QuickSaveName);
 
     /// <summary>Loads the newest readable save (autosaves count).</summary>
     public Task<bool> ResumeLastAsync()
@@ -246,33 +230,7 @@ public partial class SaveController : Control
         GetViewport().SetInputAsHandled();
     }
 
-    public override void _UnhandledKeyInput(InputEvent @event)
-    {
-        if (@event is not InputEventKey { Pressed: true, Echo: false } key) return;
-        switch (key.Keycode)
-        {
-            case Key.F5:
-                Run(QuickSaveAsync());
-                break;
-            case Key.F9:
-                Run(QuickLoadAsync());
-                break;
-            case Key.F10:
-                ToggleDialog();
-                break;
-            default:
-                return;
-        }
-        GetViewport().SetInputAsHandled();
-    }
-
     // Dialog
-
-    private void ToggleDialog()
-    {
-        if (dialog != null) CloseDialog();
-        else OpenDialog();
-    }
 
     public void OpenDialog()
     {
@@ -455,10 +413,11 @@ public partial class SaveController : Control
         detailsBody.Text = $"{"Turn".Tr()} {info.Turn.ToString(CultureInfo.InvariantCulture)}\n{info.Civ}\n{info.Ruleset}{mods}\n{when}";
     }
 
-    private void Say(string text)
+    private void Say(string text, bool notify = true)
     {
-        messageLabel.Text = text.TrText();
-        if (dialogMessage != null) dialogMessage.Text = messageLabel.Text;
+        Message = text.TrText();
+        if (dialogMessage != null) dialogMessage.Text = Message;
+        else if (notify) StatusChanged?.Invoke(Message);
     }
 
     private async void Run(Task task)

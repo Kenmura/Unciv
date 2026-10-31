@@ -46,7 +46,6 @@ public sealed class MenuScenario : Scenario
         screen.Start(localHost, registry);
         var controller = new SaveController(store, settings, new UiTheme(registry), text => LocalHost.FromSave(text, () => now += 1000), loaded => screen.Start(loaded, registry));
         host.AddChild(controller);
-        controller.ButtonVisible = false;
         controller.Attach(localHost);
         screen.HasUnsavedProgress = () => controller.HasUnsavedProgress;
         int mainMenu = 0, options = 0, newGame = 0;

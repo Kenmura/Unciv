@@ -11,7 +11,7 @@ using Unciv.Utils;
 namespace Unciv.GodotHarness;
 
 /// <summary>
-/// C016: save by name through the dialog, end the turn (an autosave appears), load the save and find the state hash equal to the saved one; quick save and quick load by key,
+/// C016: save by name through the dialog, end the turn (an autosave appears), load the save and find the state hash equal to the saved one;
 /// delete with confirmation, a damaged and a truncated file that are listed, refuse to load and leave the running game alone, and Resume last. The save folder is a temporary
 /// directory, not the player's user:// folder; file dates are pinned so the list (and its golden) does not depend on the clock.
 /// </summary>
@@ -48,6 +48,10 @@ public sealed class SaveLoadScenario : Scenario
             text => loaded = LocalHost.FromSave(text, () => now += 1000), session2 => screen.Start(session2, registry));
         host.AddChild(controller);
         controller.Attach(localHost);
+        screen.HasUnsavedProgress = () => controller.HasUnsavedProgress;
+        screen.SaveRequested += controller.OpenDialog; // T385: the dialog opens from the in-game menu only, there is no floating Saves button
+        screen.LoadRequested += controller.OpenDialog;
+        controller.StatusChanged += screen.Notifications.PushToast;
 
         int startTurn = session.Game.Turns;
         string savedHash = "";
@@ -65,6 +69,8 @@ public sealed class SaveLoadScenario : Scenario
             }
             controller.RefreshList();
         }
+
+        ScenarioStep[] OpenSaves(string entry) => [new Press("Menu"), new WaitFrames(2), new Press(entry), new WaitFrames(2)];
 
         ScenarioStep[] Row(string name) =>
         [
@@ -91,7 +97,7 @@ public sealed class SaveLoadScenario : Scenario
         [
             new WaitFrames(3),
             new AssertQuery("no saves yet", () => store.List().Count == 0 && !Directory.Exists(folder)),
-            new Press("Saves"),
+            .. OpenSaves("Save game"),
             new AssertQuery("the dialog is open with an empty list", () => controller.IsDialogOpen && controller.ListedNames.Count == 0),
             new Act("type a name", () => controller.NameField.NotNull().Text = "Alpha"),
             new Press("Save"),
@@ -103,7 +109,7 @@ public sealed class SaveLoadScenario : Scenario
             new AssertQuery("the turn advanced and the state changed", () => session.Game.Turns == startTurn + 1 && ScenarioGame.StateHash(session) != savedHash),
             new AssertQuery("an autosave and a numbered autosave appeared", () => store.List().Select(it => it.Name).Order(StringComparer.Ordinal).SequenceEqual(["Alpha", "Autosave", $"Autosave-{startTurn + 1}"])),
             new Act("pin file dates and open the list", PinDates),
-            new Press("Saves"),
+            .. OpenSaves("Load game"),
             new Capture("list", "The save list: Alpha, then the autosave and the numbered autosave, each with turn, civ and ruleset"),
             .. Row("Alpha"),
             new AssertQuery("selecting a save copies its name into the name field", () => controller.NameField.NotNull().Text == "Alpha"),
@@ -112,13 +118,6 @@ public sealed class SaveLoadScenario : Scenario
             new AssertQuery("the screen shows the loaded turn and the dialog closed", () => screen.Turn == savedTurn && !controller.IsDialogOpen && controller.Message.StartsWith("Loaded", StringComparison.Ordinal)),
             new Capture("loaded", "After loading Alpha: the screen shows the saved turn again"),
 
-            new PressKey(Key.F5),
-            new AssertQuery("F5 wrote the quick save", () => store.List().Any(it => it.Name == "QuickSave" && it.Info?.Turn == savedTurn)),
-            new Press("Next turn"),
-            new AssertQuery("the loaded game plays on", () => screen.Turn == savedTurn + 1),
-            new PressKey(Key.F9),
-            new AssertQuery("F9 went back to the quick save", () => screen.Turn == savedTurn && ScenarioGame.StateHash(loaded.NotNull().Session) == savedHash),
-
             new Act("write a damaged and a truncated save", () =>
             {
                 brokenText = File.ReadAllText(Path.Combine(folder, "Alpha"));
@@ -126,7 +125,7 @@ public sealed class SaveLoadScenario : Scenario
                 File.WriteAllText(Path.Combine(folder, "Truncated"), brokenText[..(brokenText.Length / 2)]);
                 PinDates();
             }),
-            new Press("Saves"),
+            .. OpenSaves("Load game"),
             new AssertQuery("both damaged files are listed but not readable", () => store.List().Count(it => it.Info == null) == 2),
             new Capture("damaged", "The damaged files are listed as unreadable"),
             .. Row("Broken"),
@@ -145,7 +144,7 @@ public sealed class SaveLoadScenario : Scenario
 
             new PressKey(Key.Escape), new WaitFrames(2),
             new AssertQuery("Escape closed the dialog and did not open the game menu behind it", () => !controller.IsDialogOpen && !screen.GameMenu.Visible),
-            new Press("Saves"),
+            .. OpenSaves("Load game"),
             new Press("Resume last"),
             new AssertQuery("Resume last loaded the newest readable save (an autosave)", () => controller.Message.StartsWith("Loaded \"Autosave", StringComparison.Ordinal) && !controller.IsDialogOpen),
         ];

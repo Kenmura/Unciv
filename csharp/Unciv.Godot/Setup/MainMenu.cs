@@ -15,6 +15,7 @@ namespace Unciv.GodotClient.Setup;
 public partial class MainMenu : Control
 {
     private readonly Button resume;
+    private readonly Label status = new() { Name = "MenuStatus", Visible = false, HorizontalAlignment = HorizontalAlignment.Center, AutowrapMode = TextServer.AutowrapMode.WordSmart };
 
     /// <param name="theme">C101: when given, the column is 260 px at the theme's scale (wider on a touch build; a mouse build with the default scale gets 260 px); without it 260 px.</param>
     /// <param name="profile">T334: the profile this instance runs as; shown as a line under the logo so two windows can be told apart (null = the default profile, no line).</param>
@@ -45,7 +46,17 @@ public partial class MainMenu : Control
         if (AndroidShell.ShowsHostGame(DisplayProfile.Current.Touch)) Add(column, "Host game", () => HostRequested?.Invoke()); // C099: a phone does not host
         Add(column, "Options", () => OptionsRequested?.Invoke());
         Add(column, "Quit", () => QuitRequested?.Invoke()).ThemeTypeVariation = UiVariants.ButtonGhost;
+        column.AddChild(status);
     }
+
+    /// <summary>T385: the outcome of a menu action that has no dialog (a refused Resume last); empty hides the line.</summary>
+    public void SetStatus(string text)
+    {
+        status.Text = text;
+        status.Visible = text.Length > 0;
+    }
+
+    public string StatusText => status.Text;
 
     public Button NewGame { get; }
 

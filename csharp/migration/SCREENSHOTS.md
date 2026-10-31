@@ -396,6 +396,10 @@ Scenario `saveload`.
 
 *The damaged and truncated files listed in the warning colour as Damaged next to the good saves.* (`saveload/damaged.png`)
 
+![T385: the game screen after loading Alpha. No floating Saves button bottom right and no status label bottom left; the outcome shows as a toast under the notifications.](../Unciv.Godot.Harness/golden/saveload/loaded.png)
+
+*T385: the game screen after loading Alpha. No floating Saves button bottom right and no status label bottom left; the outcome shows as a toast under the notifications.* (`saveload/loaded.png`)
+
 ## C017 City screen A: info, tiles, specialists, focus
 
 City screen A: info, tile grid, specialists, focus.
