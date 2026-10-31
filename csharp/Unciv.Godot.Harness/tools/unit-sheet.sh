@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# T295: the real-GPU recognisability sheet (scenario unit-sheet, see UnitSheetScenario.cs): every unit side by side at the game's default zoom, one PNG per page (at most 44 units, one figure each; UNCIV_SHEET_FORMATIONS=1 draws the formations, UNCIV_SHEET_ZOOM sets the camera size, the game's default is 14), plus index.md.
+# T295: the real-GPU recognisability sheet (scenario unit-sheet, see UnitSheetScenario.cs): every unit side by side at the game's default zoom, one PNG per page (at most 72 units, 12x6, one figure each, fitted camera; UNCIV_SHEET_FORMATIONS=1 draws the formations, UNCIV_SHEET_ZOOM sets the camera size, the game's default is 14), plus index.md.
 # NOT part of CI and never writes goldens: it needs a real display and GPU. The same host rules as gpu-bench.sh apply (host, not dotnet-dev; DOTNET_ROOT copy of the container's /usr/lib64/dotnet;
 # build first inside dotnet-dev: (cd Unciv.Godot.Harness && dotnet build)).
 #

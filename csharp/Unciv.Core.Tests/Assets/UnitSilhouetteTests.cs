@@ -39,7 +39,6 @@ public sealed class UnitSilhouetteTests
     private const float MinRigidDistance = 0.18f;
     /// <summary>T307: a siege engine fills at least this many pixels of the 40x56 mask (the old Cannon and Catapult were small bars of 300 to 400 pixels; the new ones 550 to 1100).</summary>
     private const int MinSiegeCoverage = 500;
-    /// <summary>T307: the civ's colour may cover at most this share of a rigid model's surface (the old Battering Ram was a flat team-coloured roof seen from above).</summary>
     /// <summary>T309: the factor of <see cref="Masks"/>' resolution for the fine checks (120x168): thin props (a spear tip, an antenna, the Mohawk) survive it.</summary>
     private const int FineScale = 3;
     /// <summary>T309: a foot unit against any rider or rigid model (measured minimum 0.348: Battering Ram against the African Forest Elephant; foot against rider 0.378).</summary>
@@ -48,6 +47,7 @@ public sealed class UnitSilhouetteTests
     private const float MinFineRigidDistance = 0.17f;
     /// <summary>T309: the outline distance (fine masks) plus the distance of the mean material colours (civ colour left out): the mask is colour-blind, so two rigid units alike in outline must differ in colour.</summary>
     private const float MinOutlinePlusColour = 0.20f;
+    /// <summary>T307: the civ's colour may cover at most this share of a rigid model's surface (the old Battering Ram was a flat team-coloured roof seen from above).</summary>
     private const float MaxTeamColourShare = 0.35f;
     private static readonly string[] Siege = ["Battering Ram", "Catapult", "Ballista", "Trebuchet", "Hwach'a", "Cannon"];
 
