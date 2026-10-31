@@ -8,6 +8,8 @@
 #   tools/run-scenario.sh <name> --expect-golden-failure self-test: against deliberately wrong goldens the run must FAIL
 #
 # HARNESS_GOLDEN_TOLERANCE=renderer compares with the cross-renderer tolerance of GoldenTolerance.Renderer (CI, T246); default strict.
+# HARNESS_TIMEOUT (seconds) bounds the whole run; default 120, 600 for layout-matrix (T388: it renders every screen at five sizes plus a resize cycle, ~135 s of
+# pure CPU on llvmpipe with no waiting, so a 120 s limit passed or timed out depending on machine load). UNCIV_STEP_TIMES=1 prints "[steptime] index ms step" per step.
 # Output: out/<name>/<step>.png and out/<name>/result.json (git-ignored). Run inside dotnet-dev (see csharp/migration/GODOT.md).
 set -euo pipefail
 
@@ -18,6 +20,8 @@ if [[ $# -lt 1 || "$1" == -* ]]; then echo "usage: $0 <scenario> [--update-golde
 name="$1"; mode="${2:-}"
 project="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 godot="${GODOT:-$("$project/tools/setup-godot.sh" --print-path)}"
+case "$name" in layout-matrix) default_timeout=600 ;; *) default_timeout=120 ;; esac
+timeout_s="${HARNESS_TIMEOUT:-$default_timeout}"
 out="${HARNESS_OUT:-$project/out}"
 golden="$project/golden"
 mkdir -p "$out"
@@ -70,13 +74,14 @@ run() {
     done
     if [[ -z "$display" ]]; then echo "Xvfb did not start" >&2; return 1; fi
     # background + wait, so a TERM/INT sent to this script alone runs the cleanup trap at once instead of after the scenario ends
-    DISPLAY=":$display" timeout "${HARNESS_TIMEOUT:-120}" \
+    DISPLAY=":$display" timeout "$timeout_s" \
         "$godot" --path "$project" --rendering-driver opengl3 --resolution 640x480 res://ScenarioRunner.tscn \
         -- --scenario="$name" --out="$out" --golden-dir="$golden" "${extra[@]}" &
     godot_pid=$!
     status=0
     wait "$godot_pid" || status=$?
     godot_pid=""
+    if [[ "$status" == 124 ]]; then echo "scenario $name TIMED OUT after ${timeout_s} s (not a hang by itself: rerun with UNCIV_STEP_TIMES=1 to see the per-step times, or raise HARNESS_TIMEOUT)" >&2; fi
     return "$status"
 }
 

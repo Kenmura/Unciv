@@ -107,7 +107,15 @@ public partial class ScenarioRunner : Control
         var session = ScenarioGame.Create(solo: scenario.Solo, godMode: scenario.GodMode, skirmish: scenario.Skirmish, diplomacy: scenario.Diplomacy, rich: scenario.Rich, policies: scenario.Policies, alerts: scenario.Alerts, victory: scenario.Victory, defeat: scenario.Defeat, trade: scenario.Trade, decisions: scenario.Decisions, crowd: scenario.Crowd, espionage: scenario.Espionage, proposals: scenario.Proposals, religion: scenario.Religion, voteResult: scenario.VoteResult, tutorialTasks: scenario.TutorialTasks);
         var script = scenario.Build(this, session);
 
-        foreach (var step in script) await Execute(step, scenario.Name, scenarioOut);
+        bool stepTimes = System.Environment.GetEnvironmentVariable("UNCIV_STEP_TIMES") != null;
+        int index = 0;
+        foreach (var step in script)
+        {
+            ulong before = Time.GetTicksMsec();
+            await Execute(step, scenario.Name, scenarioOut);
+            if (stepTimes) GD.Print($"[steptime] {index} {Time.GetTicksMsec() - before} ms {step.GetType().Name} {(step as Act)?.What}");
+            index++;
+        }
 
         string stateHash = ScenarioGame.StateHash(session);
         var result = new ScenarioResult(scenario.Name, ScenarioGame.GameSeed, ScenarioGame.MapSeed, stateHash, session.Log, captures, scenario.Checklist, failures, scenario.Solo, scenario.GodMode, scenario.Skirmish, scenario.Diplomacy, scenario.Rich, scenario.Policies, scenario.Alerts, scenario.Victory, scenario.Defeat, scenario.Trade, scenario.Decisions, scenario.Crowd, scenario.Espionage, scenario.Proposals, scenario.Religion, scenario.VoteResult, scenario.TutorialTasks);
