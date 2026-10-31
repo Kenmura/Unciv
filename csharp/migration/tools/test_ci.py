@@ -245,7 +245,7 @@ class ReleaseWorkflowShape(unittest.TestCase):
     def test_write_permission_only_on_the_publish_job(self):
         self.assertRegex(self.text, r"(?m)^permissions:\n  contents: read\n(?=\n)")
         jobs = self.jobs()
-        self.assertEqual(sorted(jobs), ["android", "cli", "client", "publish", "server", "verify"])
+        self.assertEqual(sorted(jobs), ["android", "cli", "client", "publish", "relay", "server", "verify"])
         for name, body in jobs.items():
             if name == "publish":
                 self.assertRegex(body, r"(?m)^    permissions:\n      contents: write\n(?!      )")
@@ -276,8 +276,8 @@ class ReleaseWorkflowShape(unittest.TestCase):
         self.assertTrue(uses)
         for u in uses:
             self.assertRegex(u, r"^[\w.-]+/[\w./-]+@[0-9a-f]{40}$", u)
-        self.assertRegex(self.jobs()["publish"], r"needs: \[verify, cli, server, client, android\]")
-        for name in ("cli", "client", "android"):
+        self.assertRegex(self.jobs()["publish"], r"needs: \[verify, cli, server, relay, client, android\]")
+        for name in ("cli", "server", "relay", "client", "android"):
             self.assertRegex(self.jobs()[name], r"needs: verify")
 
     def test_checkouts_do_not_persist_credentials(self):
@@ -295,10 +295,15 @@ class ReleaseWorkflowShape(unittest.TestCase):
         server_rids = re.findall(r"for rid in ([\w\- ]+); do\n\s+\(cd csharp && dotnet publish Unciv\.Server", self.text)  # T266
         self.assertEqual([r.split() for r in server_rids], [mod.SERVER_RIDS])
         self.assertIn("release_assets.py smoke-server", self.text)
+        relay_rids = re.findall(r"for rid in ([\w\- ]+); do\n\s+\(cd csharp && dotnet publish Unciv\.Relay", self.text)  # T366
+        self.assertEqual([r.split() for r in relay_rids], [mod.RELAY_RIDS])
+        self.assertIn("release_assets.py pack-relay", self.text)
+        self.assertIn("release_assets.py smoke-relay", self.text)
+        self.assertIn("name: release-relay", self.text)
         self.assertIn("python3 -I csharp/migration/tools/release_assets.py verify", self.text)
         self.assertIn(mod.ANDROID_APK, self.text)  # T280
         self.assertIn("package.sh android\n", self.text)
-        self.assertRegex(self.text, r"needs: \[verify, cli, server, client, android\]")
+        self.assertRegex(self.text, r"needs: \[verify, cli, server, relay, client, android\]")
         self.assertRegex(self.text, r"name: release-android")
         self.assertNotRegex(self.text, r"(?i)\$\{\{\s*secrets\.|keystore-password|\.jks")
 
@@ -309,6 +314,16 @@ class ReleaseWorkflowShape(unittest.TestCase):
         self.assertEqual(re.findall(r"for rid in ([\w\- ]+); do", job)[0].split(), ClientPlatforms().load("release_assets").SERVER_RIDS)
         self.assertIn("dotnet publish Unciv.Server", job)
         self.assertIn("release_assets.py smoke-server", job)
+        self.assertNotIn("upload-artifact", job)
+
+    def test_csharp_yml_relay_job_builds_and_smokes_only(self):  # T366
+        text = WORKFLOW.read_text(encoding="utf-8")
+        job = re.search(r"(?ms)^  relay-publish:\n(.*?)(?=^  \S|\Z)", text).group(1)
+        self.assertIn("needs: engine", job)
+        self.assertEqual(re.findall(r"for rid in ([\w\- ]+); do", job)[0].split(), ClientPlatforms().load("release_assets").RELAY_RIDS)
+        self.assertIn("dotnet publish Unciv.Relay", job)
+        self.assertIn("release_assets.py pack-relay", job)
+        self.assertIn("release_assets.py smoke-relay", job)
         self.assertNotIn("upload-artifact", job)
 
     def test_csharp_yml_android_job_builds_both_apks_and_smokes_without_secrets(self):  # T277
@@ -350,7 +365,8 @@ class ReleaseAssets(unittest.TestCase):
             self.mod.expected_assets(),
             ["Unciv-client-linux.tar.gz", "Unciv-client-windows.zip", "Unciv-client-macos.zip",
              "Unciv-cli-linux-x64.tar.gz", "Unciv-cli-win-x64.zip", "Unciv-cli-osx-arm64.tar.gz",
-             "Unciv-server-linux-x64.tar.gz", "Unciv-server-win-x64.zip", "Unciv-client-android-arm64.apk"],
+             "Unciv-server-linux-x64.tar.gz", "Unciv-server-win-x64.zip",
+             "Unciv-relay-linux-x64.tar.gz", "Unciv-relay-win-x64.zip", "Unciv-client-android-arm64.apk"],
         )
 
     def fake_publish(self, tmp, rid):
@@ -416,6 +432,60 @@ class ReleaseAssets(unittest.TestCase):
             with self.assertRaises(SystemExit):
                 self.mod.pack_server("linux-x64", self.fake_publish(Path(t) / "cli", "linux-x64")[0], Path(t) / "out", jsons, lic)  # a CLI publish folder is not a server one
 
+    def test_pack_relay_layout_carries_guides_and_deploy_and_no_jsons(self):  # T366
+        import tarfile
+        import zipfile
+
+        self.assertEqual(self.mod.RELAY_RIDS, ClientPlatforms().load("release").RELAY_RIDS)
+        deploy = sorted(p.relative_to(self.mod.CSHARP / "Unciv.Relay").as_posix() for p in (self.mod.CSHARP / "Unciv.Relay" / "deploy").rglob("*")
+                        if p.is_file() and p.name != ".env" and (p.parent.name != "certs" or p.name == ".gitkeep"))
+        self.assertIn("deploy/Dockerfile", deploy)
+        self.assertIn("deploy/unciv-relay.service", deploy)
+        with tempfile.TemporaryDirectory() as t:
+            for rid in self.mod.RELAY_RIDS:
+                d, _, lic = self.fake_publish(t, rid)
+                exe = "Unciv.Relay.exe" if rid.startswith("win-") else "Unciv.Relay"
+                (d / ("Unciv.Cli.exe" if rid.startswith("win-") else "Unciv.Cli")).rename(d / exe)
+                out = self.mod.pack_relay(rid, d, Path(t) / "out", lic)
+                self.assertEqual(out.name, f"Unciv-relay-{rid}.{'zip' if rid.startswith('win-') else 'tar.gz'}")
+                names = zipfile.ZipFile(out).namelist() if out.suffix == ".zip" else tarfile.open(out).getnames()
+                top = f"Unciv-relay-{rid}/"
+                self.assertEqual(sorted(names), sorted(top + n for n in [exe, "lib.dll", "LICENSE", "README.md", "SETUP.md"] + deploy))
+            with self.assertRaises(SystemExit):
+                self.mod.pack_relay("osx-arm64", d, Path(t) / "out", lic)
+            with self.assertRaises(SystemExit):
+                self.mod.pack_relay("linux-x64", self.fake_publish(Path(t) / "cli", "linux-x64")[0], Path(t) / "out", lic)  # a CLI publish folder is not a relay one
+
+    def test_pack_relay_never_packs_a_local_env_or_certificate(self):  # T366
+        deploy = self.mod.CSHARP / "Unciv.Relay" / "deploy"
+        secrets = [deploy / ".env", deploy / "certs" / "fullchain.pem"]
+        for s in secrets:
+            self.assertFalse(s.exists(), f"{s} exists locally; remove it before running this test")
+        try:
+            for s in secrets:
+                s.write_text("secret")
+            names = [rel for rel, _ in self.mod._relay_extras()]
+            self.assertNotIn("deploy/.env", names)
+            self.assertNotIn("deploy/certs/fullchain.pem", names)
+            self.assertIn("deploy/certs/.gitkeep", names)
+        finally:
+            for s in secrets:
+                s.unlink(missing_ok=True)
+
+    def test_smoke_relay_reports_a_relay_that_never_listens_and_accepts_a_clean_stop(self):  # T366
+        with tempfile.TemporaryDirectory() as t:
+            fake = Path(t) / "Unciv.Relay"
+            fake.write_text("#!/bin/sh\necho '--tunnel-port'\n[ \"$1\" = --help ] && exit 0\nexit 7\n")
+            fake.chmod(0o755)
+            problems = self.mod.smoke_relay(t)
+            self.assertTrue(problems and "LISTENING tunnel" in problems[0], problems)
+            fake.write_text("#!/bin/sh\nexit 3\n")
+            self.assertTrue("--help failed" in self.mod.smoke_relay(t)[0])
+            fake.write_text("#!/bin/sh\n[ \"$1\" = --help ] && { echo '--tunnel-port'; exit 0; }\ntrap 'exit 0' TERM\nprintf 'info\\nLISTENING tunnel 5\\nLISTENING http 6\\n'\nwhile :; do sleep 0.1; done\n")
+            self.assertEqual(self.mod.smoke_relay(t), [])
+            fake.write_text(fake.read_text().replace("trap 'exit 0' TERM", "trap 'exit 4' TERM"))
+            self.assertTrue("expected 0" in self.mod.smoke_relay(t)[0])
+
     def test_smoke_server_reports_a_server_that_never_listens(self):
         with tempfile.TemporaryDirectory() as t:
             fake = Path(t) / "Unciv.Server"
@@ -475,7 +545,7 @@ class ReleaseAssets(unittest.TestCase):
             with zipfile.ZipFile(out / self.mod.ANDROID_APK, "w") as apk:
                 apk.writestr("lib/arm64-v8a/libgodot_android.so", b"x")
             lines = self.mod.write_sums(out)
-            self.assertEqual(len(lines), 9)
+            self.assertEqual(len(lines), 11)
             self.assertEqual(lines, sorted(lines, key=lambda l: l.split("  ")[1]))
             self.assertEqual(self.mod.verify(out), [])
             self.assertEqual(self.mod.write_sums(out), lines)  # SHA256SUMS does not hash itself
@@ -495,9 +565,9 @@ class ReleaseAssets(unittest.TestCase):
         self.assertIn("a" * 40, text)
         self.assertIn("1.2.3", text)
         rows = {r.split("|")[1].strip(" `"): r for r in text.splitlines() if r.startswith("| `")}
-        for name in ("Unciv-client-windows.zip", "Unciv-client-macos.zip", "Unciv-cli-win-x64.zip", "Unciv-cli-osx-arm64.tar.gz", "Unciv-server-win-x64.zip"):
+        for name in ("Unciv-client-windows.zip", "Unciv-client-macos.zip", "Unciv-cli-win-x64.zip", "Unciv-cli-osx-arm64.tar.gz", "Unciv-server-win-x64.zip", "Unciv-relay-win-x64.zip"):
             self.assertIn("**UNVERIFIED.**", rows[name], name)
-        for name in ("Unciv-client-linux.tar.gz", "Unciv-cli-linux-x64.tar.gz"):
+        for name in ("Unciv-client-linux.tar.gz", "Unciv-cli-linux-x64.tar.gz", "Unciv-relay-linux-x64.tar.gz"):
             self.assertNotIn("UNVERIFIED", rows[name], name)
         self.assertIn("not notarised", rows["Unciv-client-macos.zip"])
         with self.assertRaises(SystemExit):

@@ -1,6 +1,15 @@
 # Territory borders on the 3D map (T377)
 
 <!-- toc -->
+## Contents
+
+- [What the owner saw and what is really wrong](#what-the-owner-saw-and-what-is-really-wrong)
+- [What Kotlin does (core/.../TileLayerBorders.kt)](#what-kotlin-does-coretilelayerborderskt)
+- [What the map shows](#what-the-map-shows)
+- [Geometry rules](#geometry-rules)
+- [Colour](#colour)
+- [Tests and evidence (PART 2)](#tests-and-evidence-part-2)
+- [Open questions for the owner (with the recommended answer)](#open-questions-for-the-owner-with-the-recommended-answer)
 <!-- /toc -->
 
 ![Before: notched corners, uneven thickness](images/borders/before-zoom14.jpg)

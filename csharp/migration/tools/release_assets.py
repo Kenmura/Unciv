@@ -6,6 +6,8 @@
     release_assets.py smoke-cli CLI_DIR                     run the published Linux CLI with an empty PATH (starts a tiny game), like release.py
     release_assets.py pack-server RID PUBLISH_DIR OUT_DIR   the same for Unciv.Server (T266): Unciv-server-<RID>.tar.gz|.zip, RID linux-x64 or win-x64
     release_assets.py smoke-server SERVER_DIR               run the published Linux server: --help, then start (LISTENING line), SIGTERM, exit 0
+    release_assets.py pack-relay RID PUBLISH_DIR OUT_DIR    the same for Unciv.Relay (T366): Unciv-relay-<RID>.tar.gz|.zip with README.md, SETUP.md and deploy/; RID linux-x64 or win-x64
+    release_assets.py smoke-relay RELAY_DIR                 run the published Linux relay: --help, then start (LISTENING tunnel line), SIGTERM, exit 0
     (T280: the Android APK is Unciv-client-android-arm64.apk; `verify` also checks that it is a zip holding the arm64 Godot library)
     release_assets.py sums DIR                              write DIR/SHA256SUMS (sha256sum format) for every file in DIR
     release_assets.py verify DIR                            exit 1 unless DIR holds exactly the expected archives (+ SHA256SUMS) and each client archive passes check_package.py
@@ -32,6 +34,7 @@ REPO = CSHARP.parent
 TAG_RE = re.compile(r"csharp-v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(-[0-9A-Za-z][0-9A-Za-z.-]*)?")
 CLI_RIDS = ["linux-x64", "win-x64", "osx-arm64"]  # self-contained `dotnet publish -r <rid>` (cross-published on the Linux runner)
 SERVER_RIDS = ["linux-x64", "win-x64"]  # T266: Unciv.Server, self-contained; no macOS server (nobody asked, nothing to run it on)
+RELAY_RIDS = ["linux-x64", "win-x64"]  # T366: Unciv.Relay, self-contained; same platforms as the server
 ANDROID_APK = "Unciv-client-android-arm64.apk"  # T280: package.sh android (debug-signed arm64-v8a, throw-away keystore), renamed so it sorts with the other clients
 SUMS = "SHA256SUMS"
 
@@ -51,6 +54,10 @@ def server_archive_name(rid):
     return f"Unciv-server-{rid}.{'zip' if rid.startswith('win-') else 'tar.gz'}"
 
 
+def relay_archive_name(rid):
+    return f"Unciv-relay-{rid}.{'zip' if rid.startswith('win-') else 'tar.gz'}"
+
+
 def client_archive_names():
     """{platform: archive name}, in release.CLIENT_PLATFORMS order."""
     platforms = _load("check_package").PLATFORMS
@@ -59,7 +66,7 @@ def client_archive_names():
 
 def expected_assets():
     """Every file the release must carry, without SHA256SUMS."""
-    return list(client_archive_names().values()) + [cli_archive_name(r) for r in CLI_RIDS] + [server_archive_name(r) for r in SERVER_RIDS] + [ANDROID_APK]
+    return list(client_archive_names().values()) + [cli_archive_name(r) for r in CLI_RIDS] + [server_archive_name(r) for r in SERVER_RIDS] + [relay_archive_name(r) for r in RELAY_RIDS] + [ANDROID_APK]
 
 
 def check_tag(tag):
@@ -78,26 +85,44 @@ def pack_server(rid, publish_dir, out_dir, jsons=None, license_file=None):
     return _pack("Unciv.Server", "server", SERVER_RIDS, server_archive_name, rid, publish_dir, out_dir, jsons, license_file)
 
 
+def pack_relay(rid, publish_dir, out_dir, license_file=None):
+    """As pack_cli for Unciv.Relay (T366): top folder Unciv-relay-<rid>/. The relay reads no rulesets, so there is no data/jsons; README.md, SETUP.md and the deploy/ files travel with the binary."""
+    return _pack("Unciv.Relay", "relay", RELAY_RIDS, relay_archive_name, rid, publish_dir, out_dir, None, license_file)
+
+
+def _relay_extras():
+    """(archive-relative path, source) for the run guides and deploy/ (Dockerfile, compose, systemd unit, nginx examples). A local .env (secrets) and anything dropped into certs/ are never packed."""
+    base = CSHARP / "Unciv.Relay"
+    found = [("README.md", base / "README.md"), ("SETUP.md", base / "SETUP.md")]
+    for p in sorted((base / "deploy").rglob("*")):
+        rel = p.relative_to(base).as_posix()
+        if p.is_file() and not p.is_symlink() and p.name != ".env" and (not rel.startswith("deploy/certs/") or p.name == ".gitkeep"):
+            found.append((rel, p))
+    return found
+
+
 def _pack(project, kind, rids, archive_name, rid, publish_dir, out_dir, jsons, license_file):
     if rid not in rids:
         raise SystemExit(f"unknown runtime id {rid} ({', '.join(rids)})")
     publish_dir = Path(publish_dir)
-    jsons = Path(jsons) if jsons else REPO / "android" / "assets" / "jsons"
+    jsons = (Path(jsons) if jsons else REPO / "android" / "assets" / "jsons") if kind != "relay" else None
     license_file = Path(license_file) if license_file else REPO / "LICENSE"
     exe = f"{project}.exe" if rid.startswith("win-") else project
     if not (publish_dir / exe).is_file():
         raise SystemExit(f"{publish_dir} has no {exe}: not a dotnet publish output for {rid}")
-    if not (jsons / "ModCategories.json").is_file():
+    if jsons is not None and not (jsons / "ModCategories.json").is_file():
         raise SystemExit(f"{jsons} is not the rulesets folder (no ModCategories.json)")
     top = f"Unciv-{kind}-{rid}"
     entries = []  # (path in archive, source file)
-    for base, prefix in ((publish_dir, top), (jsons, f"{top}/data/jsons")):
+    for base, prefix in ((publish_dir, top),) + (((jsons, f"{top}/data/jsons"),) if jsons else ()):
         for p in sorted(base.rglob("*")):
             if p.is_file() and not p.is_symlink() and not p.name.endswith(".pdb"):
                 entries.append((f"{prefix}/{p.relative_to(base).as_posix()}", p))
     entries.append((f"{top}/LICENSE", license_file))
     if kind == "server":
         entries.append((f"{top}/README.md", CSHARP / "Unciv.Server" / "README.md"))  # the run guide travels with the binary
+    if kind == "relay":
+        entries += [(f"{top}/{rel}", src) for rel, src in _relay_extras()]
     out = Path(out_dir) / archive_name(rid)
     out.parent.mkdir(parents=True, exist_ok=True)
     if out.suffix == ".zip":
@@ -171,6 +196,49 @@ def smoke_server(server_dir):
     return []
 
 
+def smoke_relay(relay_dir):
+    """Problems (empty when fine): the published Linux relay (PATH is only /usr/bin:/bin and DOTNET_ROOT is empty; folder outside any checkout) prints --help and exits 0, starts with
+    --tls none --public-name relay.example.org on free ports (stdout line 'LISTENING tunnel <port>'), then stops on SIGTERM with exit 0."""
+    import select
+    import signal
+    import time
+
+    exe = str(Path(relay_dir) / "Unciv.Relay")
+    with tempfile.TemporaryDirectory() as work:
+        env = {"PATH": "/usr/bin:/bin", "HOME": work, "DOTNET_ROOT": ""}
+        h = subprocess.run([exe, "--help"], cwd=work, env=env, capture_output=True, text=True, timeout=SERVER_SMOKE_SECONDS)
+        if h.returncode or "--tunnel-port" not in h.stdout:
+            return [f"Unciv.Relay --help failed (exit {h.returncode}): {(h.stdout + h.stderr)[-600:]}"]
+        args = [exe, "--tls", "none", "--public-name", "relay.example.org", "--tunnel-port", "0", "--http-port", "0", "--data-dir", str(Path(work) / "data")]
+        proc = subprocess.Popen(args, cwd=work, env=env, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        seen = b""
+        listening = rb"(?m)^LISTENING tunnel \d+\s*$"
+        try:
+            deadline = time.monotonic() + SERVER_SMOKE_SECONDS
+            fd = proc.stdout.fileno()
+            while time.monotonic() < deadline and not re.search(listening, seen):
+                if select.select([fd], [], [], 1)[0]:
+                    chunk = os.read(fd, 65536)
+                    if not chunk:
+                        break
+                    seen += chunk
+            if not re.search(listening, seen):
+                return [f"Unciv.Relay did not print 'LISTENING tunnel <port>' within {SERVER_SMOKE_SECONDS}s (exit {proc.poll()}): {seen.decode(errors='replace')[-600:]}"]
+            proc.send_signal(signal.SIGTERM)
+            try:
+                rest, _ = proc.communicate(timeout=SERVER_SMOKE_SECONDS)
+            except subprocess.TimeoutExpired:
+                return ["Unciv.Relay did not exit within the time limit after SIGTERM"]
+            if proc.returncode != 0:
+                return [f"Unciv.Relay exited {proc.returncode} after SIGTERM (expected 0): {(seen + rest).decode(errors='replace')[-600:]}"]
+        finally:
+            if proc.poll() is None:
+                proc.kill()
+                proc.wait()
+            proc.stdout.close()
+    return []
+
+
 def write_sums(directory):
     """Write SHA256SUMS ('<hex>  <name>' per file, sorted) for every file in the directory. Returns the lines."""
     directory = Path(directory)
@@ -230,6 +298,8 @@ def notes(tag, commit, date):
 | `{cli_archive_name('osx-arm64')}` | **UNVERIFIED.** Published self-contained, never run on a Mac. Unsigned and not notarised. |
 | `{server_archive_name('linux-x64')}` | Smoke-tested in this workflow: `--help`, then started (printed `LISTENING <port>`) and stopped with SIGTERM (exit 0) without DOTNET_ROOT, from a folder outside the checkout. Run guide: `Unciv.Server/README.md` in the repository. |
 | `{server_archive_name('win-x64')}` | **UNVERIFIED.** Dedicated server published self-contained, never run on Windows (Ctrl+C is the only stop signal there). |
+| `{relay_archive_name('linux-x64')}` | Smoke-tested in this workflow: `--help`, then started with `--tls none --public-name relay.example.org` (printed `LISTENING tunnel <port>`) and stopped with SIGTERM (exit 0) without DOTNET_ROOT, from a folder outside the checkout. Carries `README.md`, `SETUP.md` and `deploy/`. |
+| `{relay_archive_name('win-x64')}` | **UNVERIFIED.** Relay published self-contained, never run on Windows. |
 | `{ANDROID_APK}` | **NOT device-tested** (T278 has not run on a phone). Exported and checked in this workflow only (arm64-v8a library present, `apksigner verify` passes). **Debug-signed with a throw-away keystore generated for this build**: sideload only, not a store build, and an update from another build needs `adb uninstall org.unciv.godot` first (different signature). |
 
 This is a draft created by CI. The owner reviews it and publishes it by hand; nothing was published automatically.
@@ -252,10 +322,15 @@ def main(argv):
     if cmd == "pack-server" and len(args) == 3:
         print(pack_server(args[0], args[1], args[2]))
         return 0
+    if cmd == "pack-relay" and len(args) == 3:
+        print(pack_relay(args[0], args[1], args[2]))
+        return 0
     if cmd == "smoke-cli" and len(args) == 1:
         problems = smoke_cli(args[0])
     elif cmd == "smoke-server" and len(args) == 1:
         problems = smoke_server(args[0])
+    elif cmd == "smoke-relay" and len(args) == 1:
+        problems = smoke_relay(args[0])
     elif cmd == "sums" and len(args) == 1:
         print("\n".join(write_sums(args[0])))
         return 0

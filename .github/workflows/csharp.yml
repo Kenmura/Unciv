@@ -220,6 +220,38 @@ jobs:
           mkdir "$RUNNER_TEMP/smoke" && tar -xzf "$RUNNER_TEMP/assets/Unciv-server-linux-x64.tar.gz" -C "$RUNNER_TEMP/smoke"
           python3 -I csharp/migration/tools/release_assets.py smoke-server "$RUNNER_TEMP/smoke/Unciv-server-linux-x64"
 
+  # T366: the relay, published self-contained for linux-x64 and win-x64 (same commands as csharp-release.yml and tools/release.py), the Linux one smoke-run
+  # (--help, start with --tls none, LISTENING tunnel line, SIGTERM, exit 0) from the unpacked archive with no dotnet on PATH. The Windows one is only built and packed: UNVERIFIED, never run.
+  # Nothing is uploaded here (read-only workflow). Skipped on schedule because engine is.
+  relay-publish:
+    name: Publish the relay (Linux smoke, Windows build only)
+    needs: engine
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+        with:
+          dotnet-version: 10.0.x
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.nuget/packages
+          key: nuget-${{ runner.os }}-${{ hashFiles('csharp/**/*.csproj', 'csharp/Directory.Packages.props') }}
+          restore-keys: nuget-${{ runner.os }}-
+      - name: Publish and archive each runtime
+        run: |
+          mkdir -p "$RUNNER_TEMP/assets"
+          for rid in linux-x64 win-x64; do
+            (cd csharp && dotnet publish Unciv.Relay -c Release -r "$rid" --self-contained true -o "$RUNNER_TEMP/publish-$rid")
+            python3 -I csharp/migration/tools/release_assets.py pack-relay "$rid" "$RUNNER_TEMP/publish-$rid" "$RUNNER_TEMP/assets"
+          done
+      - name: Smoke the Linux relay (PATH=/usr/bin:/bin, no DOTNET_ROOT)
+        run: |
+          mkdir "$RUNNER_TEMP/smoke" && tar -xzf "$RUNNER_TEMP/assets/Unciv-relay-linux-x64.tar.gz" -C "$RUNNER_TEMP/smoke"
+          python3 -I csharp/migration/tools/release_assets.py smoke-relay "$RUNNER_TEMP/smoke/Unciv-relay-linux-x64"
+
   # T277: the Android client. Exports the debug-signed APKs (arm64-v8a only, and arm64-v8a plus x86_64 for the emulator) with the same package.sh as a local build, uploads them as
   # a 7-day artifact (throw-away keystore, no store signing, no secrets) and, when the runner offers /dev/kvm, installs the emulator APK on a headless x86_64 emulator and waits for
   # the main-menu marker in logcat (android-smoke.sh). Without KVM the build-and-artifact half still runs and the smoke step reports a warning instead of failing. T280 adds Android to the draft release.
