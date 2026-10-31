@@ -137,7 +137,8 @@ flowchart TD
 Unlinked tickets (no open dependency in either direction), by state:
 
 - ready: T354 T355 T356 T357 T361 T366 T367 T372 T373
-- in progress: T300 T301 T303 T371 T374 T376 T377
+- in progress: T300 T301 T303 T371 T376 T377
+- in review: T374
 - blocked: T290
 - waiting: T313 T314 T317 T318 T321 T326 T328 T329 T330 T331 T332 T333 T335 T341 T342 T343 T344 T345 T346 T348 T349 T350 T351 T352 T353 T362 T363 T375
 
@@ -234,7 +235,7 @@ xychart-beta
 | T362 | Available (waiting on ) | T334 | 0 | Two real client processes host and join on the real GPU (manual two-profile smoke) |
 | T363 | Available (waiting on ) | none | 0 | QuickStart and harness scenario games still start on Vanilla/Gods & Kings: move them to BNW and regenerate goldens |
 | T371 | In-Progress [Claude] | T338 | 0 | Relay settings screen and relay trust prompt: relay URL, pinned fingerprint, Reach-me-through-relay toggle, ask once before using an invite's unknown relay |
-| T374 | In-Progress [Claude] | none | 0 | Relay server one-step Docker deployment from a GitHub clone: verified Dockerfile and compose with env vars, and a step-by-step setup guide incl. nginx |
+| T374 | Needs-Review [Claude] | none | 0 | Relay server one-step Docker deployment from a GitHub clone: verified Dockerfile and compose with env vars, and a step-by-step setup guide incl. nginx |
 | T375 | Available (waiting on ) | none | 0 | Re-record stale phone-menus goldens (main-menu, new-game, host, lobby, options, modal differ from the committed images at base) |
 | T376 | In-Progress [Claude] | none | 0 | AutoPlay: skip or shorten animations and never let them queue behind the turns |
 | T377 | In-Progress [Claude] | none | 0 | Border rendering review and fix: borders have gaps, do not join at corners and are drawn partially (see owner screenshot) |
