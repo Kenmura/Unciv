@@ -159,7 +159,7 @@ public partial class App : Node
             {
                 var current = RelaySettings.Load(UserPaths.Relay, UserPaths.RelayDefault);
                 current.Remember(relay);
-                current.Save(UserPaths.Relay);
+                if (!current.Save(UserPaths.Relay)) throw new IOException("The relay settings could not be saved");
             },
             ModFiles = RulesetLocator.FileSource(),
             ModsDirectory = UserPaths.Mods,
@@ -213,9 +213,7 @@ public partial class App : Node
     {
         if (!target.IsRelay || target.Room is not { } room) return await TcpTlsClientTransport.ConnectAsync(target.Host, target.Port, cancellationToken: token);
         var settings = RelaySettings.Load(UserPaths.Relay, UserPaths.RelayDefault);
-        var choice = settings.Choose(target.Host, target.Port);
-        if (choice.NeedsPrompt) throw new InvalidOperationException("The relay " + choice.Endpoint.Key + " was not agreed to");
-        return await TcpTlsClientTransport.ConnectViaRelayAsync(choice.Endpoint, room, target.Fingerprint, known, choice.Dial, cancellationToken: token);
+        return await settings.ConnectInviteAsync(target.Host, target.Port, room, target.Fingerprint, known, token);
     }
 
     // T247: after a mod download the host's mods are in the ruleset cache but not in the form made before; make the form the host's rules (the nations list and the game's ruleset come from it).

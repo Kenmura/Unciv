@@ -238,7 +238,7 @@ public sealed class LayoutMatrixScenario : Scenario
         steps.Add(new Act("open the join dialog", () => ((BrowseScreen)M().Top.NotNull()).OpenJoinDialog()));
         steps.AddRange(check(at, "browse join dialog", () => ((BrowseScreen)M().Top.NotNull()).Dialog.NotNull()));
         steps.Add(new Act("back", () => M().Pop()));
-        steps.Add(new Act("open options", () => M().Push(new OptionsScreen(run.Settings, T(), null, ["Retro", "Neon"], null, new RelaySettingsStore(() => new RelaySettings { Url = "unciv-relay://relay.example.org:47831?fp=" + BrowseScenario.StrangerKey, AcceptedRelays = ["a.very.long.relay.host.name.example.net:47830", "friend.example.net:47830"] }, _ => { })))));
+        steps.Add(new Act("open options", () => M().Push(new OptionsScreen(run.Settings, T(), null, ["Retro", "Neon"], null, new RelaySettingsStore(() => new RelaySettings { Url = "unciv-relay://relay.example.org:47831?fp=" + BrowseScenario.StrangerKey, AcceptedRelays = ["a.very.long.relay.host.name.example.net:47830", "friend.example.net:47830"] }, _ => true)))));
         steps.AddRange(check(at, "options", () => M().Top.NotNull()));
         // T322: on every page the rows keep within the form width cap (a label next to its control, not across a 4K window)
         for (int tab = 0; tab < 8; tab++) // 8 tabs with Language; it is absent without a localization and SelectTab then ignores the index

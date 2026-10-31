@@ -301,14 +301,26 @@ public partial class JoinScreen : Control
         var sync = env.ModFiles != null && env.ModsDirectory != null
             ? new ModSyncService(env.ModFiles, env.ModsDirectory, plan => AskModsAsync(plan, cancellation))
             : null;
-        if (target.Relay is { } named && env.RelayNeedsPrompt(named))
+        if (target.Relay is { } named)
         {
-            if (!await AskRelayAsync(named, cancellation).ConfigureAwait(true) || cancellation.IsCancellationRequested)
+            try
             {
-                if (!cancellation.IsCancellationRequested) EndAttempt("Not connected: you did not agree to use that relay.");
+                if (env.RelayNeedsPrompt(named))
+                {
+                    if (!await AskRelayAsync(named, cancellation).ConfigureAwait(true) || cancellation.IsCancellationRequested)
+                    {
+                        if (!cancellation.IsCancellationRequested) EndAttempt("Not connected: you did not agree to use that relay.");
+                        return;
+                    }
+                    env.RememberRelay(named);
+                }
+            }
+            catch (Exception e) when (e is IOException or UnauthorizedAccessException or InvalidOperationException or ArgumentException or System.Text.Json.JsonException)
+            {
+                // T380: the relay settings could not be read or the answer not saved; the next join would ask again, and without a saved yes the dial fails closed.
+                if (!cancellation.IsCancellationRequested) EndAttempt("Not connected: the relay settings could not be read or saved, so your answer was not kept.");
                 return;
             }
-            env.RememberRelay(named);
         }
         string? hashAfterSync = null; // after a mod download the host's own hash: the rules now are the host's
         SyncedRules = null;

@@ -113,12 +113,9 @@ public sealed class RelayScenario : Scenario
             new AssertQuery("address and fingerprint are saved together as one relay URL", () =>
                 Editor.FingerprintProblem == "" && RelaySettings.Load(path).Endpoint is { Host: "relay.example.org", Port: 47831 } relay && HostKey.Matches(relay.Fingerprint.NotNull(), RelayPin)),
             new Capture("settings-saved", "A valid address and the relay's fingerprint: both are saved as soon as they are valid, no problem text, the switch is usable."),
-            new Act("paste a whole relay URL with a fingerprint and leave the field", () =>
-            {
-                Type(Editor.UrlField, "unciv-relay://other.example.net?fp=" + RelayPin);
-                Editor.UrlField.EmitSignal(Control.SignalName.FocusExited);
-            }),
-            new AssertQuery("the fingerprint moved into its own field", () => Editor.UrlField.Text == "unciv-relay://other.example.net" && HostKey.Matches(Editor.FingerprintField.Text, RelayPin) && RelaySettings.Load(path).Endpoint is { Host: "other.example.net" }),
+            new Act("paste a whole relay URL with ANOTHER fingerprint over the filled fields, without leaving the field (T380)", () => Type(Editor.UrlField, "unciv-relay://other.example.net?fp=" + BrowseScenario.StrangerKey)),
+            new AssertQuery("the pasted fingerprint replaced the old one at paste time and was saved, not the old one", () =>
+                Editor.UrlField.Text == "unciv-relay://other.example.net" && HostKey.Matches(Editor.FingerprintField.Text, BrowseScenario.StrangerKey) && RelaySettings.Load(path).Endpoint is { Host: "other.example.net" } other && HostKey.Matches(other.Fingerprint.NotNull(), BrowseScenario.StrangerKey)),
             new Click(() => Centre(() => Editor.ReachToggle)),
             new AssertQuery("turning the switch off is saved", () => !RelaySettings.Load(path).ReachMeThroughRelay && !RelaySettings.Load(path).HostThroughRelay),
             new Act("an invite once named another relay and the player agreed", () =>

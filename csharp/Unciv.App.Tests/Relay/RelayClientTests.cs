@@ -256,6 +256,63 @@ public sealed class RelayClientTests
         Assert.Equal("mine.example.org", settings.Endpoint!.Host);
     }
 
+    // T380: the fail-closed dial decision of App.ConnectAsync, now in RelaySettings.ConnectInviteAsync so a test can break it.
+    [Fact]
+    public async Task RelaySettings_ConnectInvite_AnUnagreedRelayThrowsBeforeAnyDial_ConfiguredAndAgreedOnesDial()
+    {
+        var settings = new RelaySettings { Url = "unciv-relay://mine.example.org:47830?fp=" + HostKey.Fingerprint([4]) };
+        settings.Remember(new RelayEndpoint("friend.example.net", 47830));
+        var dialled = new List<(string Key, bool TrustAny, string? Fingerprint)>();
+        Task<ITransport> Dialer(RelayEndpoint relay, string room, string? fingerprint, KnownHosts known, RelayDialOptions dial, CancellationToken token)
+        {
+            dialled.Add((relay.Key, dial.TrustAnyCertificate, fingerprint));
+            throw new TimeoutException("reached the dial");
+        }
+
+        var stranger = await Assert.ThrowsAsync<RelayException>(() => settings.ConnectInviteAsync("stranger.example.net", 47830, "K7M2-9XQ4AB", null, new KnownHosts(), CancellationToken.None, Dialer));
+        Assert.Equal(RelayCodes.Declined, stranger.Code);
+        await Assert.ThrowsAsync<RelayException>(() => settings.ConnectInviteAsync("friend.example.net", 47831, "K7M2-9XQ4AB", null, new KnownHosts(), CancellationToken.None, Dialer)); // another port is another relay
+        Assert.Empty(dialled);
+
+        var hostFp = HostKey.Fingerprint([7]);
+        await Assert.ThrowsAsync<TimeoutException>(() => settings.ConnectInviteAsync("MINE.example.org", 47830, "K7M2-9XQ4AB", hostFp, new KnownHosts(), CancellationToken.None, Dialer));
+        await Assert.ThrowsAsync<TimeoutException>(() => settings.ConnectInviteAsync("friend.example.net", 47830, "K7M2-9XQ4AB", null, new KnownHosts(), CancellationToken.None, Dialer));
+        Assert.Equal([("mine.example.org:47830", false, (string?)hostFp), ("friend.example.net:47830", true, null)], dialled);
+    }
+
+    [Fact]
+    public void RelaySettings_NullAcceptedRelaysInTheFile_MeansNone()
+    {
+        var dir = Directory.CreateTempSubdirectory("unciv-relay-null-").FullName;
+        try
+        {
+            var path = Path.Combine(dir, "relay.json");
+            File.WriteAllText(path, """{"url":"unciv-relay://relay.example.org","acceptedRelays":null}""");
+            var loaded = RelaySettings.Load(path);
+            Assert.Empty(loaded.AcceptedRelays);
+            Assert.True(loaded.Choose("friend.example.net", 47830).NeedsPrompt);
+            loaded.Remember(new RelayEndpoint("friend.example.net", 47830));
+            Assert.False(loaded.Forget("nobody:1"));
+            Assert.True(loaded.Save(path));
+            Assert.Single(RelaySettings.Load(path).AcceptedRelays);
+        }
+        finally { Directory.Delete(dir, recursive: true); }
+    }
+
+    [Fact]
+    public void RelaySettings_SaveReportsAFailedWrite()
+    {
+        var dir = Directory.CreateTempSubdirectory("unciv-relay-save-").FullName;
+        try
+        {
+            var blocker = Path.Combine(dir, "not-a-folder");
+            File.WriteAllText(blocker, "x");
+            Assert.False(new RelaySettings().Save(Path.Combine(blocker, "relay.json"))); // the parent is a file
+            Assert.True(new RelaySettings().Save(Path.Combine(dir, "ok", "relay.json")));
+        }
+        finally { Directory.Delete(dir, recursive: true); }
+    }
+
     // R13: no source file, fixture or config names a relay other than the placeholder or loopback.
     [Fact]
     public void NoRelayHostnameOtherThanThePlaceholderIsInTheSource()

@@ -97,7 +97,7 @@
     "Unciv.Client.Net/Hosting/ListingFactory.cs": {"branch": 81.25, "line": 100.0},
     "Unciv.Client.Net/Hosting/LocalAddresses.cs": {"branch": 97.62, "line": 88.46},
     "Unciv.Client.Net/Hosting/RelayDirectory.cs": {"branch": 89.0, "line": 97.33},
-    "Unciv.Client.Net/Hosting/RelaySettings.cs": {"branch": 89.71, "line": 93.33},
+    "Unciv.Client.Net/Hosting/RelaySettings.cs": {"branch": 89.47, "line": 96.47},
     "Unciv.Client.Net/Hosting/StandbyPromotion.cs": {"branch": 66.67, "line": 85.45},
     "Unciv.Client.Net/Mods/ModSyncService.cs": {"branch": 89.06, "line": 96.64},
     "Unciv.Client.Net/Session/ClientEvent.cs": {"branch": 100.0, "line": 100.0},

@@ -32,7 +32,13 @@ public sealed class RelaySettings
 
     /// <summary>Relays (<c>host:port</c>) the player agreed to connect through when an invite named them. Never added to <see cref="Url"/> by itself.</summary>
     [JsonPropertyName("acceptedRelays")]
-    public List<string> AcceptedRelays { get; set; } = [];
+    public List<string> AcceptedRelays
+    {
+        get => acceptedRelays;
+        set => acceptedRelays = value ?? []; // T380: a hand-edited or damaged relay.json with "acceptedRelays": null means none
+    }
+
+    private List<string> acceptedRelays = [];
 
     /// <summary>The configured relay; null when none is set or the text is not a relay URL.</summary>
     [JsonIgnore]
@@ -91,7 +97,8 @@ public sealed class RelaySettings
         return new RelaySettings();
     }
 
-    public void Save(string path)
+    /// <summary>Writes the settings to <paramref name="path"/>. False when the file could not be written (T380): every reader reloads from disk, so the change did NOT take effect and the caller must say so.</summary>
+    public bool Save(string path)
     {
         try
         {
@@ -100,10 +107,11 @@ public sealed class RelaySettings
             var temp = path + ".tmp";
             File.WriteAllText(temp, JsonSerializer.Serialize(this, new JsonSerializerOptions { WriteIndented = true }));
             File.Move(temp, path, overwrite: true);
+            return true;
         }
         catch (Exception e) when (e is IOException or UnauthorizedAccessException)
         {
-            // the setting stays for this run; the next start asks again
+            return false;
         }
     }
 
@@ -114,6 +122,20 @@ public sealed class RelaySettings
         if (Endpoint is { } configured && configured.Key == named.Key) return new RelayChoice(configured, new RelayDialOptions(), false);
         var remembered = AcceptedRelays.Contains(named.Key, StringComparer.OrdinalIgnoreCase);
         return new RelayChoice(named, new RelayDialOptions { TrustAnyCertificate = true }, !remembered);
+    }
+
+    /// <summary>
+    /// T380: the one place a relay target is dialled for a join (T338/T371). The relay must be the configured one or one the player agreed to: an unknown, never-agreed relay throws <see cref="RelayException"/>
+    /// (<see cref="RelayCodes.Declined"/>) before anything is dialled, so a relay named by a peer (a host-migration endpoint) cannot see this machine's address unasked. <paramref name="dialer"/> replaces the real
+    /// relay dial in tests.
+    /// </summary>
+    public Task<ITransport> ConnectInviteAsync(string relayHost, int relayPort, string room, string? fingerprint, KnownHosts known, CancellationToken cancellationToken, Func<RelayEndpoint, string, string?, KnownHosts, RelayDialOptions, CancellationToken, Task<ITransport>>? dialer = null)
+    {
+        var choice = Choose(relayHost, relayPort);
+        if (choice.NeedsPrompt) throw new RelayException(RelayCodes.Declined, "The relay " + choice.Endpoint.Key + " was not agreed to.");
+        return dialer != null
+            ? dialer(choice.Endpoint, room, fingerprint, known, choice.Dial, cancellationToken)
+            : TcpTlsClientTransport.ConnectViaRelayAsync(choice.Endpoint, room, fingerprint, known, choice.Dial, cancellationToken: cancellationToken);
     }
 
     /// <summary>
